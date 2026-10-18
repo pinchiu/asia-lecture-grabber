@@ -1,0 +1,19 @@
+{
+  "name": "asia-lecture-grabber",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "亞洲大學通識講座自動報名助手與四大基本素養（健康力、關懷力、創新力、卓越力）畢業門檻追蹤系統",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "dev": "node --watch src/server.mjs",
+    "desktop": "node scripts/desktop-launcher.mjs",
+    "icons": "node scripts/generate-icons.mjs",
+    "mobile:init": "npx @capacitor/cli init",
+    "mobile:add:android": "npx @capacitor/cli add android",
+    "mobile:open:android": "npx @capacitor/cli open android"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

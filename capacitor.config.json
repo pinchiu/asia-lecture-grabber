@@ -1,0 +1,10 @@
+{
+  "appId": "tw.edu.asia.lecturegrabber",
+  "appName": "亞大講座報名助手",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  }
+}
