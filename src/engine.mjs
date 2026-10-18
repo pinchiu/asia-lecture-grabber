@@ -275,28 +275,29 @@ export class Engine extends EventEmitter {
     }
   }
 
-  async manualRegister(eid01) {
+  async manualRegister(queryId) {
     if (!this.session?.token) throw new Error('請先登入');
-    let row = this.lectures.find((item) => item.eid01 === eid01);
+    const id = String(queryId || '').trim();
+    if (!id) throw new Error('請提供講座識別碼或課程代號');
+
+    let row = this.lectures.find((item) => item.eid01 === id || item.reseid === id);
     if (!row) {
       this.lectures = await api.listLectures(this.session.token);
-      row = this.lectures.find((item) => item.eid01 === eid01);
+      row = this.lectures.find((item) => item.eid01 === id || item.reseid === id);
     }
-    if (!row) throw new Error('找不到該講座，請重新整理清單');
+    if (!row) throw new Error('找不到該講座，請確認課程代號或重新整理清單');
     if (String(row.canapp) !== 'Y') {
       throw new Error(`目前狀態為「${api.STATUS_LABEL[row.canapp] || row.canapp}」，無法報名`);
     }
 
     const std = await this.ensureIdentity();
-    const res = await api.registerLecture(this.session.token, { std_info: std, eid01, reseid: row.reseid });
+    const res = await api.registerLecture(this.session.token, { std_info: std, eid01: row.eid01, reseid: row.reseid });
     if (!res.ok) throw new Error(res.message);
 
-    let target = this.targets.find((item) => item.eid01 === eid01);
+    let target = this.targets.find((item) => item.eid01 === row.eid01);
     if (!target) {
       target = normalizeTarget({
-        eid01,
-        reseid: row.reseid,
-        rescnm: row.rescnm,
+        ...row,
         status: 'waiting',
         addedAt: Date.now()
       });

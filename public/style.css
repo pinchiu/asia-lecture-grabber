@@ -953,6 +953,58 @@ table.grid td.right {
   font-size: 13px;
 }
 
+.manual-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  background: var(--obsidian-3);
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--radius-sm);
+}
+
+.manual-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.manual-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 6px;
+  background: var(--flame-glow);
+  color: var(--flame-orange);
+  border: 1px solid rgba(255, 59, 0, 0.4);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.manual-input-wrap input {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: var(--obsidian-1);
+  border: 1px solid var(--line-hairline);
+  color: var(--text-primary);
+  border-radius: var(--radius-xs);
+}
+
+.manual-input-wrap input:focus {
+  border-color: var(--flame-orange);
+  outline: none;
+}
+
+.manual-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
 /* =========================================================================
    AI 代理與排程 AI & Automation
    ========================================================================= */
