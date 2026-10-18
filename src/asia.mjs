@@ -367,9 +367,10 @@ export async function verifyIdentity(token, { p_no, p_id, p_type = 'S' }) {
 
 /** 送出報名（搶課核心）。 */
 export async function registerLecture(token, { std_info, eid01, reseid }) {
+  const safeStdInfo = std_info ? { ...std_info, bfree: std_info.bfree || 'N' } : std_info;
   const json = await request('POST', 'api/Cfd10/Save', {
     token,
-    body: { std_info, eid01, reseid },
+    body: { std_info: safeStdInfo, eid01, reseid },
     timeoutMs: 20_000
   });
   const message = String(json?.message ?? json?.Message ?? '').trim();

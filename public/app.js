@@ -788,6 +788,9 @@ async function fillForms(snap) {
   const engineSettings = snap.engine?.settings || {};
   const notify = snap.notify || {};
   $('#intervalSec').value = (Number(engineSettings.intervalMs || 2500) / 1000).toFixed(1);
+  if ($('#bfreeSelect')) {
+    $('#bfreeSelect').value = engineSettings.bfree === 'Y' ? 'Y' : 'N';
+  }
   $('#stopDoneToggle').checked = Boolean(engineSettings.stopWhenAllDone);
   $('#soundToggle').checked = notify.sound !== false;
   $('#notifyToggle').checked = notify.desktop !== false;
@@ -915,10 +918,12 @@ document.addEventListener('click', (event) => {
   if (action === 'save-settings') {
     return guard(async () => {
       const seconds = Number($('#intervalSec').value);
+      const bfree = $('#bfreeSelect')?.value === 'Y' ? 'Y' : 'N';
       await post('/api/config', {
         engine: {
           intervalMs: Math.round(Math.min(30, Math.max(1, seconds)) * 1000),
-          stopWhenAllDone: $('#stopDoneToggle').checked
+          stopWhenAllDone: $('#stopDoneToggle').checked,
+          bfree
         },
         notify: {
           sound: $('#soundToggle').checked,

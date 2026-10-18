@@ -356,6 +356,9 @@ async function handleApi(req, res, url) {
           if (body.engine.stopWhenAllDone !== undefined) {
             patch.engine.stopWhenAllDone = Boolean(body.engine.stopWhenAllDone);
           }
+          if (body.engine.bfree !== undefined) {
+            patch.engine.bfree = String(body.engine.bfree || 'N').toUpperCase() === 'Y' ? 'Y' : 'N';
+          }
         }
 
         if (body.notify && typeof body.notify === 'object') {

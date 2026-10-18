@@ -30,7 +30,8 @@ export const DEFAULT_CONFIG = {
     postOpenBurstMs: 20_000,
     retryGapMs: 5000,
     minRequestGapMs: 600,
-    stopWhenAllDone: false
+    stopWhenAllDone: false,
+    bfree: 'N'
   },
   notify: { sound: true, desktop: true },
   schedule: { enabled: true, entries: [] },
