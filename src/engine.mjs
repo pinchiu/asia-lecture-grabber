@@ -11,6 +11,7 @@
 
 import { EventEmitter } from 'node:events';
 import * as api from './asia.mjs';
+import { extractLiteracies } from './calendar.mjs';
 
 const TERMINAL = new Set(['registered', 'closed', 'manual', 'error']);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, Math.max(0, ms)));
@@ -171,6 +172,11 @@ export class Engine extends EventEmitter {
   }
 
   applyRows(rows) {
+    if (!Array.isArray(rows)) return;
+    if (rows.length === 0 && this.lectures.length > 0) {
+      this.log('warn', '校方端點回傳空講座清單，保留現存快取以維持搶課目標監控');
+      return;
+    }
     const now = Date.now();
     const nextCanapp = new Map();
 
@@ -202,12 +208,8 @@ export class Engine extends EventEmitter {
       target.chk5 = String(row.chk5 || target.chk5 || '');
       target.chk6 = String(row.chk6 || target.chk6 || '');
       target.chk7 = String(row.chk7 || target.chk7 || '');
-      const lits = [];
-      if (target.chk4 === 'Y') lits.push('健康力');
-      if (target.chk5 === 'Y') lits.push('關懷力');
-      if (target.chk6 === 'Y') lits.push('創新力');
-      if (target.chk7 === 'Y') lits.push('卓越力');
-      target.literacies = lits;
+      const lits = extractLiteracies(row);
+      target.literacies = lits.length ? lits : (target.literacies || []);
     }
   }
 
@@ -419,14 +421,7 @@ export class Engine extends EventEmitter {
           chk5: String(row.chk5 || ''),
           chk6: String(row.chk6 || ''),
           chk7: String(row.chk7 || ''),
-          literacies: (() => {
-            const list = [];
-            if (row.chk4 === 'Y') list.push('健康力');
-            if (row.chk5 === 'Y') list.push('關懷力');
-            if (row.chk6 === 'Y') list.push('創新力');
-            if (row.chk7 === 'Y') list.push('卓越力');
-            return list;
-          })(),
+          literacies: extractLiteracies(row),
           addedAt: Date.now()
         })
       );
@@ -587,13 +582,9 @@ function normalizeTarget(target) {
   const chk5 = String(target?.chk5 || '');
   const chk6 = String(target?.chk6 || '');
   const chk7 = String(target?.chk7 || '');
-  let literacies = Array.isArray(target?.literacies) ? target.literacies : [];
-  if (!literacies.length) {
-    if (chk4 === 'Y') literacies.push('健康力');
-    if (chk5 === 'Y') literacies.push('關懷力');
-    if (chk6 === 'Y') literacies.push('創新力');
-    if (chk7 === 'Y') literacies.push('卓越力');
-  }
+  let literacies = Array.isArray(target?.literacies) && target.literacies.length
+    ? target.literacies
+    : extractLiteracies(target);
 
   return {
     eid01: String(target?.eid01 || ''),

@@ -501,9 +501,18 @@ async function handleApi(req, res, url) {
 }
 
 async function serveStatic(res, pathname) {
-  const rel = pathname === '/' ? 'index.html' : decodeURIComponent(pathname).replace(/^\/+/, '');
-  const file = path.join(PUBLIC_DIR, rel);
-  if (!file.startsWith(PUBLIC_DIR)) {
+  let decoded;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Bad Request');
+    return;
+  }
+  const rel = pathname === '/' ? 'index.html' : decoded.replace(/^\/+/, '');
+  const root = path.resolve(PUBLIC_DIR);
+  const file = path.resolve(root, rel);
+  if (!file.startsWith(root + path.sep) && file !== root) {
     res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Forbidden');
     return;
