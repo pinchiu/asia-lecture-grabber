@@ -29,9 +29,9 @@
 - **禮貌退避**：平時維持 2.5 秒禮貌間隔，連線異常時自動指數退避，不對校方伺服器造成負擔。
 - **自動身份驗證**：登入時以身分證字號末四碼換取校方報名所需憑證，全程自動化。
 
-### 3. 多端支援：手機 App 版本與電腦網頁版
+### 3. 多端支援：Flutter 原生 App、PWA 行動版與電腦網頁版
+- **Flutter 原生 App (`mobile/`)**：採用 Google Flutter 跨平台原生框架開發，內建伺服器位址快速切換、斷線自動重試與硬體加速 WebView，可直接編譯為 Android 原生 APK 安裝檔或 iOS App。
 - **手機 App 版本 (PWA)**：完整支援 Progressive Web App，可直接透過瀏覽器「加入主畫面」或「安裝應用程式」，具備獨立視窗、離線快取（Service Worker）與觸控優化卡片視圖。
-- **行動原生封裝**：內建 Capacitor 設定（`capacitor.config.json`），支援直接編譯為 Android APK 或 iOS App。
 - **電腦網頁版**：支援快速啟動（`start.bat` / `start.sh`），自動以獨立 App 視窗或預設瀏覽器開啟儀表板。
 
 ### 4. 智慧排程與 AI 挑課代理
@@ -98,9 +98,52 @@ npm start
 
 ---
 
-## 手機 App 版本安裝說明 (PWA)
+## 手機 App 版本：Flutter 原生打包與安裝
 
-本系統具備標準 PWA 規格，可於手機上當作原生 App 使用：
+專案提供完整的 Flutter 原生行動端工程（位於 `mobile/` 目錄），支援編譯為 Android 原生 APK 安裝檔或 iOS 應用程式：
+
+### 1. 執行環境需求
+- 已安裝 Flutter SDK（版本 >= 3.10.0）
+- Android Studio（含 Android SDK 與 Platform-Tools）或 Xcode（iOS）
+
+### 2. 本地執行與除錯
+```bash
+# 確保根目錄 Node.js 服務已啟動：npm start
+# 接著執行 Flutter App
+npm run mobile:flutter:run
+```
+或直接進入目錄：
+```bash
+cd mobile
+flutter run
+```
+
+### 3. 打包 Android 原生 APK 安裝檔
+執行以下指令直接建置可安裝於 Android 手機的 APK 檔案：
+```bash
+npm run mobile:flutter:build:apk
+```
+或手動執行：
+```bash
+cd mobile
+flutter build apk --release
+```
+建置完成後之 APK 檔案路徑位於：
+`mobile/build/app/outputs/flutter-apk/app-release.apk`
+將該 APK 傳送至 Android 手機即可直接安裝使用。
+
+### 4. 伺服器連線設定
+開啟 Flutter App 後，App 預設連線至 `http://10.0.2.2:5199`（Android 模擬器專用位址）。
+若在實體手機上使用：
+1. 確保手機與電腦連線至相同的 Wi-Fi 區域網路。
+2. 點擊 App 頂端右上角「設定」按鈕。
+3. 輸入電腦之區域網路 IP（例如 `http://192.168.1.100:5199`），點擊「儲存並重新連線」即可。
+
+---
+
+## 免安裝行動版本：瀏覽器 PWA 加入主畫面
+
+除了 Flutter 原生 App 外，本系統亦具備標準 PWA 規格，可免安裝直接透過瀏覽器開啟：
 
 1. **同網域連線**：
    - 確保手機與運行本程式的電腦處於同一個 Wi-Fi 區域網路。
@@ -170,6 +213,13 @@ asia-lecture-grabber/
 │  ├ icon.svg                    向量應用程式圖示
 │  ├ icon-192.png                PWA 192x192 圖示
 │  └ icon-512.png                PWA 512x512 圖示
+├ mobile/
+│  ├ pubspec.yaml                Flutter 專案相依配置
+│  ├ README.md                   Flutter 原生打包指南
+│  ├ assets/                     行動端圖示資產
+│  ├ lib/                        Flutter Dart 原始碼（WebView、設定面板、主題）
+│  ├ android/                    Android 原生建置專案（含權限與 Gradle 設定）
+│  └ ios/                        iOS 原生建置專案（含 Info.plist 與權限）
 └ scripts/
    ├ desktop-launcher.mjs        桌面視窗喚起腳本
    └ generate-icons.mjs          原生 PNG 圖示生成器
