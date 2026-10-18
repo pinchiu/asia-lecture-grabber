@@ -1,0 +1,25 @@
+name: asia_lecture_grabber
+description: "亞洲大學通識講座自動報名助手與四大基本素養畢業門檻追蹤系統行動端應用"
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  webview_flutter: ^4.10.0
+  shared_preferences: ^2.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon-192.png
+    - assets/icon-512.png

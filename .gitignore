@@ -11,3 +11,16 @@ data/*.pem
 *.log
 .DS_Store
 Thumbs.db
+
+# Flutter / Dart 建置產物
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/build/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/ios/.symlinks/
+mobile/ios/Pods/
+mobile/ios/Podfile.lock
+

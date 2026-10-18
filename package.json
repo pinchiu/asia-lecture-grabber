@@ -9,6 +9,10 @@
     "dev": "node --watch src/server.mjs",
     "desktop": "node scripts/desktop-launcher.mjs",
     "icons": "node scripts/generate-icons.mjs",
+    "mobile:flutter:run": "cd mobile && flutter run",
+    "mobile:flutter:build:apk": "cd mobile && flutter build apk --release",
+    "mobile:flutter:build:bundle": "cd mobile && flutter build appbundle",
+    "mobile:flutter:doctor": "flutter doctor",
     "mobile:init": "npx @capacitor/cli init",
     "mobile:add:android": "npx @capacitor/cli add android",
     "mobile:open:android": "npx @capacitor/cli open android"
