@@ -675,10 +675,17 @@ function renderLectures(snap) {
       const kind =
         canapp === 'Y' ? 'ok' : canapp === 'F' ? 'warn' : canapp === 'N1' ? 'muted' : canapp === 'N2' ? 'dead' : canapp === 'C' || canapp === 'D' ? 'manual' : 'unknown';
       const label = STATUS_LABEL[canapp] || canapp || '—';
-      const watchedRow = watched.has(row.eid01);
-      const action = watchedRow
-        ? `<span class="cell-sub">已加入監控</span>`
-        : `<button class="btn sm ghost" data-action="add-target" data-eid="${esc(row.eid01)}">＋加入目標</button>`;
+      const actions = [];
+      if (canapp === 'Y') {
+        actions.push(`<button class="btn sm primary" data-action="quick-register" data-eid="${esc(row.eid01)}" title="不經 AI，直接送出本機報名">手動報名</button>`);
+      }
+      if (watchedRow) {
+        actions.push(`<span class="cell-sub">已在監控</span>`);
+      } else {
+        const addLabel = canapp === 'F' ? '＋候補搶票' : '＋加入目標';
+        actions.push(`<button class="btn sm ghost" data-action="add-target" data-eid="${esc(row.eid01)}">${addLabel}</button>`);
+      }
+      const actionHtml = `<div class="btn-group">${actions.join(' ')}</div>`;
 
       const lits = getLectureLiteracies(row);
       const litBadges = renderLiteracyBadges(lits);
@@ -696,7 +703,7 @@ function renderLectures(snap) {
           <td>${esc(row.locale || '-')}</td>
           <td>${esc(cleanHtml(row.appnum) || '-')}</td>
           <td class="cell-sub">${esc(row.apptim || '-')}</td>
-          <td class="right">${action}</td>
+          <td class="right">${actionHtml}</td>
         </tr>`;
     })
     .join('');
@@ -1091,10 +1098,22 @@ document.addEventListener('click', (event) => {
     });
   }
 
-  if (action === 'register-target') {
+  if (action === 'register-target' || action === 'quick-register') {
     return guard(async () => {
       const res = await post('/api/register', { eid01: button.dataset.eid });
       toast(res.message || '已送出報名請求', 'ok');
+      await poll();
+    });
+  }
+
+  if (action === 'manual-code-register') {
+    return guard(async () => {
+      const input = $('#manualCourseCode');
+      const code = input ? input.value.trim() : '';
+      if (!code) return toast('請先輸入課程代號（如 1151074）', 'err');
+      const res = await post('/api/register', { eid01: code });
+      toast(res.message || '報名成功', 'ok');
+      if (input) input.value = '';
       await poll();
     });
   }

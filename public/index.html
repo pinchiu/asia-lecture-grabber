@@ -395,7 +395,15 @@
             <label class="check inline"><input type="checkbox" id="showFullToggle"> 顯示已額滿</label>
             <label class="check inline"><input type="checkbox" id="missingOnlyToggle"> 只看我缺少的素養</label>
             <button class="btn ghost sm" data-action="refresh">重新整理</button>
+        </div>
+
+        <div class="manual-bar">
+          <div class="manual-input-wrap">
+            <span class="manual-tag">手動快報</span>
+            <input type="text" id="manualCourseCode" placeholder="直接輸入課程代號（例如 1151074）手動報名" autocomplete="off">
+            <button class="btn primary sm" data-action="manual-code-register">立即手動報名</button>
           </div>
+          <span class="manual-hint">純本機直呼校方 API，自動帶入身份驗證，後端不查圖形驗證碼，全程不需 AI。</span>
         </div>
 
         <div class="table-wrap scroll">
