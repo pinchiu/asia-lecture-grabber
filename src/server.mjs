@@ -32,7 +32,7 @@ import { buildCalendar } from './calendar.mjs';
 import { PUBLIC_DIR, loadConfig, loadState, saveConfig, saveState } from './storage.mjs';
 
 const PORT = Number(process.env.PORT || 5199);
-const HOST = process.env.HOST || '127.0.0.1';
+const HOST = process.env.HOST || '0.0.0.0';
 
 let config = await loadConfig();
 const savedState = await loadState();
