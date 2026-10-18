@@ -105,7 +105,10 @@ function crc32(buf) {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
-const publicDir = 'F:/dsh/lecture-grabber/public';
+import { fileURLToPath } from 'node:url';
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const publicDir = path.resolve(HERE, '..', 'public');
+
 fs.writeFileSync(path.join(publicDir, 'icon-192.png'), createPng(192, 192, 230, 162, 74));
 fs.writeFileSync(path.join(publicDir, 'icon-512.png'), createPng(512, 512, 230, 162, 74));
 console.log('Generated icon-192.png and icon-512.png successfully!');

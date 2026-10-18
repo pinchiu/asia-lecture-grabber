@@ -47,20 +47,33 @@
 
 ### 系統需求
 - Node.js 20 或以上版本（本系統採 ESM 原生開發，零外部第三方依賴）。
+- Git（用於複製原始碼倉庫）。
+
+### 下載與安裝
+
+開啟終端機（CMD / PowerShell / 終端機）執行：
+```bash
+git clone https://github.com/pinchiu/asia-lecture-grabber.git
+cd asia-lecture-grabber
+```
 
 ### 啟動指令
 
 #### Windows 使用者
-雙擊專案目錄下的 `start.bat`，或在命令提示字元／PowerShell 執行：
+進入專案資料夾後，直接雙擊 `start.bat`，或在命令提示字元／PowerShell 執行：
 ```bat
-cd F:\dsh\lecture-grabber
 npm start
 ```
 
 #### macOS / Linux 使用者
+在終端機中執行：
 ```bash
 chmod +x start.sh
 ./start.sh
+```
+或直接執行：
+```bash
+npm start
 ```
 
 啟動後服務預設運行於 `http://127.0.0.1:5199`，瀏覽器會自動開啟。
