@@ -12,12 +12,14 @@
 const WEEKDAY = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
 const pad = (n) => String(n).padStart(2, '0');
 
-/** 解析 YYYY/MM/DD、YYYY-MM-DD 或 M/D；失敗回傳 null。 */
+/** 解析 YYYY/MM/DD、YYYY-MM-DD 或 M/D，亦支援民國年；失敗回傳 null。 */
 export function parseYmd(value) {
   const text = String(value || '');
-  const full = /(\d{4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})/.exec(text);
+  const full = /(\d{3,4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})/.exec(text);
   if (full) {
-    const date = new Date(Number(full[1]), Number(full[2]) - 1, Number(full[3]));
+    let year = Number(full[1]);
+    if (year < 1900) year += 1911; // 支援民國年轉換
+    const date = new Date(year, Number(full[2]) - 1, Number(full[3]));
     return Number.isNaN(date.getTime()) ? null : date;
   }
   const short = /(\d{1,2})[\/.\-](\d{1,2})/.exec(text);
@@ -44,12 +46,14 @@ export function weekdayLabel(index) {
   return WEEKDAY[((index % 7) + 7) % 7];
 }
 
+const isChecked = (val) => val === 'Y' || val === 'y' || val === true || val === 1 || val === '1';
+
 export function extractLiteracies(row) {
   const list = [];
-  if (row?.chk4 === 'Y') list.push('健康力');
-  if (row?.chk5 === 'Y') list.push('關懷力');
-  if (row?.chk6 === 'Y') list.push('創新力');
-  if (row?.chk7 === 'Y') list.push('卓越力');
+  if (isChecked(row?.chk4) || isChecked(row?.chk4_flg)) list.push('健康力');
+  if (isChecked(row?.chk5) || isChecked(row?.chk5_flg)) list.push('關懷力');
+  if (isChecked(row?.chk6) || isChecked(row?.chk6_flg)) list.push('創新力');
+  if (isChecked(row?.chk7) || isChecked(row?.chk7_flg)) list.push('卓越力');
   return list;
 }
 

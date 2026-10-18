@@ -90,13 +90,13 @@ function shorten(text, max = 8) {
   return str.length > max ? str.slice(0, max) + '…' : str;
 }
 
-/** 取得講座的基本素養清單 */
 function getLectureLiteracies(row) {
   const list = [];
-  if (row?.chk4 === 'Y') list.push('健康力');
-  if (row?.chk5 === 'Y') list.push('關懷力');
-  if (row?.chk6 === 'Y') list.push('創新力');
-  if (row?.chk7 === 'Y') list.push('卓越力');
+  const isChecked = (val) => val === 'Y' || val === 'y' || val === true || val === 1 || val === '1';
+  if (isChecked(row?.chk4) || isChecked(row?.chk4_flg)) list.push('健康力');
+  if (isChecked(row?.chk5) || isChecked(row?.chk5_flg)) list.push('關懷力');
+  if (isChecked(row?.chk6) || isChecked(row?.chk6_flg)) list.push('創新力');
+  if (isChecked(row?.chk7) || isChecked(row?.chk7_flg)) list.push('卓越力');
   return list;
 }
 
@@ -281,11 +281,11 @@ function computeGraduationStats(snap) {
 
   // 累計本學期已完成報名場次
   for (const ev of events) {
-    let hasLit = false;
-    if (ev.chk4 === 'Y' || (ev.literacies && ev.literacies.includes('健康力'))) { current.health += 1; hasLit = true; }
-    if (ev.chk5 === 'Y' || (ev.literacies && ev.literacies.includes('關懷力'))) { current.care += 1; hasLit = true; }
-    if (ev.chk6 === 'Y' || (ev.literacies && ev.literacies.includes('創新力'))) { current.innovation += 1; hasLit = true; }
-    if (ev.chk7 === 'Y' || (ev.literacies && ev.literacies.includes('卓越力'))) { current.excellence += 1; hasLit = true; }
+    const lits = ev.literacies || getLectureLiteracies(ev);
+    if (lits.includes('健康力')) current.health += 1;
+    if (lits.includes('關懷力')) current.care += 1;
+    if (lits.includes('創新力')) current.innovation += 1;
+    if (lits.includes('卓越力')) current.excellence += 1;
     current.total += 1;
   }
 
@@ -296,8 +296,13 @@ function computeGraduationStats(snap) {
     excellence: (Number(history.excellence) || 0) + current.excellence
   };
 
-  // 總場次：歷年補登加總 + 當期已報名場次
-  const totalCompleted = totals.health + totals.care + totals.innovation + totals.excellence;
+  const historyTotal = (Number(history.health) || 0) +
+                       (Number(history.care) || 0) +
+                       (Number(history.innovation) || 0) +
+                       (Number(history.excellence) || 0);
+
+  // 總場次：歷年補登加總 + 當期已報名場次（單場多素養不重複灌水計入總場次）
+  const totalCompleted = historyTotal + current.total;
 
   const deficiencies = [];
   if (totals.health < 2) deficiencies.push({ id: 'health', name: '健康力', need: 2 - totals.health });
@@ -1186,8 +1191,15 @@ $('#notifyToggle').addEventListener('change', (event) => {
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   S.deferredInstallPrompt = e;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   const pwaBtn = $('#pwaInstallBtn');
-  if (pwaBtn) pwaBtn.hidden = false;
+  if (pwaBtn && !isStandalone) pwaBtn.hidden = false;
+});
+
+window.addEventListener('appinstalled', () => {
+  S.deferredInstallPrompt = null;
+  const pwaBtn = $('#pwaInstallBtn');
+  if (pwaBtn) pwaBtn.hidden = true;
 });
 
 if ('serviceWorker' in navigator) {

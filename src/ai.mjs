@@ -157,17 +157,26 @@ async function chat(aiConfig, messages) {
   return content;
 }
 
-function parseJsonObject(text) {
-  const trimmed = String(text).trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+export function parseJsonObject(text) {
+  const str = String(text || '').trim();
   try {
-    const parsed = JSON.parse(trimmed);
+    const parsed = JSON.parse(str);
     return parsed && typeof parsed === 'object' ? parsed : {};
   } catch {
-    const start = trimmed.indexOf('{');
-    const end = trimmed.lastIndexOf('}');
+    const mdMatch = /```(?:json)?\s*([\s\S]*?)\s*```/i.exec(str);
+    if (mdMatch) {
+      try {
+        const parsed = JSON.parse(mdMatch[1].trim());
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch {
+        /* 繼續嘗試括號裁切 */
+      }
+    }
+    const start = str.indexOf('{');
+    const end = str.lastIndexOf('}');
     if (start >= 0 && end > start) {
       try {
-        const parsed = JSON.parse(trimmed.slice(start, end + 1));
+        const parsed = JSON.parse(str.slice(start, end + 1));
         return parsed && typeof parsed === 'object' ? parsed : {};
       } catch {
         /* 落空 */

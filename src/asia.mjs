@@ -287,7 +287,7 @@ async function request(method, relativePath, { body, token, timeoutMs = 25_000 }
     }
   }
 
-  const text = String(response.body || '').replace(/^\uFEFF/, '');
+  const text = String(response.body || '').replace(/^\uFEFF/, '').trim();
   let json = null;
   try {
     json = text ? JSON.parse(text) : null;
@@ -301,6 +301,14 @@ async function request(method, relativePath, { body, token, timeoutMs = 25_000 }
       status: response.status,
       payload: json ?? text.slice(0, 800),
       transient: isTransientStatus(response.status)
+    });
+  }
+
+  if (!json && text.length > 0) {
+    throw new ApiError('校方伺服器回應非 JSON 格式（可能正在維護或連線逾時）', {
+      status: response.status,
+      payload: text.slice(0, 800),
+      transient: true
     });
   }
 
