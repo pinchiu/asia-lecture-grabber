@@ -676,14 +676,21 @@ function renderLectures(snap) {
         canapp === 'Y' ? 'ok' : canapp === 'F' ? 'warn' : canapp === 'N1' ? 'muted' : canapp === 'N2' ? 'dead' : canapp === 'C' || canapp === 'D' ? 'manual' : 'unknown';
       const label = STATUS_LABEL[canapp] || canapp || '—';
       const actions = [];
-      if (canapp === 'Y') {
-        actions.push(`<button class="btn sm primary" data-action="quick-register" data-eid="${esc(row.eid01)}" title="不經 AI，直接送出本機報名">手動報名</button>`);
-      }
-      if (watchedRow) {
-        actions.push(`<span class="cell-sub">已在監控</span>`);
+      const isWatched = watched.has(row.eid01);
+      const isRegistered = Number(row.cnt_10 || 0) > 0;
+
+      if (isRegistered) {
+        actions.push(`<span class="tag live">已報名</span>`);
       } else {
-        const addLabel = canapp === 'F' ? '＋候補搶票' : '＋加入目標';
-        actions.push(`<button class="btn sm ghost" data-action="add-target" data-eid="${esc(row.eid01)}">${addLabel}</button>`);
+        if (canapp === 'Y') {
+          actions.push(`<button class="btn sm primary" data-action="quick-register" data-eid="${esc(row.eid01)}" title="不經 AI，直接送出本機報名">手動報名</button>`);
+        }
+        if (isWatched) {
+          actions.push(`<span class="cell-sub">已在監控</span>`);
+        } else if (canapp !== 'N2' && canapp !== 'C' && canapp !== 'D') {
+          const addLabel = canapp === 'F' ? '＋候補搶票' : '＋加入目標';
+          actions.push(`<button class="btn sm ghost" data-action="add-target" data-eid="${esc(row.eid01)}">${addLabel}</button>`);
+        }
       }
       const actionHtml = `<div class="btn-group">${actions.join(' ')}</div>`;
 
