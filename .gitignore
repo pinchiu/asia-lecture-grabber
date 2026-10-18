@@ -1,0 +1,13 @@
+# 依賴套件
+node_modules/
+
+# 敏感個人設定與即時狀態（請勿上傳以免洩漏帳號密碼）
+data/*.json
+data/*.pem
+!data/.gitkeep
+
+# 環境變數與臨時檔案
+.env
+*.log
+.DS_Store
+Thumbs.db
