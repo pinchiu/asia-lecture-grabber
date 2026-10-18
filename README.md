@@ -175,7 +175,7 @@ flutter build apk --release
 | 講座清單 | `POST api/Cfd01/Load?op=X01F00` | 公開端點；帶 Token 可取得個人 `cnt_10`（是否已報名） |
 | 講座明細 | `GET api/Cfd01/GetRes?eid01=` | 包含基本素養、主辦單位、UCAN、SDGs 等詳細資料 |
 | 身分驗證 | `POST api/PersonInfo/GetPInfo` | 傳送 `{p_no, p_id, p_type}`（`p_id` 為身分證末四碼） |
-| 送出報名 | `POST api/Cfd10/Save` | 搶課核心端點，需帶 Token 與 `std_info` 物件 |
+| 送出報名 | `POST api/Cfd10/Save` | 搶課核心端點，需帶 Token 與 `std_info` 物件（含 `bfree` 無障礙需求，預設 `N`） |
 | 取消退選 | `POST api/cfd10/DeleteData?reseid=` | 退選已報名場次 |
 | 已選查詢 | `POST api/Cfd01/Load_del?op=X01F00DEL` | 查詢已報名與已退選紀錄 |
 
@@ -231,6 +231,7 @@ asia-lecture-grabber/
 │  ├ android/                    Android 原生建置專案（含權限與 Gradle 設定）
 │  └ ios/                        iOS 原生建置專案（含 Info.plist 與權限）
 └ scripts/
+   ├ asia-captcha-autofill.user.js 官方網頁驗證碼秒填與無障礙需求自動化腳本
    ├ desktop-launcher.mjs        桌面視窗喚起腳本
    └ generate-icons.mjs          原生 PNG 圖示生成器
 ```

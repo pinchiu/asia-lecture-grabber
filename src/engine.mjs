@@ -257,8 +257,9 @@ export class Engine extends EventEmitter {
     target.note = '送出報名中…';
 
     try {
+      const stdWithBfree = { ...std, bfree: this.settings.bfree || 'N' };
       const res = await this.paced(() =>
-        api.registerLecture(this.session.token, { std_info: std, eid01: target.eid01, reseid: row.reseid })
+        api.registerLecture(this.session.token, { std_info: stdWithBfree, eid01: target.eid01, reseid: row.reseid })
       );
       if (res.ok) this.finish(target, 'registered', res.message);
       else {
@@ -291,7 +292,8 @@ export class Engine extends EventEmitter {
     }
 
     const std = await this.ensureIdentity();
-    const res = await api.registerLecture(this.session.token, { std_info: std, eid01: row.eid01, reseid: row.reseid });
+    const stdWithBfree = { ...std, bfree: this.settings.bfree || 'N' };
+    const res = await api.registerLecture(this.session.token, { std_info: stdWithBfree, eid01: row.eid01, reseid: row.reseid });
     if (!res.ok) throw new Error(res.message);
 
     let target = this.targets.find((item) => item.eid01 === row.eid01);
@@ -566,8 +568,10 @@ function normalizeSettings(settings) {
     retryGapMs: 5000,
     minRequestGapMs: 600,
     stopWhenAllDone: false,
+    bfree: 'N',
     ...(settings || {})
   };
+  merged.bfree = String(merged.bfree || 'N').toUpperCase() === 'Y' ? 'Y' : 'N';
   merged.intervalMs = clamp(merged.intervalMs, 1000, 30_000, 2500);
   merged.burstIntervalMs = clamp(merged.burstIntervalMs, 300, 10_000, 800);
   merged.minRequestGapMs = clamp(merged.minRequestGapMs, 300, 5000, 600);
