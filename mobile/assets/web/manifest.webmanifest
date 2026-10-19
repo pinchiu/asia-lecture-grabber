@@ -1,0 +1,35 @@
+{
+  "name": "亞洲大學講座報名助手",
+  "short_name": "亞大搶課",
+  "description": "亞洲大學通識講座自動報名、搶課監控與四大基本素養（健康力、關懷力、創新力、卓越力）畢業門檻追蹤",
+  "start_url": "/",
+  "id": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "background_color": "#090a0f",
+  "theme_color": "#090a0f",
+  "orientation": "any",
+  "lang": "zh-TW",
+  "categories": ["education", "utilities", "productivity"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

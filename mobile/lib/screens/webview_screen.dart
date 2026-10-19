@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../backend/in_app_server.dart';
 import '../config/constants.dart';
 import 'settings_modal.dart';
 
 class WebViewScreen extends StatefulWidget {
   final String initialUrl;
+  final InAppServer inAppServer;
 
   const WebViewScreen({
     super.key,
     required this.initialUrl,
+    required this.inAppServer,
   });
 
   @override
@@ -23,6 +26,8 @@ class _WebViewScreenState extends State<WebViewScreen> {
   bool _isLoading = true;
   bool _hasError = false;
   String _errorDescription = '';
+
+  bool get _isLocalMode => _currentUrl.contains('127.0.0.1') || _currentUrl.contains('localhost');
 
   @override
   void initState() {
@@ -61,7 +66,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
             }
           },
           onWebResourceError: (error) {
-            // 忽略非主網頁的靜態小檔案中斷錯誤
             if (error.isForMainFrame ?? true) {
               if (mounted) {
                 setState(() {
@@ -90,21 +94,28 @@ class _WebViewScreenState extends State<WebViewScreen> {
     _controller.loadRequest(Uri.parse(newUrl));
   }
 
-  Future<bool> _handleWillPop() async {
-    if (await _controller.canGoBack()) {
-      await _controller.goBack();
-      return false;
-    }
-    return true;
+  Future<void> _switchToLocalMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(AppConstants.prefKeyHostUrl);
+    final localUrl = widget.inAppServer.localUrl;
+    await _updateServerUrl(localUrl);
   }
 
   @override
   Widget build(BuildContext context) {
-    final uri = Uri.tryParse(_currentUrl);
-    final hostDisplay = uri != null ? '${uri.host}:${uri.port}' : _currentUrl;
+    final statusText = _isLocalMode ? '原生獨立運行（免電腦 Server）' : '連線目標：$_currentUrl';
 
-    return WillPopScope(
-      onWillPop: _handleWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final canGoBack = await _controller.canGoBack();
+        if (canGoBack) {
+          await _controller.goBack();
+        } else if (mounted) {
+          Navigator.of(context).maybePop();
+        }
+      },
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
@@ -125,11 +136,11 @@ class _WebViewScreenState extends State<WebViewScreen> {
               ),
               const SizedBox(height: 2),
               Text(
-                '伺服器：$hostDisplay',
-                style: const TextStyle(
+                statusText,
+                style: TextStyle(
                   fontSize: 11,
                   fontFamily: 'monospace',
-                  color: AppColors.accentCyan,
+                  color: _isLocalMode ? AppColors.accentGreen : AppColors.accentCyan,
                 ),
               ),
             ],
@@ -159,7 +170,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.settings_outlined, color: AppColors.textPrimary, size: 20),
-              tooltip: '連線設定',
+              tooltip: '設定',
               onPressed: () {
                 SettingsModal.show(
                   context,
@@ -199,7 +210,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
             ),
             const SizedBox(height: 20),
             const Text(
-              '無法連線至搶課後端服務',
+              '連線發生異常',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -208,7 +219,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              '連線目標：$_currentUrl',
+              '連線位址：$_currentUrl',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 12,
@@ -224,12 +235,11 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: AppColors.surfaceBorder),
               ),
-              child: const Text(
-                '排查步驟：\n'
-                '1. 確認電腦終端機已執行 npm start 或 start.bat。\n'
-                '2. 若使用實體手機，請確認手機與電腦處於同一 Wi-Fi，並在設定輸入電腦的區網 IP。\n'
-                '3. 若使用 Android 模擬器，請使用預設 10.0.2.2:5199。',
-                style: TextStyle(
+              child: Text(
+                _errorDescription.isNotEmpty
+                    ? '連線錯誤原因：$_errorDescription\n\n本 App 內建原生獨立搶課引擎。\n若您先前設定了外部電腦 IP 且無法連通，建議點擊下方按鈕切換回「手機原生獨立運行」，即可完全不依賴電腦伺服器。'
+                    : '本 App 內建原生獨立搶課引擎。\n若您先前設定了外部電腦 IP 且無法連通，建議點擊下方按鈕切換回「手機原生獨立運行」，即可完全不依賴電腦伺服器。',
+                style: const TextStyle(
                   fontSize: 13,
                   color: AppColors.textSecondary,
                   height: 1.5,
@@ -237,44 +247,61 @@ class _WebViewScreenState extends State<WebViewScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Column(
               children: [
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textPrimary,
-                    side: const BorderSide(color: AppColors.surfaceBorder),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  icon: const Icon(Icons.settings, size: 16),
-                  label: const Text('更換網址'),
-                  onPressed: () {
-                    SettingsModal.show(
-                      context,
-                      currentUrl: _currentUrl,
-                      onSaveUrl: _updateServerUrl,
-                    );
-                  },
-                ),
-                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    backgroundColor: AppColors.accentGreen,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     elevation: 0,
                   ),
-                  icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('重試連線'),
-                  onPressed: () {
-                    setState(() {
-                      _hasError = false;
-                      _isLoading = true;
-                    });
-                    _controller.loadRequest(Uri.parse(_currentUrl));
-                  },
+                  icon: const Icon(Icons.phone_android, size: 16),
+                  label: const Text('切換為手機原生獨立運行（免電腦）', style: TextStyle(fontWeight: FontWeight.bold)),
+                  onPressed: _switchToLocalMode,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.textPrimary,
+                        side: const BorderSide(color: AppColors.surfaceBorder),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(Icons.settings, size: 16),
+                      label: const Text('設定網址'),
+                      onPressed: () {
+                        SettingsModal.show(
+                          context,
+                          currentUrl: _currentUrl,
+                          onSaveUrl: _updateServerUrl,
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text('重試連線'),
+                      onPressed: () {
+                        setState(() {
+                          _hasError = false;
+                          _isLoading = true;
+                        });
+                        _controller.loadRequest(Uri.parse(_currentUrl));
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),
