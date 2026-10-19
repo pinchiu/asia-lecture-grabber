@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#090a0f">
+  <meta name="theme-color" content="#16171b">
   <meta name="description" content="亞洲大學通識講座自動報名助手與四大基本素養（健康力、關懷力、創新力、卓越力）畢業門檻追蹤系統">
   <title>亞洲大學講座報名系統 · 畢業素養門檻追蹤與自動搶課</title>
 
@@ -186,15 +186,15 @@
         </div>
       </section>
 
-      <!-- 04 AI 智慧挑課 -->
+      <!-- 04 智慧模型擴充設定 -->
       <section class="card">
         <div class="card-head">
-          <h2><span class="idx">04</span> AI 連線設定</h2>
+          <h2><span class="idx">04</span> 語言模型連線設定</h2>
           <span class="tag">選用</span>
         </div>
         <div class="form">
-          <label class="check"><input type="checkbox" id="aiEnabled"> 啟用 AI（OpenAI 相容 API）</label>
-          <p class="hint">不啟用也能使用本機自然語言規則解析素養與排程。</p>
+          <label class="check"><input type="checkbox" id="aiEnabled"> 啟用智慧語言模型（OpenAI 相容 API）</label>
+          <p class="hint">不啟用亦可完整使用本機智慧規則解析素養與排程。</p>
           <label>API 位址
             <input id="aiBaseUrl" placeholder="https://api.openai.com/v1" autocomplete="off">
           </label>
@@ -460,14 +460,17 @@
         </div>
       </section>
 
-      <!-- AI 代理與智慧排程 -->
+      <!-- 智慧挑課與排程指令 -->
       <section class="card agent" id="cardAgent">
         <div class="card-head">
           <h2>
             <span class="spark" aria-hidden="true">
-              <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 0.8l1.5 4.4 4.4 1.5-4.4 1.5L8 12.6 6.5 8.2 2.1 6.7l4.4-1.5z"/><path d="M12.6 11l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></svg>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="4 17 10 11 4 5"/>
+                <line x1="12" y1="19" x2="20" y2="19"/>
+              </svg>
             </span>
-            AI 智慧代理與自然語言挑課
+            智慧挑課與快速規劃指令
             <span class="tag" id="agentSource">待命</span>
           </h2>
           <div class="tools">
@@ -475,7 +478,7 @@
           </div>
         </div>
 
-        <p class="lead">用一句話描述你的目標與時間，支援指定四大素養。代理會自動挑出場次並規劃排程，經你確認後才會加入監控。</p>
+        <p class="lead">用一句話描述你的目標與時間，支援指定四大素養。系統會自動篩選場次並規劃排程，經你確認後才會加入監控。</p>
 
         <div class="agent-bar">
           <textarea id="agentPrompt" rows="2" placeholder="例如：我想補 2 場創新力跟 1 場健康力講座，明天晚上搶課"></textarea>
@@ -561,6 +564,6 @@
   <!-- 浮動通知容器 -->
   <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
 
-  <script src="./app.js?v=2.1"></script>
+  <script src="./app.js?v=2.2"></script>
 </body>
 </html>
