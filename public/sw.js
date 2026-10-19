@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asia-lecture-grabber-v5';
+const CACHE_NAME = 'asia-lecture-grabber-v6';
 const PRECACHE = [
   '/',
   '/index.html',
