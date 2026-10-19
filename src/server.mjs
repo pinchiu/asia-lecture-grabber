@@ -217,8 +217,13 @@ async function handleApi(req, res, url) {
       case 'POST /api/login': {
         const body = await readJson(req);
         const username = String(body.username || '').trim();
-        const password = String(body.password || '');
+        let password = String(body.password || '');
         const idLast4 = String(body.idLast4 || '').trim();
+
+        // 若密碼留空但原先已記住密碼，且帳號相同，直接沿用已儲存密碼
+        if (!password && config.account?.password && config.account?.username === username) {
+          password = config.account.password;
+        }
 
         if (!username || !password) return fail(res, '請輸入學號與密碼');
         if (idLast4 && !/^\d{4}$/.test(idLast4)) return fail(res, '身分證字號末四碼需為 4 位數字');
@@ -236,6 +241,9 @@ async function handleApi(req, res, url) {
 
         if (body.remember) {
           config = await saveConfig({ account: { username, password, idLast4 } });
+        } else {
+          // 若未勾選記住密碼，主動清除先前儲存之密碼
+          config = await saveConfig({ account: { username, password: '', idLast4 } });
         }
 
         let identity = null;
@@ -560,7 +568,51 @@ server.listen(PORT, HOST, () => {
   console.log(`  目標系統：${api.BASE_URL}`);
   console.log(`  已載入 ${engine.targets.length} 個目標講座`);
   console.log('');
+
+  // 伺服器開機時，若有已記住之密碼，立即執行自動登入與身分驗證
+  autoLogin().catch(() => {});
 });
+
+async function autoLogin() {
+  const username = String(config.account?.username || '').trim();
+  const password = String(config.account?.password || '');
+  const idLast4 = String(config.account?.idLast4 || '').trim();
+
+  if (!username || !password) return;
+
+  try {
+    engine.log('info', `正在使用已記住的帳號（${username}）自動登入校方系統…`);
+    const user = await api.login(username, password);
+    engine.setSession({
+      token: user.token,
+      emp_id: String(user.emp_id || username),
+      emp_nm: String(user.emp_nm || ''),
+      emp_rl: String(user.emp_rl || ''),
+      idLast4,
+      username,
+      password
+    });
+    engine.log('success', `[自動登入成功] 歡迎回來，${user.emp_nm || username}`);
+
+    if (idLast4) {
+      try {
+        await engine.ensureIdentity();
+      } catch (err) {
+        engine.log('warn', `身分驗證失敗：${err.message}`);
+      }
+    }
+
+    try {
+      const rows = await api.listLectures(engine.session.token);
+      engine.applyRows(rows);
+      engine.stats.lastSyncAt = Date.now();
+    } catch {}
+
+    engine.emit('state');
+  } catch (err) {
+    engine.log('warn', `自動登入失敗（可能密碼已變更）：${err.message}`);
+  }
+}
 
 async function shutdown() {
   engine.stop('伺服器關閉');

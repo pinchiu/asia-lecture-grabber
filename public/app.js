@@ -685,12 +685,30 @@ function renderAccount(snap) {
   const account = snap.account || {};
   const parts = [];
   if (session.loggedIn) {
-    parts.push(`身分：${session.emp_nm || '-'}（${session.emp_rl || '-'}）`);
-    parts.push(session.identityVerified ? '報名身分驗證：[已通過]' : '報名身分驗證：尚未通過（請填寫身分證末四碼）');
+    const verified = session.identityVerified ? '身分末四碼已驗證' : '尚未驗證身分末四碼';
+    parts.push(`已登入：${esc(session.emp_nm || '-') }（${esc(session.emp_id || '')}，${esc(session.emp_rl || '-')}） · ${verified}`);
+    if (account.saved) {
+      parts.push('本機已記住密碼（伺服器重啟將自動登入）');
+    }
   } else if (account.username) {
-    parts.push(`上次登入帳號：${account.username}`);
+    parts.push(`已記住帳號：${esc(account.username)}${account.saved ? '（已記住密碼，可直接點擊登入）' : ''}`);
   }
-  $('#accountInfo').textContent = parts.join('\n');
+  const infoEl = $('#accountInfo');
+  if (infoEl) {
+    const logoutBtn = session.loggedIn ? ' · <button class="btn ghost sm" type="button" data-action="logout" style="margin-left: 6px;">登出</button>' : '';
+    infoEl.innerHTML = (parts.join('<br>') || '') + logoutBtn;
+  }
+
+  const loginForm = $('#loginForm');
+  if (loginForm && document.activeElement !== loginForm.password && !loginForm.password.value) {
+    if (account.saved && loginForm.username.value.trim() === account.username) {
+      loginForm.password.placeholder = '●●●●●●●●（已儲存，留空＝使用記住密碼）';
+      loginForm.password.removeAttribute('required');
+    } else {
+      loginForm.password.placeholder = '';
+      loginForm.password.setAttribute('required', '');
+    }
+  }
 }
 
 function renderSchedule(snap) {
@@ -1143,6 +1161,21 @@ async function fillForms(snap) {
   $('#gradHistCare').value = history.care || 0;
   $('#gradHistInnovation').value = history.innovation || 0;
   $('#gradHistExcellence').value = history.excellence || 0;
+
+  const account = snap.account || {};
+  const loginForm = $('#loginForm');
+  if (loginForm) {
+    if (account.username) loginForm.username.value = account.username;
+    if (account.idLast4) loginForm.idLast4.value = account.idLast4;
+    loginForm.remember.checked = Boolean(account.saved);
+    if (account.saved) {
+      loginForm.password.placeholder = '●●●●●●●●（已儲存，留空＝使用記住密碼）';
+      loginForm.password.removeAttribute('required');
+    } else {
+      loginForm.password.placeholder = '';
+      loginForm.password.setAttribute('required', '');
+    }
+  }
 
   S.filled = true;
 }
@@ -1679,6 +1712,15 @@ document.addEventListener('click', (event) => {
     });
   }
 
+  if (action === 'logout') {
+    if (!window.confirm('確定要登出並清除目前連線階段嗎？')) return;
+    return guard(async () => {
+      await post('/api/logout');
+      toast('已成功登出', 'ok');
+      await poll();
+    });
+  }
+
   if (action === 'clear-log') {
     return guard(async () => {
       await post('/api/logs/clear');
@@ -1701,13 +1743,33 @@ $('#loginForm').addEventListener('submit', (event) => {
       idLast4: form.idLast4.value.trim(),
       remember: form.remember.checked
     };
-    if (!payload.username || !payload.password) return toast('請輸入學號與密碼', 'err');
+    const savedForUser = Boolean(S.snap?.account?.saved && S.snap?.account?.username === payload.username);
+    if (!payload.username) return toast('請輸入學號', 'err');
+    if (!payload.password && !savedForUser) return toast('請輸入密碼', 'err');
     if (!payload.idLast4) toast('提醒：未填寫身分證末四碼將無法進行自動報名', 'err');
     const res = await post('/api/login', payload);
     if (res.identity) toast(`身分驗證成功：${res.identity.name || ''}`, 'ok');
     else toast('登入成功', 'ok');
+    form.password.value = '';
     await poll();
   });
+});
+
+$('#loginForm')?.username?.addEventListener('input', (event) => {
+  const loginForm = $('#loginForm');
+  if (!loginForm) return;
+  const typed = event.target.value.trim();
+  const isSavedUser = Boolean(S.snap?.account?.saved && S.snap?.account?.username === typed);
+  if (isSavedUser) {
+    if (!loginForm.password.value) {
+      loginForm.password.placeholder = '●●●●●●●●（已儲存，留空＝使用記住密碼）';
+      loginForm.password.removeAttribute('required');
+      loginForm.remember.checked = true;
+    }
+  } else {
+    loginForm.password.placeholder = '';
+    loginForm.password.setAttribute('required', '');
+  }
 });
 
 $('#searchBox').addEventListener('input', (event) => {
