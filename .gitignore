@@ -20,10 +20,12 @@ mobile/.packages
 mobile/build/
 mobile/android/.gradle/
 mobile/android/local.properties
+mobile/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
 mobile/ios/.symlinks/
 mobile/ios/Pods/
 mobile/ios/Podfile.lock
-
+mobile/ios/Runner/GeneratedPluginRegistrant.*
+mobile/ios/Flutter/
 
 graphify-out/.*
 graphify-out/cache/
