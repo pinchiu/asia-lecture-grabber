@@ -287,9 +287,6 @@ export class Engine extends EventEmitter {
       row = this.lectures.find((item) => item.eid01 === id || item.reseid === id);
     }
     if (!row) throw new Error('找不到該講座，請確認課程代號或重新整理清單');
-    if (String(row.canapp) !== 'Y') {
-      throw new Error(`目前狀態為「${api.STATUS_LABEL[row.canapp] || row.canapp}」，無法報名`);
-    }
 
     const std = await this.ensureIdentity();
     const stdWithBfree = { ...std, bfree: this.settings.bfree || 'N' };

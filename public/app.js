@@ -883,10 +883,9 @@ function renderTargets(snap) {
       const litHtml = renderLiteracyBadges(lits);
 
       const actions = [];
-      if (target.kind === 'ok' && !['registered', 'manual'].includes(target.status)) {
-        actions.push(`<button class="btn sm primary" data-action="register-target" data-eid="${esc(target.eid01)}">手動報名</button>`);
-      }
-      if (target.status === 'registered') {
+      if (target.status !== 'registered') {
+        actions.push(`<button class="btn sm primary" data-action="register-target" data-eid="${esc(target.eid01)}" title="立即嘗試送出報名">手動報名</button>`);
+      } else {
         actions.push(`<button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(target.reseid || '')}" data-eid01="${esc(target.eid01 || '')}" data-eid="${esc(target.eid || '')}" title="取消報名（退選）">取消報名</button>`);
       }
       actions.push(`<button class="btn sm ghost" data-action="remove-target" data-eid="${esc(target.eid01)}">移除</button>`);
@@ -1010,12 +1009,10 @@ function renderLectures(snap) {
         actions.push(`<span class="tag live">已報名</span>`);
         actions.push(`<button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(row.reseid || '')}" data-eid01="${esc(row.eid01 || '')}" data-eid="${esc(row.eid || '')}" title="取消報名（退選）">取消報名</button>`);
       } else {
-        if (canapp === 'Y') {
-          actions.push(`<button class="btn sm primary" data-action="quick-register" data-eid="${esc(row.eid01)}" title="不經 AI，直接送出本機報名">手動報名</button>`);
-        }
+        actions.push(`<button class="btn sm primary" data-action="quick-register" data-eid="${esc(row.eid01)}" title="立即嘗試送出報名">手動報名</button>`);
         if (isWatched) {
           actions.push(`<span class="cell-sub">已在監控</span>`);
-        } else if (canapp !== 'N2' && canapp !== 'C' && canapp !== 'D') {
+        } else {
           const addLabel = canapp === 'F' ? '＋候補搶票' : '＋加入目標';
           actions.push(`<button class="btn sm ghost" data-action="add-target" data-eid="${esc(row.eid01)}">${addLabel}</button>`);
         }
@@ -1637,6 +1634,7 @@ document.addEventListener('click', (event) => {
     return guard(async () => {
       const res = await post('/api/register', { eid01: button.dataset.eid });
       toast(res.message || '已送出報名請求', 'ok');
+      await refreshLectures();
       await poll();
     });
   }
@@ -1649,6 +1647,7 @@ document.addEventListener('click', (event) => {
       const res = await post('/api/register', { eid01: code });
       toast(res.message || '報名成功', 'ok');
       if (input) input.value = '';
+      await refreshLectures();
       await poll();
     });
   }
