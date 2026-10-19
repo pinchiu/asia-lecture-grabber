@@ -277,7 +277,7 @@ async function handleApi(req, res, url) {
       case 'GET /api/lectures': {
         try {
           const rows = await api.listLectures(engine.session?.token || null);
-          engine.lectures = rows;
+          engine.applyRows(rows);
           engine.stats.lastSyncAt = Date.now();
           engine.emit('state');
           return ok(res, { lectures: rows, fetchedAt: Date.now() });
@@ -479,7 +479,13 @@ async function handleApi(req, res, url) {
       case 'POST /api/cancel': {
         const body = await readJson(req);
         if (!engine.session) return fail(res, '請先登入', 401);
-        const title = await engine.cancelTarget(String(body.reseid || body.eid01 || ''));
+        const id = String(body.eid || body.reseid || body.eid01 || '');
+        if (!id) return fail(res, '請提供要退選的講座代號或編號');
+        const title = await engine.cancelTarget(id, {
+          eid: body.eid ? String(body.eid) : '',
+          reseid: body.reseid ? String(body.reseid) : '',
+          eid01: body.eid01 ? String(body.eid01) : ''
+        });
         return ok(res, { ok: true, message: `已成功取消報名：${title}` });
       }
 

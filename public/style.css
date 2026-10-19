@@ -221,22 +221,68 @@ a { color: inherit; text-decoration: none; }
   user-select: none;
 }
 
-/* 核心層級分頁導覽列 (Segmented Control) */
+/* 核心層級分頁導覽列 (Segmented Control，附帶 iOS 原生級滑動塊與液態磨砂拖曳特效) */
 .nav-segments {
-  display: flex;
+  position: relative;
+  display: inline-flex;
   align-items: center;
   gap: 3px;
   padding: 3px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--line-hairline);
-  box-shadow: var(--glass-specular-soft);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 4px 16px rgba(0, 0, 0, 0.25);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+/* iOS 原生滑動塊 (Glider) */
+.nav-segment-glider {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  width: 0;
+  border-radius: 9px;
+  background: #ffffff;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1),
+              width 0.28s cubic-bezier(0.2, 0.9, 0.3, 1),
+              background 0.2s ease,
+              opacity 0.2s ease,
+              box-shadow 0.2s ease,
+              backdrop-filter 0.2s ease;
+  pointer-events: none;
+  z-index: 1;
+  will-change: transform, width;
+}
+
+/* 左右拖曳時的液態磨砂毛玻璃特效 (Fluid Drag Transparency) */
+.nav-segments.is-dragging {
+  cursor: grabbing !important;
+}
+
+.nav-segments.is-dragging .nav-segment-glider {
+  transition: none !important;
+  background: rgba(255, 255, 255, 0.76) !important;
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45),
+              0 0 0 1px rgba(255, 255, 255, 0.5),
+              inset 0 1px 2px rgba(255, 255, 255, 0.9) !important;
+  opacity: 0.96;
 }
 
 .nav-segment-btn {
+  position: relative;
+  z-index: 2;
   appearance: none;
-  background: transparent;
-  border: 1px solid transparent;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
   padding: 5px 14px;
   border-radius: 9px;
   color: var(--text-secondary);
@@ -246,20 +292,16 @@ a { color: inherit; text-decoration: none; }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: all var(--motion-fast);
+  transition: color 0.18s ease;
 }
 
 .nav-segment-btn:hover:not(.active) {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.06);
 }
 
 .nav-segment-btn.active {
-  background: #ffffff;
   color: #000000;
-  border-color: #ffffff;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .seg-badge {
@@ -270,6 +312,7 @@ a { color: inherit; text-decoration: none; }
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.2);
   color: #000000;
+  transition: background 0.18s ease, color 0.18s ease;
 }
 
 .nav-segment-btn:not(.active) .seg-badge {
@@ -1988,6 +2031,20 @@ table.grid td.right {
   }
 
   .nav-segments {
+    display: flex;
+    width: 100%;
+    order: 3;
+    margin-top: 8px;
+  }
+
+  .nav-segment-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 6px 6px;
+    font-size: 11.5px;
+  }
+
+  .nav-segment-btn .kbd-sub {
     display: none;
   }
 

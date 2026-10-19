@@ -86,6 +86,7 @@ export function eventFromRow(row) {
     id: String(row.eid01 || ''),
     eid01: String(row.eid01 || ''),
     reseid: String(row.reseid || ''),
+    eid: String(row.eid || ''),
     title: String(row.rescnm || ''),
     speaker: String(row.teachm || ''),
     place: String(row.locale || ''),

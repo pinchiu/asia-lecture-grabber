@@ -296,6 +296,7 @@ export class Engine extends EventEmitter {
     const res = await api.registerLecture(this.session.token, { std_info: stdWithBfree, eid01: row.eid01, reseid: row.reseid });
     if (!res.ok) throw new Error(res.message);
 
+    row.cnt_10 = 1;
     let target = this.targets.find((item) => item.eid01 === row.eid01);
     if (!target) {
       target = normalizeTarget({
@@ -306,25 +307,64 @@ export class Engine extends EventEmitter {
       this.targets.push(target);
     }
     this.finish(target, 'registered', res.message);
+
+    try {
+      const freshRows = await api.listLectures(this.session.token);
+      this.applyRows(freshRows);
+    } catch {}
+
+    this.emit('state');
     return res.message;
   }
 
-  async cancelTarget(id) {
+  async cancelTarget(id, options = {}) {
     if (!this.session?.token) throw new Error('請先登入');
-    const target = this.targets.find((item) => item.reseid === id || item.eid01 === id);
+    const target = this.targets.find((item) => item.reseid === id || item.eid01 === id || item.eid === id);
     const lec = this.lectures.find((item) => item.reseid === id || item.eid01 === id);
-    const actualReseid = target?.reseid || lec?.reseid || id;
-    await api.cancelLecture(this.session.token, actualReseid);
+
+    let registeredList = [];
+    try {
+      registeredList = await api.listRegistered(this.session.token);
+    } catch (err) {
+      this.log('warn', `查詢已報名清單失敗：${err.message}`);
+    }
+
+    const match = registeredList.find((r) =>
+      (id && (r.eid === id || r.reseid === id || r.eid01 === id)) ||
+      (options.eid && r.eid === options.eid) ||
+      (options.reseid && r.reseid === options.reseid) ||
+      (options.eid01 && r.eid01 === options.eid01) ||
+      (target?.reseid && r.reseid === target.reseid) ||
+      (target?.eid01 && r.eid01 === target.eid01) ||
+      (lec?.reseid && r.reseid === lec.reseid) ||
+      (lec?.eid01 && r.eid01 === lec.eid01)
+    );
+
+    const title = match?.rescnm || target?.rescnm || lec?.rescnm || id;
+
+    if (match?.eid) {
+      await api.cancelLecture(this.session.token, match.eid);
+    } else if (/^ID[A-Za-z0-9+/=]+$/.test(id)) {
+      await api.cancelLecture(this.session.token, id);
+    } else {
+      this.log('info', `校方清冊無此報名紀錄，同步重設本機狀態：${title}`);
+    }
+
     if (target) {
       target.status = 'waiting';
-      target.note = '已取消報名';
+      target.note = '已退選';
       target.doneAt = 0;
     }
     if (lec) {
-      lec.cnt_10 = '0';
+      lec.cnt_10 = 0;
     }
-    const title = target?.rescnm || lec?.rescnm || actualReseid;
-    this.log('info', `已取消報名：${title}`);
+
+    try {
+      const freshRows = await api.listLectures(this.session.token);
+      this.applyRows(freshRows);
+    } catch {}
+
+    this.log('info', `已成功取消報名：${title}`);
     this.onChange();
     this.emit('state');
     return title;
@@ -507,9 +547,9 @@ export class Engine extends EventEmitter {
         locale: target.locale || '',
         resdat: target.resdat || '',
         apptim: target.apptim || '',
-        appnum: target.appnum || '',
-        maxstd: target.maxstd ?? 0,
-        selnum: target.selnum ?? 0,
+        appnum: (row ? row.appnum : target.appnum) || '',
+        maxstd: (row ? row.maxstd : target.maxstd) ?? 0,
+        selnum: (row ? row.selnum : target.selnum) ?? 0,
         canapp,
         count,
         openAt: target.openAt || 0,
