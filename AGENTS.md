@@ -42,11 +42,15 @@
     - **全域快捷鍵系統**：支援 `1`~`4` 切換分頁、`/` 聚焦搜尋、`R` 快速重新整理。
     - **自動登入復原**：前端重整時若本機記住密碼，自動無感換證並復原身分。
   - `app.js` 每 1.2 秒向 `/api/state` 輪詢後重繪畫面，包含四大基本素養（健康力、關懷力、創新力、卓越力）門檻進度條與歷年累計補登計算。
-- **Flutter 行動端**：
-  - `mobile/lib/main.dart`：入口點與黑底終端風格主題配置。
-  - `mobile/lib/screens/webview_screen.dart`：基於 `webview_flutter` 核心，具備硬體加速、連線失敗重試畫面與下拉重新整理。
-  - `mobile/lib/screens/settings_modal.dart`：伺服器位址動態切換面板，並透過 `shared_preferences` 自動記憶主機 IP。
-  - `mobile/android/` 與 `mobile/ios/`：原生工程配置，已設定 `INTERNET` 權限與 `usesCleartextTraffic="true"`（支援 Wi-Fi 區網 HTTP 呼叫）。
+- **Flutter 行動端（路線 B：終極 Native 化，純 Cupertino 100% 原生架構）**：
+  - **核心哲學**：徹底淘汰 WebView 包裝與中介代理，全介面直接以 Apple 官方標準設計語言 `flutter/cupertino.dart` 建構，具備 iOS 物理彈簧阻尼（BouncingScrollPhysics）、CupertinoSliverRefreshControl 下拉齒輪回彈、CupertinoTabBar 底部貼合（精準適配 safe-area）、零縮放、零左右晃動，達到 120Hz/60Hz GPU 直接繪製之原生質感。
+  - `mobile/lib/main.dart`：App 根元件 `CupertinoApp`、曜石黑深色主題（`CupertinoThemeData.dark`）與 `CupertinoTabScaffold` 根導覽控制器。
+  - `mobile/lib/screens/lectures_screen.dart`：講座情報 Screen（大標題導覽列、四大素養畢業門檻即時儀表板、CupertinoSearchTextField 搜尋、素養過濾晶片、卡片化講座清冊、一鍵秒報與加入排程）。
+  - `mobile/lib/screens/targets_screen.dart`：搶課排程 Screen（狀態機監控儀表板、800ms 突發輪詢指示燈、輪詢/搶課計數器、目標清單佇列與清理）。
+  - `mobile/lib/screens/calendar_screen.dart`：個人行程 Screen（已報名講座清冊、衝堂交叉比對預警、二段式確認彈窗、校方加密代碼退選）。
+  - `mobile/lib/screens/settings_screen.dart`：系統設定 Screen（校園入口帳密、身分證末四碼驗證、記住帳密自動登入開關、歷年四力補登手動輸入、引擎即時執行日誌 Console）。
+  - `mobile/lib/backend/`：純 Dart 實現之亞大 API 逆向客戶端（`asia_api.dart`）、搶課狀態機引擎（`grab_engine.dart`）、民國年與素養輔助器（`calendar_helper.dart`），手機端原生獨立自足，完全不依賴電腦伺服器。
+  - `mobile/android/` 與 `mobile/ios/`：原生工程配置，已設定 `INTERNET` 權限。
 
 ## 改動時最容易出錯的地方
 

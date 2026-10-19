@@ -824,9 +824,15 @@ function renderCalendar(snap) {
     .slice(0, 6);
 
   const badge = $('#navCalBadge');
+  const mobBadge = $('#mobCalBadge');
+  const calCountStr = String(events.length);
   if (badge) {
-    badge.textContent = String(events.length);
+    badge.textContent = calCountStr;
     badge.hidden = events.length === 0;
+  }
+  if (mobBadge) {
+    mobBadge.textContent = calCountStr;
+    mobBadge.hidden = events.length === 0;
   }
 
   upcoming.innerHTML = nextUp
@@ -891,9 +897,15 @@ function renderTargets(snap) {
   const hint = $('#targetHint');
   $('#targetCount').textContent = String(targets.length);
   const badgeEl = $('#navTargetBadge');
+  const mobTargetBadgeEl = $('#mobTargetBadge');
+  const targetCountStr = String(targets.length);
   if (badgeEl) {
-    badgeEl.textContent = String(targets.length);
+    badgeEl.textContent = targetCountStr;
     badgeEl.hidden = targets.length === 0;
+  }
+  if (mobTargetBadgeEl) {
+    mobTargetBadgeEl.textContent = targetCountStr;
+    mobTargetBadgeEl.hidden = targets.length === 0;
   }
 
   if (!targets.length) {
@@ -1361,45 +1373,32 @@ function initSegmentDrag() {
   window.addEventListener('pointercancel', onPointerEnd);
 }
 
-/** 全螢幕 iOS 手勢左右滑動切換分頁 */
-function initPageSwipe() {
-  const main = $('#main');
-  if (!main) return;
-  const views = ['lectures', 'targets', 'calendar', 'settings'];
-  let touchStartX = 0;
-  let touchStartY = 0;
-  let touchStartTime = 0;
+/** 徹底禁止縮放與橫向手勢干擾，杜絕左右晃動，實現原生 App 堅固體驗 */
+function preventUnwantedGestures() {
+  // 禁止 iOS Safari / WebView 手勢縮放
+  document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+  document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+  document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
 
-  main.addEventListener('touchstart', (e) => {
-    if (e.touches.length !== 1) return;
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-    touchStartTime = Date.now();
-  }, { passive: true });
+  // 禁止雙指觸控捏合縮放 (Pinch-to-zoom)
+  document.addEventListener('touchstart', (e) => {
+    if (e.touches && e.touches.length > 1) {
+      e.preventDefault();
+    }
+  }, { passive: false });
 
-  main.addEventListener('touchend', (e) => {
-    if (e.changedTouches.length !== 1) return;
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    const dy = e.changedTouches[0].clientY - touchStartY;
-    const dt = Date.now() - touchStartTime;
-
-    // 水平滑動距離 > 55px，且水平幅度顯著大於垂直位移（避免干擾上下捲動）
-    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.6 && dt < 450) {
-      const currentView = document.body.dataset.view || 'lectures';
-      const idx = views.indexOf(currentView);
-      if (idx !== -1) {
-        if (dx < 0 && idx < views.length - 1) {
-          // 向左滑動 -> 下一個視圖
-          switchView(views[idx + 1]);
-          if (navigator.vibrate) navigator.vibrate(10);
-        } else if (dx > 0 && idx > 0) {
-          // 向右滑動 -> 上一個視圖
-          switchView(views[idx - 1]);
-          if (navigator.vibrate) navigator.vibrate(10);
-        }
+  // 禁止雙擊螢幕縮放放大（輸入框除外）
+  let lastTouchEndTime = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTouchEndTime <= 320) {
+      const tag = e.target?.tagName?.toLowerCase();
+      if (tag !== 'input' && tag !== 'textarea') {
+        e.preventDefault();
       }
     }
-  }, { passive: true });
+    lastTouchEndTime = now;
+  }, { passive: false });
 }
 
 function switchView(viewName) {
@@ -1434,6 +1433,9 @@ document.addEventListener('click', (event) => {
 
   if (action === 'switch-view' || action === 'mob-tab') {
     const view = button.dataset.view || button.dataset.target?.replace('card', '').toLowerCase();
+    if (navigator.vibrate) {
+      try { navigator.vibrate(10); } catch {}
+    }
     switchView(view);
     return;
   }
@@ -1960,8 +1962,8 @@ window.addEventListener('keydown', (event) => {
 /* ------------------------------ 系統開機初始化 ------------------------------ */
 
 async function boot() {
+  preventUnwantedGestures();
   initSegmentDrag();
-  initPageSwipe();
   window.addEventListener('resize', () => {
     updateGlider(document.body.dataset.view, false);
   });

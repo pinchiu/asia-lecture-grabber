@@ -15,6 +15,35 @@ class CalendarHelper {
     return list;
   }
 
+  static List<String> detectLiteracies(dynamic input) {
+    if (input is Map<String, dynamic>) {
+      final list = extractLiteracies(input);
+      if (list.isNotEmpty) return list;
+      final title = (input['reseid_name'] ?? input['name'] ?? '').toString();
+      return detectLiteraciesFromTitle(title);
+    } else if (input is String) {
+      return detectLiteraciesFromTitle(input);
+    }
+    return [];
+  }
+
+  static List<String> detectLiteraciesFromTitle(String title) {
+    final list = <String>[];
+    if (title.contains('健康') || title.contains('衛教') || title.contains('心理') || title.contains('體育') || title.contains('防疫')) {
+      list.add('健康力');
+    }
+    if (title.contains('關懷') || title.contains('服務') || title.contains('志工') || title.contains('社會') || title.contains('弱勢') || title.contains('人權')) {
+      list.add('關懷力');
+    }
+    if (title.contains('創新') || title.contains('科技') || title.contains('AI') || title.contains('數位') || title.contains('人工智慧') || title.contains('創業')) {
+      list.add('創新力');
+    }
+    if (title.contains('卓越') || title.contains('國際') || title.contains('領導') || title.contains('就業') || title.contains('職涯') || title.contains('英語')) {
+      list.add('卓越力');
+    }
+    return list;
+  }
+
   static String? parseYmd(String? str) {
     if (str == null || str.trim().isEmpty) return null;
     final s = str.trim();
