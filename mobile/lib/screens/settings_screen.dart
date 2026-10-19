@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import '../backend/grab_engine.dart';
+import '../backend/update_service.dart';
 import '../config/constants.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -24,6 +25,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   bool _rememberPassword = true;
   bool _isLoading = false;
+  bool _isCheckingUpdate = false;
 
   @override
   void initState() {
@@ -398,11 +400,224 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
+
+              // 軟體版本與線上更新卡片
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.surfaceBorder, width: 0.8),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              '關於軟體與更新',
+                              style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceElevated,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppColors.hairline, width: 0.5),
+                              ),
+                              child: const Text(
+                                '目前版本 v${UpdateService.currentVersion}',
+                                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          '亞洲大學通識講座自動報名助手與四大基本素養追蹤系統行動端。支援 GitHub 線上檢查更新，可直接在 App 內下載最新 APK 升級或透過瀏覽器下載。',
+                          style: TextStyle(fontSize: 12, color: AppColors.textMuted, height: 1.4),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: CupertinoButton(
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                color: CupertinoColors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                onPressed: _isCheckingUpdate ? null : _handleCheckUpdate,
+                                child: _isCheckingUpdate
+                                    ? const CupertinoActivityIndicator(color: CupertinoColors.black)
+                                    : const Text(
+                                        '檢查新版本',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: CupertinoColors.black,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ],
           );
         },
       ),
     );
+  }
+
+  Future<void> _handleCheckUpdate() async {
+    setState(() => _isCheckingUpdate = true);
+    HapticFeedback.lightImpact();
+
+    try {
+      final info = await UpdateService.checkUpdate();
+      if (!mounted) return;
+
+      if (info == null) {
+        _showDialog('檢查更新失敗', '無法連接至 GitHub Releases 服務，請確認手機網路連線。');
+        return;
+      }
+
+      if (info.hasUpdate) {
+        _showUpdatePrompt(info);
+      } else {
+        _showDialog('已是最新版本', '目前安裝版本 v${UpdateService.currentVersion} 已是最新正式發布版本。');
+      }
+    } catch (e) {
+      if (mounted) _showDialog('錯誤', '檢查更新時發生例外：$e');
+    } finally {
+      if (mounted) setState(() => _isCheckingUpdate = false);
+    }
+  }
+
+  void _showUpdatePrompt(ReleaseInfo info) {
+    final sizeMb = (info.apkSize / (1024 * 1024)).toStringAsFixed(1);
+    final sizeText = info.apkSize > 0 ? '（約 $sizeMb MB）' : '';
+
+    showCupertinoDialog(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: Text('發現新版本 ${info.tagName}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
+            Text('更新標題：${info.name}\n檔案大小：$sizeText\n\n是否立即下載並安裝更新？',
+                style: const TextStyle(fontSize: 13, color: AppColors.textPrimary)),
+          ],
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('稍後再說'),
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          if (info.apkUrl.isNotEmpty)
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              child: const Text('App 內下載安裝'),
+              onPressed: () {
+                Navigator.pop(ctx);
+                _startInAppDownload(info);
+              },
+            ),
+          CupertinoDialogAction(
+            child: const Text('瀏覽器下載'),
+            onPressed: () {
+              Navigator.pop(ctx);
+              UpdateService.openUrl(info.apkUrl.isNotEmpty ? info.apkUrl : info.htmlUrl);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _startInAppDownload(ReleaseInfo info) {
+    double progressValue = 0.0;
+    String statusText = '準備下載...';
+    StateSetter? dialogSetState;
+
+    showCupertinoDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          dialogSetState = setDialogState;
+          final percent = (progressValue * 100).clamp(0, 100).toStringAsFixed(0);
+
+          return CupertinoAlertDialog(
+            title: const Text('正在下載最新版本'),
+            content: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    height: 6,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: progressValue.clamp(0.01, 1.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.white,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text('$statusText ($percent%)', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    UpdateService.downloadApk(
+      info.apkUrl,
+      onProgress: (p, received, total) {
+        if (dialogSetState != null) {
+          dialogSetState!(() {
+            progressValue = p;
+            final recMb = (received / (1024 * 1024)).toStringAsFixed(1);
+            final totMb = (total / (1024 * 1024)).toStringAsFixed(1);
+            statusText = '$recMb MB / $totMb MB';
+          });
+        }
+      },
+    ).then((filePath) async {
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+      HapticFeedback.mediumImpact();
+      try {
+        await UpdateService.installApk(filePath);
+      } catch (e) {
+        if (mounted) _showDialog('安裝提示', '下載完成，但啟動安裝失敗：$e\n您可選擇使用瀏覽器下載安裝。');
+      }
+    }).catchError((err) {
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        _showDialog('下載失敗', err.toString().replaceAll('Exception: ', ''));
+      }
+    });
   }
 
   Widget _buildLitInput(String label, TextEditingController ctrl) {
