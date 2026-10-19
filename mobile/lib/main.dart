@@ -59,64 +59,114 @@ class AsiaLectureGrabberApp extends StatelessWidget {
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final GrabEngine engine;
 
   const HomeScreen({super.key, required this.engine});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late final PageController _pageController;
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: _currentIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onTabTapped(int index) {
+    if (_currentIndex == index) return;
+    HapticFeedback.selectionClick();
+    setState(() {
+      _currentIndex = index;
+    });
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeInOutCubic,
+    );
+  }
+
+  void _onPageChanged(int index) {
+    if (_currentIndex == index) return;
+    HapticFeedback.selectionClick();
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: engine,
+      animation: widget.engine,
       builder: (context, _) {
-        final targetCount = engine.activeTargets().length;
+        final targetCount = widget.engine.activeTargets().length;
 
-        return CupertinoTabScaffold(
-          tabBar: CupertinoTabBar(
-            backgroundColor: AppColors.glassBar,
-            border: const Border(
-              top: BorderSide(color: AppColors.hairline, width: 0.5),
-            ),
-            activeColor: CupertinoColors.white,
-            inactiveColor: AppColors.textMuted,
-            iconSize: 22,
-            items: [
-              const BottomNavigationBarItem(
-                icon: Icon(CupertinoIcons.book),
-                activeIcon: Icon(CupertinoIcons.book_fill),
-                label: '講座情報',
+        return CupertinoPageScaffold(
+          backgroundColor: AppColors.background,
+          child: Column(
+            children: [
+              // 支援 iOS 阻尼左右平滑滑動換頁之 PageView
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const BouncingScrollPhysics(),
+                  onPageChanged: _onPageChanged,
+                  children: [
+                    _KeepAlivePage(child: LecturesScreen(engine: widget.engine)),
+                    _KeepAlivePage(child: TargetsScreen(engine: widget.engine)),
+                    _KeepAlivePage(child: CalendarScreen(engine: widget.engine)),
+                    _KeepAlivePage(child: SettingsScreen(engine: widget.engine)),
+                  ],
+                ),
               ),
-              BottomNavigationBarItem(
-                icon: _buildBadgeIcon(CupertinoIcons.alarm, targetCount),
-                activeIcon: _buildBadgeIcon(CupertinoIcons.alarm_fill, targetCount),
-                label: '搶課排程',
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(CupertinoIcons.calendar),
-                activeIcon: Icon(CupertinoIcons.calendar_today),
-                label: '個人行程',
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(CupertinoIcons.gear_alt),
-                activeIcon: Icon(CupertinoIcons.gear_alt_fill),
-                label: '系統設定',
+
+              // iOS 原生貼底導覽列（與 PageView 左右滑動即時雙向聯動）
+              CupertinoTabBar(
+                currentIndex: _currentIndex,
+                onTap: _onTabTapped,
+                backgroundColor: AppColors.glassBar,
+                border: const Border(
+                  top: BorderSide(color: AppColors.hairline, width: 0.5),
+                ),
+                activeColor: CupertinoColors.white,
+                inactiveColor: AppColors.textMuted,
+                iconSize: 22,
+                items: [
+                  const BottomNavigationBarItem(
+                    icon: Icon(CupertinoIcons.book),
+                    activeIcon: Icon(CupertinoIcons.book_fill),
+                    label: '講座情報',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: _buildBadgeIcon(CupertinoIcons.alarm, targetCount),
+                    activeIcon: _buildBadgeIcon(CupertinoIcons.alarm_fill, targetCount),
+                    label: '搶課排程',
+                  ),
+                  const BottomNavigationBarItem(
+                    icon: Icon(CupertinoIcons.calendar),
+                    activeIcon: Icon(CupertinoIcons.calendar_today),
+                    label: '個人行程',
+                  ),
+                  const BottomNavigationBarItem(
+                    icon: Icon(CupertinoIcons.gear_alt),
+                    activeIcon: Icon(CupertinoIcons.gear_alt_fill),
+                    label: '系統設定',
+                  ),
+                ],
               ),
             ],
           ),
-          tabBuilder: (context, index) {
-            switch (index) {
-              case 0:
-                return LecturesScreen(engine: engine);
-              case 1:
-                return TargetsScreen(engine: engine);
-              case 2:
-                return CalendarScreen(engine: engine);
-              case 3:
-                return SettingsScreen(engine: engine);
-              default:
-                return LecturesScreen(engine: engine);
-            }
-          },
         );
       },
     );
@@ -154,5 +204,25 @@ class HomeScreen extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+class _KeepAlivePage extends StatefulWidget {
+  final Widget child;
+
+  const _KeepAlivePage({required this.child});
+
+  @override
+  State<_KeepAlivePage> createState() => _KeepAlivePageState();
+}
+
+class _KeepAlivePageState extends State<_KeepAlivePage> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

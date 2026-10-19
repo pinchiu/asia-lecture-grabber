@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import '../backend/grab_engine.dart';
+import '../backend/calendar_helper.dart';
 import '../config/constants.dart';
 
 class TargetsScreen extends StatefulWidget {
@@ -224,7 +225,7 @@ class _TargetsScreenState extends State<TargetsScreen> {
 
   Widget _buildTargetItem(Map<String, dynamic> target) {
     final eid01 = (target['eid01'] ?? '').toString();
-    final title = (target['title'] ?? eid01).toString();
+    final title = CalendarHelper.extractTitle(target);
     final status = (target['status'] ?? 'waiting').toString();
     final message = (target['message'] ?? '').toString();
     final rescsd = (target['rescsd'] ?? '').toString();
