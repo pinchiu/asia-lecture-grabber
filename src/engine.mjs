@@ -309,18 +309,25 @@ export class Engine extends EventEmitter {
     return res.message;
   }
 
-  async cancelTarget(reseid) {
+  async cancelTarget(id) {
     if (!this.session?.token) throw new Error('請先登入');
-    await api.cancelLecture(this.session.token, reseid);
-    const target = this.targets.find((item) => item.reseid === reseid);
+    const target = this.targets.find((item) => item.reseid === id || item.eid01 === id);
+    const lec = this.lectures.find((item) => item.reseid === id || item.eid01 === id);
+    const actualReseid = target?.reseid || lec?.reseid || id;
+    await api.cancelLecture(this.session.token, actualReseid);
     if (target) {
       target.status = 'waiting';
-      target.note = '已退選';
+      target.note = '已取消報名';
       target.doneAt = 0;
     }
-    this.log('info', `已退選：${target?.rescnm || reseid}`);
+    if (lec) {
+      lec.cnt_10 = '0';
+    }
+    const title = target?.rescnm || lec?.rescnm || actualReseid;
+    this.log('info', `已取消報名：${title}`);
     this.onChange();
     this.emit('state');
+    return title;
   }
 
   finish(target, status, note) {

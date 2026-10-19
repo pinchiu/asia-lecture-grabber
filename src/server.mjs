@@ -479,8 +479,8 @@ async function handleApi(req, res, url) {
       case 'POST /api/cancel': {
         const body = await readJson(req);
         if (!engine.session) return fail(res, '請先登入', 401);
-        await engine.cancelTarget(String(body.reseid || ''));
-        return ok(res, { ok: true });
+        const title = await engine.cancelTarget(String(body.reseid || body.eid01 || ''));
+        return ok(res, { ok: true, message: `已成功取消報名：${title}` });
       }
 
       case 'GET /api/logs': {

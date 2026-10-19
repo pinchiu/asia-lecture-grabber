@@ -18,24 +18,16 @@
 
   <link rel="icon" type="image/svg+xml" href="./icon.svg">
   <link rel="alternate icon" href="./icon-192.png">
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./style.css?v=5.0">
 </head>
-<body data-view="dashboard">
+<body data-view="lectures">
   <a class="skip" href="#main">跳到主要內容</a>
 
-  <!-- 頂部導航列 -->
+  <!-- 頂部導航列 (Apple Frosted Glass & Segmented Navigation) -->
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <span class="logo" aria-hidden="true">
-          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="16" cy="16" r="3" fill="currentColor" stroke="none"/>
-            <path d="M11 21a7 7 0 0 1 0-10"/>
-            <path d="M21 11a7 7 0 0 1 0 10"/>
-            <path d="M6.5 25.5a13.5 13.5 0 0 1 0-19"/>
-            <path d="M25.5 6.5a13.5 13.5 0 0 1 0 19"/>
-          </svg>
-        </span>
+        <span class="logo-mark" aria-hidden="true">AU</span>
         <div class="brand-text">
           <div class="brand-title-wrap">
             <h1>亞洲大學講座助手</h1>
@@ -45,6 +37,24 @@
         </div>
       </div>
 
+      <!-- 核心層級切換選單 (Segmented Control) -->
+      <nav class="nav-segments" role="tablist" aria-label="系統功能切換">
+        <button class="nav-segment-btn active" role="tab" aria-selected="true" data-action="switch-view" data-view="lectures">
+          <span class="seg-title">講座情報</span>
+        </button>
+        <button class="nav-segment-btn" role="tab" aria-selected="false" data-action="switch-view" data-view="targets">
+          <span class="seg-title">搶課排程</span>
+          <span class="seg-badge" id="navTargetBadge" hidden>0</span>
+        </button>
+        <button class="nav-segment-btn" role="tab" aria-selected="false" data-action="switch-view" data-view="calendar">
+          <span class="seg-title">個人行程</span>
+          <span class="seg-badge" id="navCalBadge" hidden>0</span>
+        </button>
+        <button class="nav-segment-btn" role="tab" aria-selected="false" data-action="switch-view" data-view="settings">
+          <span class="seg-title">系統設定</span>
+        </button>
+      </nav>
+
       <div class="head-state" role="group" aria-label="系統狀態與主要控制">
         <div class="pills">
           <span class="pill" id="pillSession">未登入</span>
@@ -52,193 +62,36 @@
           <span class="pill" id="pillSchedule">無排程</span>
         </div>
         <div class="head-actions">
-          <button class="btn ghost btn-pwa" id="pwaInstallBtn" data-action="install-pwa" hidden>
-            <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v9m-4-4l4 4 4-4M3 13h10"/></svg>
-            安裝 App
-          </button>
-          <button class="btn primary" id="btnStart" data-action="start" disabled>
-            <svg viewBox="0 0 16 16" width="11" height="11" fill="currentColor" aria-hidden="true"><path d="M4 2.5v11L13.5 8z"/></svg>
-            開始搶課
-          </button>
-          <button class="btn ghost" id="btnStop" data-action="stop" disabled>
-            <svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor" aria-hidden="true"><rect x="3" y="3" width="10" height="10" rx="1.5"/></svg>
-            停止
-          </button>
-          <button class="btn ghost mobile-toggle-btn" data-action="toggle-side" aria-label="切換設定側邊欄">
-            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
-          </button>
+          <button class="btn ghost sm btn-pwa" id="pwaInstallBtn" data-action="install-pwa" hidden>安裝 App</button>
+          <button class="btn primary" id="btnStart" data-action="start" disabled>開始搶課</button>
+          <button class="btn ghost" id="btnStop" data-action="stop" disabled>停止</button>
         </div>
       </div>
     </div>
   </header>
 
-  <div class="layout">
-    <!-- 側邊欄：帳號、搶課參數、排程、AI -->
-    <aside class="side" id="sidePanel" aria-label="設定與輔助功能">
-      <div class="side-header-mobile">
-        <h3>控制與設定</h3>
-        <button class="btn ghost sm icon" data-action="toggle-side" aria-label="關閉側邊欄">
-          <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg>
-        </button>
-      </div>
+  <!-- 主內容容器：分層視圖管理 -->
+  <main class="layout" id="main">
 
-      <!-- 01 帳號與身份 -->
-      <section class="card" id="cardAccount">
-        <div class="card-head">
-          <h2><span class="idx">01</span> 學生登入與身份驗證</h2>
-        </div>
-        <form id="loginForm" class="form">
-          <label>學號
-            <input name="username" autocomplete="username" placeholder="例如 11234567" required>
-          </label>
-          <label>密碼
-            <input type="password" name="password" autocomplete="current-password" required>
-          </label>
-          <label>身分證字號末四碼
-            <input name="idLast4" inputmode="numeric" maxlength="4" placeholder="報名驗證必填末四碼" autocomplete="off">
-          </label>
-          <label class="check">
-            <input type="checkbox" name="remember"> 記住帳密（以純文字存於本機 data/config.json）
-          </label>
-          <button class="btn primary wide" type="submit">登入校方系統並驗證身份</button>
-          <p class="hint" id="accountInfo"></p>
-        </form>
-      </section>
-
-      <!-- 02 搶課參數 -->
-      <section class="card">
-        <div class="card-head">
-          <h2><span class="idx">02</span> 搶課設定與無障礙需求</h2>
-        </div>
-        <div class="form">
-          <label>監控頻率（秒／次）
-            <input type="number" id="intervalSec" min="1" max="30" step="0.5" value="2.5" inputmode="decimal">
-          </label>
-          <label>無障礙空間需求（報名預設值）
-            <select id="bfreeSelect">
-              <option value="N" selected>無需求／否（通常選此項）</option>
-              <option value="Y">有需求／是</option>
-            </select>
-          </label>
-          <label class="check"><input type="checkbox" id="soundToggle"> 搶到時播放提示音</label>
-          <label class="check"><input type="checkbox" id="notifyToggle"> 搶到時發送桌面通知</label>
-          <label class="check"><input type="checkbox" id="stopDoneToggle"> 目標全部完成後自動停止</label>
-          <button class="btn ghost wide" data-action="save-settings">儲存設定</button>
-        </div>
-      </section>
-
-      <!-- 03 排程自動搶課 -->
-      <section class="card">
-        <div class="card-head">
-          <h2><span class="idx">03</span> 排程自動啟動</h2>
-          <span class="tag" id="scheduleNext">—</span>
-        </div>
-        <div class="form">
-          <label class="check"><input type="checkbox" id="scheduleEnabled"> 啟用排程功能</label>
-          <div class="sched-list" id="scheduleList"></div>
-          <p class="hint" id="scheduleHint">尚無排程；新增後時間到會自動喚起監控。</p>
-          <hr class="divider">
-          <label>觸發方式
-            <select id="schedMode">
-              <option value="open">開放瞬間（依報名開放時間）</option>
-              <option value="at">指定日期時間（單次）</option>
-              <option value="window">每週固定時段</option>
-            </select>
-          </label>
-
-          <div class="sched-fields" data-mode="open">
-            <label>開放前幾秒啟動
-              <input type="number" id="schedLeadSec" min="0" max="600" step="5" value="15" inputmode="numeric">
-            </label>
-          </div>
-
-          <div class="sched-fields" data-mode="at" hidden>
-            <label>開始時間
-              <input type="datetime-local" id="schedStartAt">
-            </label>
-            <label>自動停止（可留空）
-              <input type="datetime-local" id="schedStopAt">
-            </label>
-          </div>
-
-          <div class="sched-fields" data-mode="window" hidden>
-            <div class="day-row" id="schedDays" role="group" aria-label="星期">
-              <label class="day"><input type="checkbox" data-day="1" checked><span>一</span></label>
-              <label class="day"><input type="checkbox" data-day="2" checked><span>二</span></label>
-              <label class="day"><input type="checkbox" data-day="3" checked><span>三</span></label>
-              <label class="day"><input type="checkbox" data-day="4" checked><span>四</span></label>
-              <label class="day"><input type="checkbox" data-day="5" checked><span>五</span></label>
-              <label class="day"><input type="checkbox" data-day="6"><span>六</span></label>
-              <label class="day"><input type="checkbox" data-day="0"><span>日</span></label>
-            </div>
-            <label>開始時間
-              <input type="time" id="schedStartTime" value="20:00">
-            </label>
-            <label>停止時間
-              <input type="time" id="schedStopTime" value="22:00">
-            </label>
-          </div>
-
-          <label>標籤備註（選填）
-            <input id="schedLabel" placeholder="例如 平日晚上搶課" autocomplete="off">
-          </label>
-          <button class="btn ghost wide" data-action="schedule-add">＋ 新增排程</button>
-        </div>
-      </section>
-
-      <!-- 04 智慧模型擴充設定 -->
-      <section class="card">
-        <div class="card-head">
-          <h2><span class="idx">04</span> 語言模型連線設定</h2>
-          <span class="tag">選用</span>
-        </div>
-        <div class="form">
-          <label class="check"><input type="checkbox" id="aiEnabled"> 啟用智慧語言模型（OpenAI 相容 API）</label>
-          <p class="hint">不啟用亦可完整使用本機智慧規則解析素養與排程。</p>
-          <label>API 位址
-            <input id="aiBaseUrl" placeholder="https://api.openai.com/v1" autocomplete="off">
-          </label>
-          <label>API Key
-            <input id="aiKey" type="password" placeholder="sk-…（留空＝不變更）" autocomplete="off">
-          </label>
-          <label>模型名稱
-            <input id="aiModel" placeholder="gpt-4o-mini" autocomplete="off">
-          </label>
-          <button class="btn ghost wide" data-action="save-ai">儲存 AI 設定</button>
-        </div>
-      </section>
-
-      <p class="footnote">
-        僅供個人學術與自主報名使用。系統以約 2.5 秒禮貌間隔輪詢，避免對校方系統產生負擔。請遵守學校規範。
-      </p>
-    </aside>
-
-    <!-- 主要操作區塊 -->
-    <main class="main" id="main">
-
-      <!-- 核心功能：四大基本素養畢業門檻儀表板 -->
+    <!-- ==================== 第一層：講座情報（大廳與畢業門檻） ==================== -->
+    <div class="view-panel" data-view="lectures">
+      
+      <!-- 四大基本素養畢業門檻儀表板 -->
       <section class="card grad-card" id="gradCard">
         <div class="card-head grad-head">
           <div class="grad-head-text">
             <div class="grad-title-row">
-              <span class="grad-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                  <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-                </svg>
-              </span>
-              <h2>通識講座畢業門檻進度（四大基本素養）</h2>
+              <span class="tag-label">畢業指標</span>
+              <h2>通識講座畢業門檻進度</h2>
             </div>
             <p class="grad-desc">
-              在學期間必須累積至少 <b>8 場次</b>，且四大素養平均符合：健康力 ≥ 2、關懷力 ≥ 2、創新力 ≥ 2、卓越力 ≥ 2。
+              在學期間必須累積至少 <b>8 場次</b>，且四大基本素養各至少符合 2 次：健康力 ≥ 2、關懷力 ≥ 2、創新力 ≥ 2、卓越力 ≥ 2。
             </p>
           </div>
           <div class="grad-head-actions">
             <span class="grad-status-badge" id="gradOverallStatus">計算中…</span>
-            <button class="btn ghost sm" data-action="toggle-grad-history">
-              <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 8A5 5 0 1 1 8 3m0 0v5h5"/></svg>
-              歷年累計補登
-            </button>
+            <button class="btn ghost sm" data-action="toggle-grad-history">歷年累計補登</button>
+            <button class="btn ghost sm" data-action="switch-view" data-view="calendar">查看個人行程 ›</button>
           </div>
         </div>
 
@@ -374,7 +227,13 @@
         </div>
       </section>
 
-      <!-- 講座清單（含基本素養標示與篩選） -->
+      <!-- 快速跳轉橋樑：若有目標則顯示前往按鈕 -->
+      <div class="view-bridge-bar" id="lecturesBridgeBar" hidden>
+        <span class="bridge-text" id="lecturesBridgeText">已加入搶課目標</span>
+        <button class="btn ghost sm" data-action="switch-view" data-view="targets">前往搶課排程中心 ›</button>
+      </div>
+
+      <!-- 講座情報大廳清單 -->
       <section class="card" id="cardLectures">
         <div class="card-head">
           <div class="head-title-wrap">
@@ -404,11 +263,13 @@
           </div>
         </div>
 
+        <!-- 手動快報與手動取消報名工具列 -->
         <div class="manual-bar">
           <div class="manual-input-wrap">
-            <span class="manual-tag">手動快報</span>
-            <input type="text" id="manualCourseCode" placeholder="直接輸入課程代號（例如 1151074）手動報名" autocomplete="off">
-            <button class="btn primary sm" data-action="manual-code-register">立即手動報名</button>
+            <span class="manual-tag">快捷操作</span>
+            <input type="text" id="manualCourseCode" placeholder="直接輸入課程代號（例如 1151074）" autocomplete="off">
+            <button class="btn primary sm" data-action="manual-code-register">手動報名</button>
+            <button class="btn ghost sm danger-hover" data-action="manual-code-cancel">取消報名</button>
           </div>
           <span class="manual-hint">純本機直呼校方 API，自動帶入身份驗證，後端不查圖形驗證碼，全程不需 AI。</span>
         </div>
@@ -418,14 +279,14 @@
             <thead>
               <tr>
                 <th style="width: 85px;">狀態</th>
-                <th style="min-width: 200px;">課程名稱 / 主辦單位</th>
+                <th style="min-width: 220px;">課程名稱 / 主辦單位</th>
                 <th style="width: 140px;">基本素養 (四力)</th>
                 <th style="width: 110px;">演講者 / 主持人</th>
-                <th style="width: 130px;">活動時間</th>
-                <th style="width: 90px;">活動地點</th>
+                <th style="width: 140px;">活動時間</th>
+                <th style="width: 100px;">活動地點</th>
                 <th style="width: 100px;">報名人數</th>
-                <th style="width: 120px;">報名期間</th>
-                <th class="right" style="width: 110px;">操作</th>
+                <th style="width: 130px;">報名期間</th>
+                <th class="right" style="width: 160px;">操作</th>
               </tr>
             </thead>
             <tbody id="lectureBody"></tbody>
@@ -434,33 +295,11 @@
         </div>
       </section>
 
-      <!-- 我的目標 -->
-      <section class="card" id="cardTargets">
-        <div class="card-head">
-          <h2>我的搶課目標 <span class="count" id="targetCount">0</span></h2>
-          <div class="tools">
-            <button class="btn ghost sm" data-action="clear-finished">清除已完成</button>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table class="grid" id="targetTable">
-            <thead>
-              <tr>
-                <th>課程名稱</th>
-                <th>基本素養</th>
-                <th>活動時間</th>
-                <th>活動地點</th>
-                <th>即時監控狀態</th>
-                <th>名額</th>
-                <th class="right">操作</th>
-              </tr>
-            </thead>
-            <tbody id="targetBody"></tbody>
-          </table>
-          <p class="empty" id="targetHint">尚未加入目標；請先從上方清單加入目標，或由 AI 代理規劃排程。</p>
-        </div>
-      </section>
+    </div>
 
+    <!-- ==================== 第二層：搶課排程（目標管理與定時啟動） ==================== -->
+    <div class="view-panel" data-view="targets" hidden>
+      
       <!-- 快速規劃指令列 -->
       <section class="card agent" id="cardAgent">
         <div class="card-head">
@@ -498,6 +337,100 @@
         </div>
       </section>
 
+      <!-- 我的搶課目標 -->
+      <section class="card" id="cardTargets">
+        <div class="card-head">
+          <h2>我的搶課目標 <span class="count" id="targetCount">0</span></h2>
+          <div class="tools">
+            <button class="btn ghost sm" data-action="switch-view" data-view="lectures">＋ 前往大廳挑選</button>
+            <button class="btn ghost sm" data-action="clear-finished">清除已完成</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="grid" id="targetTable">
+            <thead>
+              <tr>
+                <th style="min-width: 220px;">課程名稱</th>
+                <th style="width: 140px;">基本素養</th>
+                <th style="width: 150px;">活動時間</th>
+                <th style="width: 110px;">活動地點</th>
+                <th style="width: 130px;">即時監控狀態</th>
+                <th style="width: 100px;">名額</th>
+                <th class="right" style="width: 180px;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="targetBody"></tbody>
+          </table>
+          <p class="empty" id="targetHint">尚未加入目標；請先從講座情報大廳加入目標，或由快速規劃指令列產生排程。</p>
+        </div>
+      </section>
+
+      <!-- 排程自動搶課 -->
+      <section class="card" id="cardSchedule">
+        <div class="card-head">
+          <h2>排程定時自動啟動</h2>
+          <span class="tag" id="scheduleNext">—</span>
+        </div>
+        <div class="form">
+          <label class="check"><input type="checkbox" id="scheduleEnabled"> 啟用排程功能</label>
+          <div class="sched-list" id="scheduleList"></div>
+          <p class="hint" id="scheduleHint">尚無排程；新增後時間到會自動喚起監控。</p>
+          <hr class="divider">
+          <div class="sched-form-grid">
+            <label>觸發方式
+              <select id="schedMode">
+                <option value="open">開放瞬間（依報名開放時間）</option>
+                <option value="at">指定日期時間（單次）</option>
+                <option value="window">每週固定時段</option>
+              </select>
+            </label>
+
+            <div class="sched-fields" data-mode="open">
+              <label>開放前幾秒啟動
+                <input type="number" id="schedLeadSec" min="0" max="600" step="5" value="15" inputmode="numeric">
+              </label>
+            </div>
+
+            <div class="sched-fields" data-mode="at" hidden>
+              <label>開始時間
+                <input type="datetime-local" id="schedStartAt">
+              </label>
+              <label>自動停止（可留空）
+                <input type="datetime-local" id="schedStopAt">
+              </label>
+            </div>
+
+            <div class="sched-fields" data-mode="window" hidden>
+              <div class="day-row" id="schedDays" role="group" aria-label="星期">
+                <label class="day"><input type="checkbox" data-day="1" checked><span>一</span></label>
+                <label class="day"><input type="checkbox" data-day="2" checked><span>二</span></label>
+                <label class="day"><input type="checkbox" data-day="3" checked><span>三</span></label>
+                <label class="day"><input type="checkbox" data-day="4" checked><span>四</span></label>
+                <label class="day"><input type="checkbox" data-day="5" checked><span>五</span></label>
+                <label class="day"><input type="checkbox" data-day="6" checked><span>六</span></label>
+                <label class="day"><input type="checkbox" data-day="0"><span>日</span></label>
+              </div>
+              <label>開始時間
+                <input type="time" id="schedStartTime" value="20:00">
+              </label>
+              <label>停止時間
+                <input type="time" id="schedStopTime" value="22:00">
+              </label>
+            </div>
+
+            <label>標籤備註（選填）
+              <input id="schedLabel" placeholder="例如 平日晚上搶課" autocomplete="off">
+            </label>
+          </div>
+          <button class="btn ghost wide" data-action="schedule-add">＋ 新增排程</button>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ==================== 第三層：個人行程（行事曆與已報名） ==================== -->
+    <div class="view-panel" data-view="calendar" hidden>
+      
       <!-- 我的行事曆 -->
       <section class="card" id="cardCalendar">
         <div class="card-head">
@@ -514,50 +447,132 @@
           <div class="cal-grid" id="calGrid"></div>
         </div>
         <p class="empty" id="calendarHint">登入並報名講座後，這裡會即時標示你的行程與素養類別。</p>
-        <ul class="cal-upcoming" id="calUpcoming"></ul>
-      </section>
-
-      <!-- 執行日誌 -->
-      <section class="card" id="cardLogs">
-        <div class="card-head">
-          <h2>系統執行紀錄</h2>
-          <div class="tools">
-            <button class="btn ghost sm" data-action="clear-log">清空紀錄</button>
+        
+        <div class="upcoming-wrap">
+          <div class="upcoming-head">
+            <h3>近期已報名場次</h3>
+            <span class="hint">可直接在此點擊取消報名（退選）</span>
           </div>
+          <ul class="cal-upcoming" id="calUpcoming"></ul>
         </div>
-        <div class="log" id="logBox" role="log" aria-live="polite"></div>
       </section>
 
-    </main>
-  </div>
+    </div>
 
-  <!-- 手機版底部導覽切換列 -->
+    <!-- ==================== 第四層：系統設定（帳號、參數、日誌） ==================== -->
+    <div class="view-panel" data-view="settings" hidden>
+      
+      <div class="settings-grid">
+        <!-- 01 帳號與身份 -->
+        <section class="card" id="cardAccount">
+          <div class="card-head">
+            <h2><span class="idx">01</span> 學生登入與身份驗證</h2>
+          </div>
+          <form id="loginForm" class="form">
+            <label>學號
+              <input name="username" autocomplete="username" placeholder="例如 11234567" required>
+            </label>
+            <label>密碼
+              <input type="password" name="password" autocomplete="current-password" required>
+            </label>
+            <label>身分證字號末四碼
+              <input name="idLast4" inputmode="numeric" maxlength="4" placeholder="報名驗證必填末四碼" autocomplete="off">
+            </label>
+            <label class="check">
+              <input type="checkbox" name="remember"> 記住帳密（以純文字存於本機 data/config.json）
+            </label>
+            <button class="btn primary wide" type="submit">登入校方系統並驗證身份</button>
+            <p class="hint" id="accountInfo"></p>
+          </form>
+        </section>
+
+        <!-- 02 搶課參數 -->
+        <section class="card" id="cardSettings">
+          <div class="card-head">
+            <h2><span class="idx">02</span> 搶課設定與無障礙需求</h2>
+          </div>
+          <div class="form">
+            <label>監控頻率（秒／次）
+              <input type="number" id="intervalSec" min="1" max="30" step="0.5" value="2.5" inputmode="decimal">
+            </label>
+            <label>無障礙空間需求（報名預設值）
+              <select id="bfreeSelect">
+                <option value="N" selected>無需求／否（通常選此項）</option>
+                <option value="Y">有需求／是</option>
+              </select>
+            </label>
+            <label class="check"><input type="checkbox" id="soundToggle"> 搶到時播放提示音</label>
+            <label class="check"><input type="checkbox" id="notifyToggle"> 搶到時發送桌面通知</label>
+            <label class="check"><input type="checkbox" id="stopDoneToggle"> 目標全部完成後自動停止</label>
+            <button class="btn ghost wide" data-action="save-settings">儲存設定</button>
+          </div>
+        </section>
+
+        <!-- 03 智慧模型擴充設定 -->
+        <section class="card" id="cardAi">
+          <div class="card-head">
+            <h2><span class="idx">03</span> 語言模型連線設定</h2>
+            <span class="tag">選用</span>
+          </div>
+          <div class="form">
+            <label class="check"><input type="checkbox" id="aiEnabled"> 啟用智慧語言模型（OpenAI 相容 API）</label>
+            <p class="hint">不啟用亦可完整使用本機智慧規則解析素養與排程。</p>
+            <label>API 位址
+              <input id="aiBaseUrl" placeholder="https://api.openai.com/v1" autocomplete="off">
+            </label>
+            <label>API Key
+              <input id="aiKey" type="password" placeholder="sk-…（留空＝不變更）" autocomplete="off">
+            </label>
+            <label>模型名稱
+              <input id="aiModel" placeholder="gpt-4o-mini" autocomplete="off">
+            </label>
+            <button class="btn ghost wide" data-action="save-ai">儲存 AI 設定</button>
+          </div>
+        </section>
+
+        <!-- 04 執行日誌 -->
+        <section class="card" id="cardLogs">
+          <div class="card-head">
+            <h2><span class="idx">04</span> 系統執行紀錄</h2>
+            <div class="tools">
+              <button class="btn ghost sm" data-action="clear-log">清空紀錄</button>
+            </div>
+          </div>
+          <div class="log" id="logBox" role="log" aria-live="polite"></div>
+        </section>
+      </div>
+
+      <p class="footnote">
+        僅供個人學術與自主報名使用。系統以約 2.5 秒禮貌間隔輪詢，避免對校方系統產生負擔。請遵守學校規範。
+      </p>
+
+    </div>
+
+  </main>
+
+  <!-- 手機版底部導覽切換列 (分層跳轉，與 Segmented Control 同步) -->
   <nav class="mobile-nav" aria-label="手機端主選單">
-    <button class="mob-tab active" data-action="mob-tab" data-target="cardLectures">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
-      <span>講座大廳</span>
+    <button class="mob-tab active" data-action="switch-view" data-view="lectures">
+      <span class="mob-badge">01</span>
+      <span>講座情報</span>
     </button>
-    <button class="mob-tab" data-action="mob-tab" data-target="gradCard">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-      <span>畢業門檻</span>
+    <button class="mob-tab" data-action="switch-view" data-view="targets">
+      <span class="mob-badge">02</span>
+      <span>搶課排程</span>
     </button>
-    <button class="mob-tab" data-action="mob-tab" data-target="cardTargets">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3"/></svg>
-      <span>搶課目標</span>
+    <button class="mob-tab" data-action="switch-view" data-view="calendar">
+      <span class="mob-badge">03</span>
+      <span>個人行程</span>
     </button>
-    <button class="mob-tab" data-action="mob-tab" data-target="cardCalendar">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      <span>行事曆</span>
-    </button>
-    <button class="mob-tab" data-action="mob-tab" data-target="cardAccount">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="7" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg>
-      <span>帳號設定</span>
+    <button class="mob-tab" data-action="switch-view" data-view="settings">
+      <span class="mob-badge">04</span>
+      <span>系統設定</span>
     </button>
   </nav>
 
   <!-- 浮動通知容器 -->
   <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
 
-  <script src="./app.js?v=2.3"></script>
+  <script src="./app.js?v=5.0"></script>
 </body>
 </html>
