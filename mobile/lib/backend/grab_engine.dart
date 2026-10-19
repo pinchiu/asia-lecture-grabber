@@ -346,7 +346,7 @@ class GrabEngine extends ChangeNotifier {
 
       if (match.isNotEmpty) {
         regEid = (match['reseid'] ?? match['eid'] ?? '').toString();
-        title = (match['reseid_name'] ?? match['name'] ?? id).toString();
+        title = CalendarHelper.extractTitle(match);
       }
     }
 
@@ -370,7 +370,7 @@ class GrabEngine extends ChangeNotifier {
       final entry = {
         'eid01': eid01,
         'reseid': (row['reseid'] ?? '').toString(),
-        'title': (row['reseid_name'] ?? row['name'] ?? eid01).toString(),
+        'title': CalendarHelper.extractTitle(row),
         'status': 'waiting',
         'message': '已加入目標佇列',
         'canapp': (row['canapp'] ?? '').toString(),
@@ -378,7 +378,7 @@ class GrabEngine extends ChangeNotifier {
         'rescsd': (row['rescsd'] ?? row['sdate'] ?? '').toString(),
         'stime': (row['stime'] ?? '').toString(),
         'etime': (row['etime'] ?? '').toString(),
-        'place': (row['place'] ?? '').toString(),
+        'place': (row['locale'] ?? row['place'] ?? '').toString(),
       };
       targets.add(entry);
       added.add(entry);
@@ -499,8 +499,7 @@ class GrabEngine extends ChangeNotifier {
       final cnt = int.tryParse((row['cnt_10'] ?? '0').toString()) ?? 0;
       if (cnt > 0) {
         currTotal++;
-        final title = (row['reseid_name'] ?? row['name'] ?? '').toString();
-        final lits = CalendarHelper.detectLiteracies(title);
+        final lits = CalendarHelper.detectLiteracies(row);
         if (lits.contains('健康力')) currHealth++;
         if (lits.contains('關懷力')) currCare++;
         if (lits.contains('創新力')) currInnovation++;

@@ -196,15 +196,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildRegisteredCard(Map<String, dynamic> row, bool hasConflict) {
-    final title = (row['reseid_name'] ?? row['name'] ?? row['eid01'] ?? '').toString();
+    final title = CalendarHelper.extractTitle(row);
     final eid01 = (row['eid01'] ?? '').toString();
     final reseid = (row['reseid'] ?? row['eid'] ?? '').toString();
     final date = (row['rescsd'] ?? row['sdate'] ?? '').toString();
     final dateStr = CalendarHelper.parseYmd(date) ?? date;
     final stime = (row['stime'] ?? '').toString();
     final etime = (row['etime'] ?? '').toString();
-    final place = (row['place'] ?? '').toString();
-    final lits = CalendarHelper.detectLiteracies(title);
+    final place = (row['locale'] ?? row['place'] ?? '').toString();
+    final lits = CalendarHelper.detectLiteracies(row);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

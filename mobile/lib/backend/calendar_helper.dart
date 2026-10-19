@@ -1,26 +1,47 @@
 
 class CalendarHelper {
+  static String extractTitle(dynamic row) {
+    if (row == null) return '';
+    if (row is String) return row.trim();
+    if (row is Map<String, dynamic>) {
+      final rescnm = (row['rescnm'] ?? '').toString().trim();
+      if (rescnm.isNotEmpty) return rescnm;
+      final actName = (row['act_name'] ?? '').toString().trim();
+      if (actName.isNotEmpty) return actName;
+      final name = (row['name'] ?? '').toString().trim();
+      if (name.isNotEmpty) return name;
+      final title = (row['title'] ?? '').toString().trim();
+      if (title.isNotEmpty) return title;
+      final reseidName = (row['reseid_name'] ?? '').toString().trim();
+      if (reseidName.isNotEmpty) return reseidName;
+      final eid01 = (row['eid01'] ?? row['id'] ?? '').toString().trim();
+      return eid01.isNotEmpty ? eid01 : '未命名講座';
+    }
+    return '';
+  }
+
   static List<String> extractLiteracies(Map<String, dynamic> row) {
     final list = <String>[];
     bool checkFlag(dynamic val) {
       if (val == true) return true;
-      if (val == 1 || val == '1' || val == 'Y' || val == 'true') return true;
+      if (val == 1 || val == '1' || val == 'Y' || val == 'y' || val == 'true') return true;
       return false;
     }
 
-    if (checkFlag(row['chk4'])) list.add('健康力');
-    if (checkFlag(row['chk5'])) list.add('關懷力');
-    if (checkFlag(row['chk6'])) list.add('創新力');
-    if (checkFlag(row['chk7'])) list.add('卓越力');
+    if (checkFlag(row['chk4']) || checkFlag(row['chk4_flg'])) list.add('健康力');
+    if (checkFlag(row['chk5']) || checkFlag(row['chk5_flg'])) list.add('關懷力');
+    if (checkFlag(row['chk6']) || checkFlag(row['chk6_flg'])) list.add('創新力');
+    if (checkFlag(row['chk7']) || checkFlag(row['chk7_flg'])) list.add('卓越力');
     return list;
   }
 
   static List<String> detectLiteracies(dynamic input) {
     if (input is Map<String, dynamic>) {
-      final list = extractLiteracies(input);
-      if (list.isNotEmpty) return list;
-      final title = (input['reseid_name'] ?? input['name'] ?? '').toString();
-      return detectLiteraciesFromTitle(title);
+      final set = <String>{};
+      set.addAll(extractLiteracies(input));
+      final title = extractTitle(input);
+      set.addAll(detectLiteraciesFromTitle(title));
+      return set.toList();
     } else if (input is String) {
       return detectLiteraciesFromTitle(input);
     }
@@ -108,14 +129,14 @@ class CalendarHelper {
         'eid01': eid01,
         'reseid': (row['reseid'] ?? '').toString(),
         'eid': (row['eid'] ?? '').toString(),
-        'title': (row['reseid_name'] ?? row['name'] ?? '未命名講座').toString(),
+        'title': extractTitle(row),
         'date': dateStr ?? '',
         'start': startHm,
         'end': endHm,
         'startAt': startAt,
         'endAt': endAt,
-        'place': (row['place'] ?? '').toString(),
-        'literacies': extractLiteracies(row),
+        'place': (row['locale'] ?? row['place'] ?? '').toString(),
+        'literacies': detectLiteracies(row),
         'status': (row['cnt_10'] != null && int.tryParse(row['cnt_10'].toString()) != null && int.parse(row['cnt_10'].toString()) > 0)
             ? 'registered'
             : (row['status'] ?? 'registered').toString(),

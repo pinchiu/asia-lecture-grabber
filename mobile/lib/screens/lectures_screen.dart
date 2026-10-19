@@ -32,21 +32,29 @@ class _LecturesScreenState extends State<LecturesScreen> {
 
           // 過濾清單
           final filteredLectures = allLectures.where((row) {
-            final title = (row['reseid_name'] ?? row['name'] ?? '').toString();
-            final place = (row['place'] ?? '').toString();
-            final canapp = (row['canapp'] ?? '').toString();
+            final title = CalendarHelper.extractTitle(row);
+            final place = (row['locale'] ?? row['place'] ?? '').toString();
+            final speaker = (row['teachm'] ?? row['speaker'] ?? '').toString();
+            final sponsor = (row['sponsr'] ?? '').toString();
+            final canapp = (row['canapp'] ?? '').toString().trim().toUpperCase();
+            final count = int.tryParse((row['cnt_10'] ?? '0').toString()) ?? 0;
+            final isRegistered = count > 0;
+            final lits = CalendarHelper.detectLiteracies(row);
 
             if (_searchQuery.isNotEmpty) {
               final query = _searchQuery.toLowerCase();
-              if (!title.toLowerCase().contains(query) && !place.toLowerCase().contains(query)) {
-                return false;
-              }
+              final match = title.toLowerCase().contains(query) ||
+                  place.toLowerCase().contains(query) ||
+                  speaker.toLowerCase().contains(query) ||
+                  sponsor.toLowerCase().contains(query) ||
+                  lits.any((lit) => lit.toLowerCase().contains(query)) ||
+                  row['eid01']?.toString().toLowerCase().contains(query) == true;
+              if (!match) return false;
             }
 
             if (_selectedLitFilter == '僅看可報名') {
-              return canapp == 'Y';
+              return canapp == 'Y' && !isRegistered;
             } else if (_selectedLitFilter != '全部') {
-              final lits = CalendarHelper.detectLiteracies(title);
               return lits.contains(_selectedLitFilter);
             }
             return true;
@@ -100,7 +108,7 @@ class _LecturesScreenState extends State<LecturesScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   child: CupertinoSearchTextField(
                     style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-                    placeholder: '搜尋講座名稱、地點或講者',
+                    placeholder: '搜尋講座名稱、地點、講者或素養',
                     placeholderStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
                     onChanged: (val) {
                       setState(() {
@@ -111,7 +119,7 @@ class _LecturesScreenState extends State<LecturesScreen> {
                 ),
               ),
 
-              // 分類過濾晶片橫列
+              // 分類過濾晶片橫列（帶 iOS 平滑過渡動效與觸覺震動）
               SliverToBoxAdapter(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -122,22 +130,32 @@ class _LecturesScreenState extends State<LecturesScreen> {
                       final isSelected = _selectedLitFilter == filter;
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
-                        child: CupertinoButton(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          color: isSelected ? CupertinoColors.white : AppColors.surface,
-                          borderRadius: BorderRadius.circular(14),
-                          onPressed: () {
+                        child: GestureDetector(
+                          onTap: () {
                             HapticFeedback.selectionClick();
                             setState(() {
                               _selectedLitFilter = filter;
                             });
                           },
-                          child: Text(
-                            filter,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              color: isSelected ? CupertinoColors.black : AppColors.textSecondary,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeInOutCubic,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: isSelected ? CupertinoColors.white : AppColors.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isSelected ? CupertinoColors.white : AppColors.surfaceBorder,
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Text(
+                              filter,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                color: isSelected ? CupertinoColors.black : AppColors.textSecondary,
+                              ),
                             ),
                           ),
                         ),
@@ -282,8 +300,8 @@ class _LecturesScreenState extends State<LecturesScreen> {
 
   Widget _buildLectureCard(Map<String, dynamic> row) {
     final eid01 = (row['eid01'] ?? '').toString();
-    final title = (row['reseid_name'] ?? row['name'] ?? eid01).toString();
-    final canapp = (row['canapp'] ?? '').toString();
+    final title = CalendarHelper.extractTitle(row);
+    final canapp = (row['canapp'] ?? '').toString().trim().toUpperCase();
     final count = int.tryParse((row['cnt_10'] ?? '0').toString()) ?? 0;
     final isRegistered = count > 0;
     final isTarget = widget.engine.targets.any((t) => t['eid01']?.toString() == eid01);
@@ -292,8 +310,8 @@ class _LecturesScreenState extends State<LecturesScreen> {
     final dateStr = CalendarHelper.parseYmd(rawDate) ?? rawDate;
     final stime = (row['stime'] ?? '').toString();
     final etime = (row['etime'] ?? '').toString();
-    final place = (row['place'] ?? '').toString();
-    final lits = CalendarHelper.detectLiteracies(title);
+    final place = (row['locale'] ?? row['place'] ?? '').toString();
+    final lits = CalendarHelper.detectLiteracies(row);
 
     Color statusColor;
     String statusText;
