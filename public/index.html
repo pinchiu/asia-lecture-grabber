@@ -18,7 +18,7 @@
 
   <link rel="icon" type="image/svg+xml" href="./icon.svg">
   <link rel="alternate icon" href="./icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=5.0">
+  <link rel="stylesheet" href="./style.css?v=5.1">
 </head>
 <body data-view="lectures">
   <a class="skip" href="#main">跳到主要內容</a>
@@ -37,21 +37,25 @@
         </div>
       </div>
 
-      <!-- 核心層級切換選單 (Segmented Control) -->
+      <!-- 核心層級切換選單 (Segmented Control，附帶快捷鍵標註) -->
       <nav class="nav-segments" role="tablist" aria-label="系統功能切換">
-        <button class="nav-segment-btn active" role="tab" aria-selected="true" data-action="switch-view" data-view="lectures">
+        <button class="nav-segment-btn active" role="tab" aria-selected="true" data-action="switch-view" data-view="lectures" title="按鍵盤 1 快速切換">
           <span class="seg-title">講座情報</span>
+          <span class="kbd-sub">1</span>
         </button>
-        <button class="nav-segment-btn" role="tab" aria-selected="false" data-action="switch-view" data-view="targets">
+        <button class="nav-segment-btn" role="tab" aria-selected="false" data-action="switch-view" data-view="targets" title="按鍵盤 2 快速切換">
           <span class="seg-title">搶課排程</span>
           <span class="seg-badge" id="navTargetBadge" hidden>0</span>
+          <span class="kbd-sub">2</span>
         </button>
-        <button class="nav-segment-btn" role="tab" aria-selected="false" data-action="switch-view" data-view="calendar">
+        <button class="nav-segment-btn" role="tab" aria-selected="false" data-action="switch-view" data-view="calendar" title="按鍵盤 3 快速切換">
           <span class="seg-title">個人行程</span>
           <span class="seg-badge" id="navCalBadge" hidden>0</span>
+          <span class="kbd-sub">3</span>
         </button>
-        <button class="nav-segment-btn" role="tab" aria-selected="false" data-action="switch-view" data-view="settings">
+        <button class="nav-segment-btn" role="tab" aria-selected="false" data-action="switch-view" data-view="settings" title="按鍵盤 4 快速切換">
           <span class="seg-title">系統設定</span>
+          <span class="kbd-sub">4</span>
         </button>
       </nav>
 
@@ -90,8 +94,28 @@
           </div>
           <div class="grad-head-actions">
             <span class="grad-status-badge" id="gradOverallStatus">計算中…</span>
+            <button class="btn primary sm" data-action="auto-fill-deficiency">智慧推薦補齊缺額 ›</button>
             <button class="btn ghost sm" data-action="toggle-grad-history">歷年累計補登</button>
             <button class="btn ghost sm" data-action="switch-view" data-view="calendar">查看個人行程 ›</button>
+          </div>
+        </div>
+
+        <!-- 智慧推薦補齊缺額展示卡（點擊推薦時動態顯示） -->
+        <div class="grad-recommend-panel" id="gradRecommendPanel" hidden>
+          <div class="rec-inner">
+            <div class="rec-header">
+              <div>
+                <span class="tag-label">最速畢業路線規劃</span>
+                <strong class="rec-title">智慧推薦補齊缺額組合</strong>
+              </div>
+              <button class="btn ghost sm icon" data-action="close-grad-recommend" aria-label="關閉推薦面板">✕</button>
+            </div>
+            <p class="rec-desc" id="gradRecommendDesc">正在比對講座清單…</p>
+            <div class="rec-list" id="gradRecommendList"></div>
+            <div class="rec-actions">
+              <button class="btn primary sm" id="btnApplyRecommend" data-action="apply-grad-recommend">一鍵全部加入搶課監控</button>
+              <button class="btn ghost sm" data-action="close-grad-recommend">取消</button>
+            </div>
           </div>
         </div>
 
@@ -240,7 +264,10 @@
             <h2>講座情報大廳 <span class="count" id="lectureCount">0</span></h2>
           </div>
           <div class="tools">
-            <input id="searchBox" type="search" placeholder="搜尋課程 / 講者 / 地點 / 主辦單位" autocomplete="off">
+            <div class="search-wrap">
+              <input id="searchBox" type="search" placeholder="搜尋課程 / 講者 / 地點" autocomplete="off">
+              <kbd class="kbd-hint">/</kbd>
+            </div>
             <select id="literacyFilter" aria-label="依基本素養篩選">
               <option value="all">全部基本素養</option>
               <option value="健康力">健康力 (Health)</option>
@@ -259,7 +286,7 @@
             </select>
             <label class="check inline"><input type="checkbox" id="showFullToggle"> 顯示已額滿</label>
             <label class="check inline"><input type="checkbox" id="missingOnlyToggle"> 只看我缺少的素養</label>
-            <button class="btn ghost sm" data-action="refresh">重新整理</button>
+            <button class="btn ghost sm" data-action="refresh" title="重新整理清單 (快捷鍵 R)">重新整理</button>
           </div>
         </div>
 
@@ -300,6 +327,33 @@
     <!-- ==================== 第二層：搶課排程（目標管理與定時啟動） ==================== -->
     <div class="view-panel" data-view="targets" hidden>
       
+      <!-- 搶課即時戰情儀表 (Engine Telemetry) -->
+      <div class="telemetry-grid">
+        <div class="telem-card">
+          <div class="telem-label">引擎運作狀態</div>
+          <div class="telem-val-wrap">
+            <span class="telem-dot" id="telemDot"></span>
+            <span class="telem-val" id="telemState">待命</span>
+          </div>
+          <span class="telem-sub" id="telemSub">等待啟動指令</span>
+        </div>
+        <div class="telem-card">
+          <div class="telem-label">輪詢間隔</div>
+          <div class="telem-val" id="telemInterval">2.5s / 次</div>
+          <span class="telem-sub">禮貌輪詢免受校方封鎖</span>
+        </div>
+        <div class="telem-card">
+          <div class="telem-label">監控目標數</div>
+          <div class="telem-val" id="telemTargets">0 場目標</div>
+          <span class="telem-sub" id="telemDone">已成功搶到 0 場</span>
+        </div>
+        <div class="telem-card">
+          <div class="telem-label">最近開放報名倒數</div>
+          <div class="telem-val countdown" id="telemCountdown">—</div>
+          <span class="telem-sub" id="telemNearestTarget">無待開放目標</span>
+        </div>
+      </div>
+
       <!-- 快速規劃指令列 -->
       <section class="card agent" id="cardAgent">
         <div class="card-head">
@@ -408,7 +462,7 @@
                 <label class="day"><input type="checkbox" data-day="4" checked><span>四</span></label>
                 <label class="day"><input type="checkbox" data-day="5" checked><span>五</span></label>
                 <label class="day"><input type="checkbox" data-day="6" checked><span>六</span></label>
-                <label class="day"><input type="checkbox" data-day="0"><span>日</span></label>
+                <label class="day"><input type="checkbox" data-day="0" checked><span>日</span></label>
               </div>
               <label>開始時間
                 <input type="time" id="schedStartTime" value="20:00">
@@ -436,6 +490,8 @@
         <div class="card-head">
           <h2>我的行事曆與已報名行程 <span class="count" id="calendarCount">0</span></h2>
           <div class="tools">
+            <button class="btn ghost sm" data-action="export-ics" title="匯出 .ics 行事曆檔案，可直接同步至 Apple 日曆或 Google 日曆">匯出行事曆 (.ics)</button>
+            <button class="btn ghost sm" data-action="copy-schedule" title="複製課表文字，方便貼到備忘錄或通訊軟體">複製課表</button>
             <button class="btn ghost sm icon" data-action="cal-prev" aria-label="上一個月">‹</button>
             <span class="cal-month" id="calMonth">—</span>
             <button class="btn ghost sm icon" data-action="cal-next" aria-label="下一個月">›</button>
@@ -573,6 +629,6 @@
   <!-- 浮動通知容器 -->
   <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
 
-  <script src="./app.js?v=5.0"></script>
+  <script src="./app.js?v=5.1"></script>
 </body>
 </html>

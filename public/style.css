@@ -864,6 +864,215 @@ input[type="checkbox"]:checked::after {
   gap: 8px;
 }
 
+/* 智慧補齊缺額推薦面板 */
+.grad-recommend-panel {
+  background: var(--glass-card-hover);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-card);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), var(--glass-specular);
+  animation: panelIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rec-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.rec-title {
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.rec-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.rec-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.rec-item {
+  padding: 9px 12px;
+  background: var(--glass-subcard);
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--r-control);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all var(--motion-fast);
+}
+
+.rec-item:hover {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rec-item-title {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.rec-item-sub {
+  color: var(--text-muted);
+  font-size: 11.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rec-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 搶課即時戰情儀表 (Engine Telemetry) */
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.telem-card {
+  background: var(--glass-card);
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--r-control);
+  padding: 12px 14px;
+  box-shadow: var(--glass-specular-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border-color var(--motion-fast);
+}
+
+.telem-card:hover {
+  border-color: var(--line-strong);
+}
+
+.telem-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.telem-val-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.telem-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  font-family: var(--font-mono);
+}
+
+.telem-val.countdown {
+  letter-spacing: -0.02em;
+}
+
+.telem-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.telem-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.telem-dot.active {
+  background: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  animation: pulseWhite 1.5s infinite ease-in-out;
+}
+
+@keyframes pulseWhite {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+}
+
+/* 鍵盤提示與搜尋框 */
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-wrap input {
+  padding-right: 30px;
+}
+
+.kbd-hint {
+  position: absolute;
+  right: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  border: 1px solid var(--line-hairline);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.kbd-sub {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  opacity: 0.55;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-left: 2px;
+}
+
+.nav-segment-btn.active .kbd-sub {
+  background: rgba(0, 0, 0, 0.15);
+  color: #000000;
+  opacity: 0.8;
+}
+
+.status-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.badge-status.k-conflict {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  font-size: 10px;
+  padding: 1px 6px;
+}
+
 /* 五大素養指標橫向儀表 (Bauhaus Modular Ribbon) */
 .grad-metrics-grid {
   display: grid;

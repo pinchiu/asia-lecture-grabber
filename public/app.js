@@ -138,6 +138,287 @@ function toast(message, kind = '') {
   setTimeout(() => el.remove(), 5000);
 }
 
+/* ------------------------------ 創意進階功能：時間衝突與素養推薦 ------------------------------ */
+
+function parseYmd(value) {
+  const text = String(value || '');
+  const full = /(\d{3,4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})/.exec(text);
+  if (full) {
+    let year = Number(full[1]);
+    if (year < 1900) year += 1911;
+    const date = new Date(year, Number(full[2]) - 1, Number(full[3]));
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+  const short = /(\d{1,2})[\/.\-](\d{1,2})/.exec(text);
+  if (short) {
+    const month = Number(short[1]);
+    const day = Number(short[2]);
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      const date = new Date(new Date().getFullYear(), month - 1, day);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+  }
+  return null;
+}
+
+function parseHm(value) {
+  const match = /(\d{1,2})\s*[:：]\s*(\d{2})/.exec(String(value || ''));
+  if (!match) return '';
+  const hour = Math.min(23, Math.max(0, Number(match[1])));
+  return `${pad2(hour)}:${match[2]}`;
+}
+
+function getLectureTimeRange(row) {
+  const date = parseYmd(row?.rescsd) || parseYmd(row?.resdat);
+  if (!date) return null;
+  const start = parseHm(row?.stime) || parseHm(row?.resdat);
+  const end = parseHm(row?.etime);
+  const [sh, sm] = start ? start.split(':').map(Number) : [9, 0];
+  const [eh, em] = end ? end.split(':').map(Number) : [sh + 2, sm];
+  const startAt = new Date(date.getFullYear(), date.getMonth(), date.getDate(), sh, sm).getTime();
+  const endAt = new Date(date.getFullYear(), date.getMonth(), date.getDate(), eh, em).getTime();
+  return { startAt, endAt };
+}
+
+function checkScheduleConflict(row, events) {
+  const range = getLectureTimeRange(row);
+  if (!range) return null;
+  const list = Array.isArray(events) ? events : [];
+  for (const ev of list) {
+    if (String(ev.eid01) === String(row.eid01)) continue;
+    if (!ev.startAt) continue;
+    const evEnd = ev.endAt || (ev.startAt + 7200000);
+    if (Math.max(range.startAt, ev.startAt) < Math.min(range.endAt, evEnd)) {
+      return { conflict: true, withTitle: ev.title || '已報名講座', timeText: ev.timeText };
+    }
+  }
+  return null;
+}
+
+/* 匯出標準 iCalendar (.ics) 行事曆檔案，可直接同步 Apple Calendar / Google 日曆 */
+function exportCalendarICS() {
+  const events = Array.isArray(S.calEvents) && S.calEvents.length ? S.calEvents : S.snap?.calendar || [];
+  if (!events.length) {
+    return toast('目前尚無已報名講座，報名後即可匯出行事曆', 'err');
+  }
+
+  const formatIcsDate = (date) => {
+    return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  };
+
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Asia University//Lecture Grabber//ZH-TW',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'X-WR-CALNAME:亞洲大學通識講座',
+    'X-WR-TIMEZONE:Asia/Taipei'
+  ];
+
+  for (const ev of events) {
+    const start = ev.startAt ? new Date(ev.startAt) : new Date();
+    const end = ev.endAt ? new Date(ev.endAt) : new Date(start.getTime() + 7200000);
+    const lits = (ev.literacies || []).join('、') || '一般';
+    const summary = `${ev.title} [${lits}]`;
+    const desc = `講者：${ev.speaker || '校方講師'}\\n地點：${ev.place || '亞大校園'}\\n基本素養：${lits}\\n課程代號：${ev.eid01 || ''}`;
+
+    lines.push(
+      'BEGIN:VEVENT',
+      `UID:au-lecture-${ev.eid01 || Math.random().toString(36).slice(2)}@asia.edu.tw`,
+      `DTSTAMP:${formatIcsDate(new Date())}`,
+      `DTSTART:${formatIcsDate(start)}`,
+      `DTEND:${formatIcsDate(end)}`,
+      `SUMMARY:${summary}`,
+      `LOCATION:${ev.place || '亞洲大學'}`,
+      `DESCRIPTION:${desc}`,
+      'STATUS:CONFIRMED',
+      'END:VEVENT'
+    );
+  }
+
+  lines.push('END:VCALENDAR');
+
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `亞洲大學通識講座行程_${dateKey(new Date())}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('已匯出行事曆檔（.ics），可直接開啟同步至 Apple 日曆或 Google 日曆！', 'ok');
+}
+
+/* 複製純文字行程表 */
+async function copyScheduleText() {
+  const events = Array.isArray(S.calEvents) && S.calEvents.length ? S.calEvents : S.snap?.calendar || [];
+  if (!events.length) {
+    return toast('目前尚無已報名講座可供複製', 'err');
+  }
+  const lines = ['【亞洲大學通識講座行程表】'];
+  events
+    .sort((a, b) => a.startAt - b.startAt)
+    .forEach((ev, idx) => {
+      const lits = (ev.literacies || []).join('、');
+      const litStr = lits ? ` [${lits}]` : '';
+      lines.push(`${idx + 1}. ${ev.dateLabel}（${ev.weekdayLabel}）${ev.timeText}｜${ev.title}${litStr}｜${ev.place || ''}`);
+    });
+  const text = lines.join('\n');
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('已複製通識課表至剪貼簿，可直接貼入備忘錄或通訊軟體', 'ok');
+  } catch {
+    toast('複製失敗，請確認瀏覽器剪貼簿權限', 'err');
+  }
+}
+
+/* 智慧分析缺少素養並推薦最優選課路線 */
+function recommendOptimalLectures() {
+  const stats = computeGraduationStats(S.snap);
+  if (stats.isAllMet) {
+    return toast('恭喜！你的四大基本素養與總累積場次已全部達標！', 'ok');
+  }
+
+  const panel = $('#gradRecommendPanel');
+  const descEl = $('#gradRecommendDesc');
+  const listEl = $('#gradRecommendList');
+  if (!panel || !descEl || !listEl) return;
+
+  const defMap = new Map();
+  for (const def of stats.deficiencies) {
+    defMap.set(def.name, def.need);
+  }
+
+  const registeredEids = new Set(
+    (S.snap?.calendar || []).map((e) => String(e.eid01))
+  );
+
+  const candidates = S.lectures.filter((row) => {
+    if (registeredEids.has(String(row.eid01))) return false;
+    if (Number(row.cnt_10 || 0) > 0) return false;
+    if (row.canapp === 'N2' || row.canapp === 'C' || row.canapp === 'D') return false;
+    const lits = getLectureLiteracies(row);
+    const hasNeeded = lits.some((l) => defMap.has(l));
+    if (!hasNeeded && stats.totalCompleted >= 8) return false;
+    return true;
+  });
+
+  const picks = [];
+  const currentDef = new Map(defMap);
+  let neededTotal = Math.max(0, 8 - stats.totalCompleted);
+
+  const sorted = [...candidates].sort((a, b) => {
+    const litsA = getLectureLiteracies(a).filter((l) => currentDef.get(l) > 0).length;
+    const litsB = getLectureLiteracies(b).filter((l) => currentDef.get(l) > 0).length;
+    if (litsB !== litsA) return litsB - litsA;
+    return (a.canapp === 'Y' ? 0 : 1) - (b.canapp === 'Y' ? 0 : 1);
+  });
+
+  for (const row of sorted) {
+    const lits = getLectureLiteracies(row);
+    const helpsWith = lits.filter((l) => (currentDef.get(l) || 0) > 0);
+    if (!helpsWith.length && neededTotal <= 0) continue;
+
+    const conflict = checkScheduleConflict(row, [...(S.snap?.calendar || []), ...picks.map((p) => ({ ...p, eid01: p.eid01 }))]);
+    if (conflict) continue;
+
+    picks.push(row);
+    helpsWith.forEach((l) => {
+      currentDef.set(l, Math.max(0, currentDef.get(l) - 1));
+    });
+    if (neededTotal > 0) neededTotal -= 1;
+
+    const allDefsFilled = [...currentDef.values()].every((v) => v === 0);
+    if (allDefsFilled && neededTotal <= 0) break;
+  }
+
+  S.recommendedPicks = picks;
+
+  if (!picks.length) {
+    descEl.textContent = '目前開放的講座中，暫時沒有能補齊你缺少素養的場次，建議稍後再查看新開放講座。';
+    listEl.innerHTML = '<p class="hint">暫無符合推薦條件的講座。</p>';
+    $('#btnApplyRecommend').disabled = true;
+  } else {
+    const neededSummary = stats.deficiencies.map((d) => `${d.name}缺${d.need}次`).join('、');
+    descEl.textContent = `針對你目前的缺額（${neededSummary}），系統已精選出以下 ${picks.length} 場最速畢業選課路線：`;
+    listEl.innerHTML = picks
+      .map((row) => {
+        const lits = getLectureLiteracies(row);
+        const when = cleanHtml(row.resdat);
+        const canapp = row.canapp === 'Y' ? '可報名' : '已額滿（候補搶票）';
+        return `
+          <div class="rec-item">
+            <div class="rec-item-title">${esc(row.rescnm)}</div>
+            <div class="rec-item-sub">代號 ${esc(row.reseid || row.eid01)} · ${esc(when)} · ${renderLiteracyBadges(lits)} <span class="tag">${canapp}</span></div>
+          </div>`;
+      })
+      .join('');
+    $('#btnApplyRecommend').disabled = false;
+  }
+
+  panel.hidden = false;
+  panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function applyGradRecommend() {
+  if (!S.recommendedPicks?.length) return;
+  const eids = S.recommendedPicks.map((r) => r.eid01);
+  await post('/api/targets', { eid01s: eids });
+  $('#gradRecommendPanel').hidden = true;
+  toast(`已成功將推薦的 ${eids.length} 場講座加入搶課監控！`, 'ok');
+  await poll();
+  switchView('targets');
+}
+
+/* 搶課即時戰情儀表更新 */
+function renderTelemetry(snap) {
+  const engine = snap?.engine || {};
+  const isRunning = Boolean(engine.running);
+  const dot = $('#telemDot');
+  const state = $('#telemState');
+  const sub = $('#telemSub');
+  const interval = $('#telemInterval');
+  const targets = $('#telemTargets');
+  const done = $('#telemDone');
+  const countdownEl = $('#telemCountdown');
+  const nearestTarget = $('#telemNearestTarget');
+
+  if (dot && state && sub) {
+    if (isRunning) {
+      dot.className = 'telem-dot active';
+      state.textContent = '毫秒監控中';
+      sub.textContent = '持續輪詢搶票中';
+    } else {
+      dot.className = 'telem-dot';
+      state.textContent = '待機中';
+      sub.textContent = '等待啟動搶課';
+    }
+  }
+
+  if (interval) {
+    const sec = (Number(engine.settings?.intervalMs || 2500) / 1000).toFixed(1);
+    interval.textContent = `${sec}s / 次`;
+  }
+
+  const list = engine.targets || [];
+  if (targets) targets.textContent = `${list.length} 場目標`;
+  const finished = list.filter((t) => t.status === 'registered').length;
+  if (done) done.textContent = `已成功搶到 ${finished} 場`;
+
+  const waitingTargets = list.filter((t) => t.openAt && t.openAt > Date.now());
+  if (waitingTargets.length && countdownEl) {
+    waitingTargets.sort((a, b) => a.openAt - b.openAt);
+    const nearest = waitingTargets[0];
+    countdownEl.textContent = countdown(nearest.openAt) || '即將開放';
+    if (nearestTarget) nearestTarget.textContent = shorten(nearest.rescnm || nearest.eid01, 10);
+  } else if (countdownEl) {
+    countdownEl.textContent = '—';
+    if (nearestTarget) nearestTarget.textContent = '無待開放目標';
+  }
+}
+
 async function getJSON(path, options = {}) {
   const res = await fetch(path, {
     method: options.method || 'GET',
@@ -217,6 +498,7 @@ function render() {
   renderCalendar(snap);
   renderAgent(snap);
   renderTargets(snap);
+  renderTelemetry(snap);
   renderLectures(snap);
   renderLogs();
 }
@@ -706,6 +988,10 @@ function renderLectures(snap) {
       const actions = [];
       const isWatched = watched.has(row.eid01);
       const isRegistered = Number(row.cnt_10 || 0) > 0;
+      const conflict = !isRegistered && checkScheduleConflict(row, S.calEvents || S.snap?.calendar || []);
+      const conflictHtml = conflict
+        ? `<span class="badge-status k-conflict" title="與已報名【${esc(conflict.withTitle)}】時間重疊">時段衝突</span>`
+        : '';
 
       if (isRegistered) {
         actions.push(`<span class="tag live">已報名</span>`);
@@ -728,7 +1014,12 @@ function renderLectures(snap) {
 
       return `
         <tr>
-          <td><span class="badge-status k-${kind}">${esc(label)}</span></td>
+          <td>
+            <div class="status-wrap">
+              <span class="badge-status k-${kind}">${esc(label)}</span>
+              ${conflictHtml}
+            </div>
+          </td>
           <td>
             <div class="cell-name">${esc(row.rescnm)}</div>
             <div class="cell-sub">${esc(row.sponsr || '')} · 代號 ${esc(row.reseid || '')}</div>
@@ -922,6 +1213,33 @@ document.addEventListener('click', (event) => {
   if (action === 'toggle-grad-history') {
     const panel = $('#gradHistoryPanel');
     panel.hidden = !panel.hidden;
+    return;
+  }
+
+  if (action === 'auto-fill-deficiency') {
+    recommendOptimalLectures();
+    return;
+  }
+
+  if (action === 'close-grad-recommend') {
+    const recPanel = $('#gradRecommendPanel');
+    if (recPanel) recPanel.hidden = true;
+    return;
+  }
+
+  if (action === 'apply-grad-recommend') {
+    return guard(async () => {
+      await applyGradRecommend();
+    });
+  }
+
+  if (action === 'export-ics') {
+    exportCalendarICS();
+    return;
+  }
+
+  if (action === 'copy-schedule') {
+    copyScheduleText();
     return;
   }
 
@@ -1300,6 +1618,43 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+/* ------------------------------ 全域鍵盤快捷鍵系統 ------------------------------ */
+
+window.addEventListener('keydown', (event) => {
+  const activeTag = document.activeElement?.tagName?.toLowerCase();
+  const isInput = activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select';
+
+  if (event.key === 'Escape') {
+    if (isInput) document.activeElement.blur();
+    const recPanel = $('#gradRecommendPanel');
+    if (recPanel && !recPanel.hidden) recPanel.hidden = true;
+    return;
+  }
+
+  if (isInput) return;
+
+  if (event.key === '1') {
+    switchView('lectures');
+  } else if (event.key === '2') {
+    switchView('targets');
+  } else if (event.key === '3') {
+    switchView('calendar');
+  } else if (event.key === '4') {
+    switchView('settings');
+  } else if (event.key === '/') {
+    event.preventDefault();
+    switchView('lectures');
+    const sBox = $('#searchBox');
+    if (sBox) {
+      sBox.focus();
+      sBox.select();
+    }
+  } else if (event.key === 'r' || event.key === 'R') {
+    refreshLectures();
+    poll();
+    toast('已重新整理講座情報', 'ok');
+  }
+});
 
 /* ------------------------------ 系統開機初始化 ------------------------------ */
 
