@@ -320,6 +320,9 @@ async function handleApi(req, res, url) {
         const rows = lectures.filter((row) => ids.includes(String(row.eid01)));
         const missing = ids.filter((id) => !rows.some((row) => String(row.eid01) === id));
         const added = engine.addTargets(rows, Math.max(1, ids.length));
+        if (added.length) {
+          scheduler.ensureOpenSchedule();
+        }
         return ok(res, { added, missing });
       }
 
@@ -568,6 +571,11 @@ server.listen(PORT, HOST, () => {
   console.log(`  目標系統：${api.BASE_URL}`);
   console.log(`  已載入 ${engine.targets.length} 個目標講座`);
   console.log('');
+
+  // 若已存在未完成之搶課目標，自動啟用開放瞬間排程
+  if (engine.activeTargets().length > 0) {
+    scheduler.ensureOpenSchedule();
+  }
 
   // 伺服器開機時，若有已記住之密碼，立即執行自動登入與身分驗證
   autoLogin().catch(() => {});

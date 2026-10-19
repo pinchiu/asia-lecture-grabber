@@ -294,16 +294,13 @@ export class Engine extends EventEmitter {
     if (!res.ok) throw new Error(res.message);
 
     row.cnt_10 = 1;
-    let target = this.targets.find((item) => item.eid01 === row.eid01);
-    if (!target) {
-      target = normalizeTarget({
-        ...row,
-        status: 'waiting',
-        addedAt: Date.now()
-      });
-      this.targets.push(target);
+    const target = this.targets.find((item) => item.eid01 === row.eid01);
+    if (target) {
+      this.finish(target, 'registered', res.message);
+    } else {
+      this.log('success', `[手動報名成功] ${row.rescnm || id}（${res.message}）`);
+      this.onChange();
     }
-    this.finish(target, 'registered', res.message);
 
     try {
       const freshRows = await api.listLectures(this.session.token);
