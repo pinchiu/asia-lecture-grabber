@@ -378,9 +378,46 @@ export async function registerLecture(token, { std_info, eid01, reseid }) {
   return { ok, message: message || '（系統未回傳訊息）', raw: json };
 }
 
-/** 退選。 */
-export async function cancelLecture(token, reseid) {
-  return request('POST', `api/cfd10/DeleteData?reseid=${encodeURIComponent(reseid)}`, { token, body: {} });
+/** 退選（傳入校方加密退選代碼 regEid）。 */
+export async function cancelLecture(token, regEid) {
+  if (!token) throw new ApiError('請先登入', { status: 401 });
+  if (!regEid) throw new ApiError('缺少退選代號', { status: 400 });
+
+  const headers = { ...JSON_HEADERS };
+  if (token) headers.Authorization = 'Bearer ' + token;
+  const payload = '{}';
+  headers['Content-Length'] = Buffer.byteLength(payload);
+
+  let response;
+  try {
+    response = await rawRequest('POST', `api/cfd10/DeleteData?reseid=${encodeURIComponent(regEid)}`, headers, payload, 20_000);
+  } catch (err) {
+    throw toApiError(err);
+  }
+
+  const text = String(response.body || '').replace(/^\uFEFF/, '').trim();
+
+  if (response.status < 200 || response.status >= 300) {
+    throw new ApiError(text || `退選失敗（HTTP ${response.status}）`, {
+      status: response.status,
+      payload: text,
+      transient: isTransientStatus(response.status)
+    });
+  }
+
+  // 校方 DeleteData 成功時回傳空字串 ""
+  if (!text) {
+    return { ok: true, message: '已成功取消報名' };
+  }
+
+  // 若回傳非空字串，為校方系統錯誤訊息（如 Base-64 錯誤、超過退選時間等）
+  let message = text;
+  try {
+    const json = JSON.parse(text);
+    message = json?.message || json?.Message || text;
+  } catch {}
+
+  throw new ApiError(message || '退選失敗', { status: 400, payload: text });
 }
 
 /** 已報名 / 已退選清單。 */

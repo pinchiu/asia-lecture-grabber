@@ -57,8 +57,21 @@ const cleanHtml = (value) =>
   String(value ?? '')
     .replace(/<br\s*\/?>/gi, ' · ')
     .replace(/<[^>]+>/g, '')
+    .replace(/(?:\s*·\s*)+$/, '')
     .replace(/\s+/g, ' ')
     .trim();
+
+function formatAppNum(value, row) {
+  const cleaned = cleanHtml(value);
+  if (cleaned && cleaned !== '-') return cleaned;
+  if (row) {
+    const total = row.webstd || row.maxstd;
+    if (total) {
+      return `${row.selnum || 0}/${total}`;
+    }
+  }
+  return '-';
+}
 
 const hhmmss = (ts) => new Date(ts).toLocaleTimeString('zh-TW', { hour12: false });
 
@@ -796,7 +809,7 @@ function renderCalendar(snap) {
           <div class="up-meta">${renderLiteracyBadges(ev.literacies)} <span class="up-place">${esc(ev.place || '')}</span></div>
         </div>
         <div class="up-action-col">
-          <button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(ev.reseid || ev.eid01)}" title="取消報名（退選）">取消報名</button>
+          <button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(ev.reseid || '')}" data-eid01="${esc(ev.eid01 || '')}" data-eid="${esc(ev.eid || '')}" title="取消報名（退選）">取消報名</button>
         </div>
       </li>`
     )
@@ -874,7 +887,7 @@ function renderTargets(snap) {
         actions.push(`<button class="btn sm primary" data-action="register-target" data-eid="${esc(target.eid01)}">手動報名</button>`);
       }
       if (target.status === 'registered') {
-        actions.push(`<button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(target.reseid || target.eid01)}" title="取消報名（退選）">取消報名</button>`);
+        actions.push(`<button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(target.reseid || '')}" data-eid01="${esc(target.eid01 || '')}" data-eid="${esc(target.eid || '')}" title="取消報名（退選）">取消報名</button>`);
       }
       actions.push(`<button class="btn sm ghost" data-action="remove-target" data-eid="${esc(target.eid01)}">移除</button>`);
 
@@ -888,7 +901,7 @@ function renderTargets(snap) {
           <td><div class="cell-time">${esc(cleanHtml(target.resdat))}</div>${openHint}</td>
           <td>${esc(target.locale || '-')}</td>
           <td>${badge}${note}</td>
-          <td>${esc(cleanHtml(target.appnum) || '-')}</td>
+          <td>${esc(formatAppNum(target.appnum, target))}</td>
           <td class="right"><div class="btn-group">${actions.join(' ')}</div></td>
         </tr>`;
     })
@@ -954,7 +967,7 @@ function renderLectures(snap) {
     S.showFull,
     S.lectures.length,
     [...watched],
-    rows.map((row) => [row.eid01, row.canapp, row.appnum, row.chk4, row.chk5, row.chk6, row.chk7])
+    rows.map((row) => [row.eid01, row.canapp, row.appnum, row.cnt_10, row.chk4, row.chk5, row.chk6, row.chk7])
   ]);
   if (sig === lectureSig && body.children.length) return;
   lectureSig = sig;
@@ -995,7 +1008,7 @@ function renderLectures(snap) {
 
       if (isRegistered) {
         actions.push(`<span class="tag live">已報名</span>`);
-        actions.push(`<button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(row.reseid || row.eid01)}" title="取消報名（退選）">取消報名</button>`);
+        actions.push(`<button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(row.reseid || '')}" data-eid01="${esc(row.eid01 || '')}" data-eid="${esc(row.eid || '')}" title="取消報名（退選）">取消報名</button>`);
       } else {
         if (canapp === 'Y') {
           actions.push(`<button class="btn sm primary" data-action="quick-register" data-eid="${esc(row.eid01)}" title="不經 AI，直接送出本機報名">手動報名</button>`);
@@ -1028,7 +1041,7 @@ function renderLectures(snap) {
           <td>${esc(row.teachm || '-')}</td>
           <td><div class="cell-time">${esc(cleanHtml(row.resdat) || '-')}</div></td>
           <td>${esc(row.locale || '-')}</td>
-          <td>${esc(cleanHtml(row.appnum) || '-')}</td>
+          <td>${esc(formatAppNum(row.appnum, row))}</td>
           <td class="cell-sub">${esc(row.apptim || '-')}</td>
           <td class="right">${actionHtml}</td>
         </tr>`;
@@ -1137,7 +1150,153 @@ async function fillForms(snap) {
   S.filled = true;
 }
 
-/* ------------------------------ 分層視圖導覽切換 ------------------------------ */
+/* ------------------------------ 分層視圖導覽切換與 iOS 滑動塊 ------------------------------ */
+
+function updateGlider(viewName, animate = true) {
+  const nav = $('#navSegments');
+  const glider = $('#navGlider');
+  if (!nav || !glider) return;
+
+  const currentView = viewName || document.body.dataset.view || 'lectures';
+  const btn = nav.querySelector(`.nav-segment-btn[data-view="${currentView}"]`);
+  if (!btn) return;
+
+  const navRect = nav.getBoundingClientRect();
+  const btnRect = btn.getBoundingClientRect();
+
+  if (btnRect.width === 0) {
+    requestAnimationFrame(() => updateGlider(viewName, animate));
+    return;
+  }
+
+  const offsetLeft = btnRect.left - navRect.left;
+  const width = btnRect.width;
+
+  if (!animate) {
+    glider.style.transition = 'none';
+  } else {
+    glider.style.transition = '';
+  }
+
+  glider.style.width = `${Math.round(width)}px`;
+  glider.style.transform = `translateX(${Math.round(offsetLeft)}px)`;
+}
+
+function initSegmentDrag() {
+  const nav = $('#navSegments');
+  const glider = $('#navGlider');
+  if (!nav || !glider) return;
+
+  let isDragging = false;
+  let startX = 0;
+  let startLeft = 0;
+  let currentLeft = 0;
+  let gliderWidth = 0;
+  let minLeft = 3;
+  let maxLeft = 0;
+  let activePointerId = null;
+  const dragThreshold = 5;
+  let hasMovedPastThreshold = false;
+
+  const buttons = () => [...nav.querySelectorAll('.nav-segment-btn')];
+
+  nav.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+
+    const navRect = nav.getBoundingClientRect();
+    const currentBtn = nav.querySelector('.nav-segment-btn.active') || buttons()[0];
+    if (!currentBtn) return;
+
+    const btnRect = currentBtn.getBoundingClientRect();
+    startX = e.clientX;
+    startLeft = btnRect.left - navRect.left;
+    currentLeft = startLeft;
+    gliderWidth = btnRect.width;
+
+    const allBtns = buttons();
+    if (!allBtns.length) return;
+    const firstRect = allBtns[0].getBoundingClientRect();
+    const lastRect = allBtns[allBtns.length - 1].getBoundingClientRect();
+    minLeft = firstRect.left - navRect.left;
+    maxLeft = lastRect.left - navRect.left;
+
+    activePointerId = e.pointerId;
+    isDragging = true;
+    hasMovedPastThreshold = false;
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    if (!isDragging || e.pointerId !== activePointerId) return;
+
+    const dx = e.clientX - startX;
+    if (!hasMovedPastThreshold) {
+      if (Math.abs(dx) > dragThreshold) {
+        hasMovedPastThreshold = true;
+        nav.classList.add('is-dragging');
+        try {
+          nav.setPointerCapture(activePointerId);
+        } catch {}
+      } else {
+        return;
+      }
+    }
+
+    let targetLeft = startLeft + dx;
+    if (targetLeft < minLeft) {
+      const over = minLeft - targetLeft;
+      targetLeft = minLeft - Math.pow(over, 0.75);
+    } else if (targetLeft > maxLeft) {
+      const over = targetLeft - maxLeft;
+      targetLeft = maxLeft + Math.pow(over, 0.75);
+    }
+
+    currentLeft = targetLeft;
+    const stretchRatio = Math.min(1.08, 1 + Math.abs(dx) / 1200);
+    glider.style.width = `${Math.round(gliderWidth * stretchRatio)}px`;
+    glider.style.transform = `translateX(${Math.round(currentLeft)}px)`;
+  });
+
+  const onPointerEnd = (e) => {
+    if (!isDragging || e.pointerId !== activePointerId) return;
+
+    isDragging = false;
+    activePointerId = null;
+    nav.classList.remove('is-dragging');
+    try {
+      nav.releasePointerCapture(e.pointerId);
+    } catch {}
+
+    if (hasMovedPastThreshold) {
+      const gliderCenter = currentLeft + gliderWidth / 2;
+      const navRect = nav.getBoundingClientRect();
+      const allBtns = buttons();
+
+      let closestBtn = allBtns[0];
+      let minDistance = Infinity;
+
+      allBtns.forEach((btn) => {
+        const bRect = btn.getBoundingClientRect();
+        const btnCenter = (bRect.left - navRect.left) + bRect.width / 2;
+        const dist = Math.abs(btnCenter - gliderCenter);
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestBtn = btn;
+        }
+      });
+
+      if (closestBtn && closestBtn.dataset.view) {
+        switchView(closestBtn.dataset.view);
+      } else {
+        updateGlider(document.body.dataset.view, true);
+      }
+    } else {
+      updateGlider(document.body.dataset.view, true);
+    }
+  };
+
+  window.addEventListener('pointerup', onPointerEnd);
+  window.addEventListener('pointercancel', onPointerEnd);
+}
 
 function switchView(viewName) {
   const allowed = ['lectures', 'targets', 'calendar', 'settings'];
@@ -1154,6 +1313,7 @@ function switchView(viewName) {
   document.querySelectorAll('.mob-tab').forEach((tab) => {
     tab.classList.toggle('active', tab.dataset.view === viewName);
   });
+  updateGlider(viewName, true);
   try {
     localStorage.setItem('au_lecture_view', viewName);
     history.replaceState(null, '', `#${viewName}`);
@@ -1499,7 +1659,7 @@ document.addEventListener('click', (event) => {
     if (!code) return toast('請先輸入課程代號（如 1151074）', 'err');
     if (!window.confirm(`確定要取消報名（退選）代號 ${code} 的講座嗎？`)) return;
     return guard(async () => {
-      const res = await post('/api/cancel', { reseid: code });
+      const res = await post('/api/cancel', { reseid: code, eid01: code, eid: code });
       toast(res.message || '已成功取消報名', 'ok');
       if (input) input.value = '';
       await refreshLectures();
@@ -1510,7 +1670,10 @@ document.addEventListener('click', (event) => {
   if (action === 'cancel-target') {
     if (!window.confirm('確定要取消報名（退選）這場講座嗎？（若未出席可能累積缺曠紀錄）')) return;
     return guard(async () => {
-      const res = await post('/api/cancel', { reseid: button.dataset.reseid });
+      const reseid = button.dataset.reseid || '';
+      const eid01 = button.dataset.eid01 || '';
+      const eid = button.dataset.eid || '';
+      const res = await post('/api/cancel', { reseid, eid01, eid });
       toast(res.message || '已成功取消報名', 'ok');
       await refreshLectures();
       await poll();
@@ -1659,9 +1822,15 @@ window.addEventListener('keydown', (event) => {
 /* ------------------------------ 系統開機初始化 ------------------------------ */
 
 async function boot() {
+  initSegmentDrag();
+  window.addEventListener('resize', () => {
+    updateGlider(document.body.dataset.view, false);
+  });
+
   const hash = window.location.hash.replace('#', '');
   const saved = localStorage.getItem('au_lecture_view');
   switchView(hash || saved || 'lectures');
+  setTimeout(() => updateGlider(document.body.dataset.view, false), 60);
 
   await poll();
   try {
