@@ -1,73 +1,158 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'backend/in_app_server.dart';
+import 'backend/grab_engine.dart';
 import 'config/constants.dart';
-import 'screens/webview_screen.dart';
+import 'screens/lectures_screen.dart';
+import 'screens/targets_screen.dart';
+import 'screens/calendar_screen.dart';
+import 'screens/settings_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 設定系統狀態列為透明黑底風格
+  // Android 沉浸式透明狀態列與虛擬導覽列適配
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
+      statusBarColor: CupertinoColors.transparent,
       statusBarIconBrightness: Brightness.light,
       systemNavigationBarColor: AppColors.background,
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
 
-  // 啟動本機獨立內嵌伺服器（免電腦 Node.js 伺服器）
-  final inAppServer = InAppServer();
-  await inAppServer.start();
+  // 初始化純 Dart 搶課引擎
+  final engine = GrabEngine();
+  await engine.initFromStorage();
 
-  // 讀取設定：預設直接使用手機本機獨立伺服器
-  final prefs = await SharedPreferences.getInstance();
-  final savedUrl = prefs.getString(AppConstants.prefKeyHostUrl);
-  final initialUrl = (savedUrl != null && savedUrl.isNotEmpty) ? savedUrl : inAppServer.localUrl;
+  // 背景嘗試自動登入並載入清冊（不阻塞主畫面渲染）
+  engine.autoLoginIfRemembered();
 
-  runApp(AsiaLectureGrabberApp(
-    initialUrl: initialUrl,
-    inAppServer: inAppServer,
-  ));
+  runApp(AsiaLectureGrabberApp(engine: engine));
 }
 
 class AsiaLectureGrabberApp extends StatelessWidget {
-  final String initialUrl;
-  final InAppServer inAppServer;
+  final GrabEngine engine;
 
-  const AsiaLectureGrabberApp({
-    super.key,
-    required this.initialUrl,
-    required this.inAppServer,
-  });
+  const AsiaLectureGrabberApp({super.key, required this.engine});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return CupertinoApp(
       title: AppConstants.appTitle,
       debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.dark,
-      theme: ThemeData.dark().copyWith(
+      theme: const CupertinoThemeData(
+        brightness: Brightness.dark,
         scaffoldBackgroundColor: AppColors.background,
-        primaryColor: AppColors.primary,
-        colorScheme: const ColorScheme.dark(
-          primary: AppColors.primary,
-          secondary: AppColors.accentCyan,
-          surface: AppColors.surface,
-          error: AppColors.error,
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.surface,
-          foregroundColor: AppColors.textPrimary,
-          elevation: 0,
+        barBackgroundColor: AppColors.glassBar,
+        primaryColor: CupertinoColors.white,
+        primaryContrastingColor: CupertinoColors.black,
+        textTheme: CupertinoTextThemeData(
+          primaryColor: CupertinoColors.white,
+          textStyle: TextStyle(
+            color: AppColors.textPrimary,
+            fontFamily: '.SF Pro Text',
+          ),
         ),
       ),
-      home: WebViewScreen(
-        initialUrl: initialUrl,
-        inAppServer: inAppServer,
-      ),
+      home: HomeScreen(engine: engine),
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  final GrabEngine engine;
+
+  const HomeScreen({super.key, required this.engine});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: engine,
+      builder: (context, _) {
+        final targetCount = engine.activeTargets().length;
+
+        return CupertinoTabScaffold(
+          tabBar: CupertinoTabBar(
+            backgroundColor: AppColors.glassBar,
+            border: const Border(
+              top: BorderSide(color: AppColors.hairline, width: 0.5),
+            ),
+            activeColor: CupertinoColors.white,
+            inactiveColor: AppColors.textMuted,
+            iconSize: 22,
+            items: [
+              const BottomNavigationBarItem(
+                icon: Icon(CupertinoIcons.book),
+                activeIcon: Icon(CupertinoIcons.book_fill),
+                label: '講座情報',
+              ),
+              BottomNavigationBarItem(
+                icon: _buildBadgeIcon(CupertinoIcons.alarm, targetCount),
+                activeIcon: _buildBadgeIcon(CupertinoIcons.alarm_fill, targetCount),
+                label: '搶課排程',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(CupertinoIcons.calendar),
+                activeIcon: Icon(CupertinoIcons.calendar_today),
+                label: '個人行程',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(CupertinoIcons.gear_alt),
+                activeIcon: Icon(CupertinoIcons.gear_alt_fill),
+                label: '系統設定',
+              ),
+            ],
+          ),
+          tabBuilder: (context, index) {
+            switch (index) {
+              case 0:
+                return LecturesScreen(engine: engine);
+              case 1:
+                return TargetsScreen(engine: engine);
+              case 2:
+                return CalendarScreen(engine: engine);
+              case 3:
+                return SettingsScreen(engine: engine);
+              default:
+                return LecturesScreen(engine: engine);
+            }
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildBadgeIcon(IconData iconData, int count) {
+    if (count <= 0) {
+      return Icon(iconData);
+    }
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(iconData),
+        Positioned(
+          top: -3,
+          right: -8,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: AppColors.accentRed,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.background, width: 1.2),
+            ),
+            constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+            child: Text(
+              count > 99 ? '99+' : count.toString(),
+              style: const TextStyle(
+                color: CupertinoColors.white,
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

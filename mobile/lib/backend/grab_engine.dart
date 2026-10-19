@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'asia_api.dart';
 import 'calendar_helper.dart';
 
-class GrabEngine {
+class GrabEngine extends ChangeNotifier {
   final AsiaApi api;
   Map<String, dynamic>? session;
   Map<String, dynamic>? stdInfo;
@@ -389,6 +390,7 @@ class GrabEngine {
   void removeTarget(String eid01) {
     targets.removeWhere((t) => t['eid01']?.toString() == eid01);
     log('info', '已移除搶課目標：[$eid01]');
+    notifyListeners();
   }
 
   void clearTargets() {
@@ -397,6 +399,7 @@ class GrabEngine {
       return s == 'registered' || s == 'closed' || s == 'error';
     });
     log('info', '已清理已完成之目標');
+    notifyListeners();
   }
 
   Map<String, dynamic> snapshot() {
@@ -430,6 +433,94 @@ class GrabEngine {
       },
       'schedule': schedule,
       'calendar': CalendarHelper.buildCalendar(lectures),
+    };
+  }
+
+  Future<void> refreshLectures() async {
+    final token = session?['token']?.toString();
+    final rows = await api.listLectures(token);
+    lectures = rows;
+    stats['lastSyncAt'] = DateTime.now().millisecondsSinceEpoch;
+    log('info', '已成功更新講座清單，共 ${rows.length} 場');
+    notifyListeners();
+  }
+
+  Future<void> autoLoginIfRemembered() async {
+    final username = session?['username']?.toString() ?? '';
+    final password = session?['password']?.toString() ?? '';
+    final idLast4 = session?['idLast4']?.toString() ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      try {
+        log('info', '偵測到儲存之帳密，自動嘗試登入校方系統...');
+        final res = await api.login(username, password);
+        final newSession = {
+          'token': res['token'],
+          'username': username,
+          'password': password,
+          'emp_id': res['emp_id'] ?? username,
+          'emp_nm': res['emp_nm'] ?? '',
+          'emp_rl': res['emp_rl'] ?? 'Student',
+          'idLast4': idLast4,
+        };
+        setSession(newSession);
+
+        if (idLast4.isNotEmpty) {
+          try {
+            await ensureIdentity();
+          } catch (_) {}
+        }
+        await refreshLectures();
+      } catch (e) {
+        log('warn', '自動登入失敗：$e');
+      }
+    } else {
+      try {
+        await refreshLectures();
+      } catch (_) {}
+    }
+  }
+
+  Map<String, dynamic> computeGraduationProgress() {
+    final history = Map<String, dynamic>.from(graduation['history'] ?? {});
+    final histHealth = int.tryParse(history['health']?.toString() ?? '0') ?? 0;
+    final histCare = int.tryParse(history['care']?.toString() ?? '0') ?? 0;
+    final histInnovation = int.tryParse(history['innovation']?.toString() ?? '0') ?? 0;
+    final histExcellence = int.tryParse(history['excellence']?.toString() ?? '0') ?? 0;
+    final histTotal = int.tryParse(history['total']?.toString() ?? '0') ?? (histHealth + histCare + histInnovation + histExcellence);
+
+    int currHealth = 0;
+    int currCare = 0;
+    int currInnovation = 0;
+    int currExcellence = 0;
+    int currTotal = 0;
+
+    for (final row in lectures) {
+      final cnt = int.tryParse((row['cnt_10'] ?? '0').toString()) ?? 0;
+      if (cnt > 0) {
+        currTotal++;
+        final title = (row['reseid_name'] ?? row['name'] ?? '').toString();
+        final lits = CalendarHelper.detectLiteracies(title);
+        if (lits.contains('健康力')) currHealth++;
+        if (lits.contains('關懷力')) currCare++;
+        if (lits.contains('創新力')) currInnovation++;
+        if (lits.contains('卓越力')) currExcellence++;
+      }
+    }
+
+    final totalHealth = histHealth + currHealth;
+    final totalCare = histCare + currCare;
+    final totalInnovation = histInnovation + currInnovation;
+    final totalExcellence = histExcellence + currExcellence;
+    final totalLectures = histTotal + currTotal;
+
+    return {
+      'health': {'current': totalHealth, 'target': 2, 'done': totalHealth >= 2},
+      'care': {'current': totalCare, 'target': 2, 'done': totalCare >= 2},
+      'innovation': {'current': totalInnovation, 'target': 2, 'done': totalInnovation >= 2},
+      'excellence': {'current': totalExcellence, 'target': 2, 'done': totalExcellence >= 2},
+      'total': {'current': totalLectures, 'target': 8, 'done': totalLectures >= 8},
+      'qualified': totalHealth >= 2 && totalCare >= 2 && totalInnovation >= 2 && totalExcellence >= 2 && totalLectures >= 8,
     };
   }
 }
