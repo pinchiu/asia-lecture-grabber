@@ -1,7 +1,7 @@
 name: asia_lecture_grabber
 description: "亞洲大學通識講座自動報名助手與四大基本素養畢業門檻追蹤系統行動端應用"
 publish_to: "none"
-version: 1.1.0+2
+version: 1.2.0+3
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

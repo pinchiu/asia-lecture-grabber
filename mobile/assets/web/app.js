@@ -1241,8 +1241,9 @@ function initSegmentDrag() {
   let minLeft = 3;
   let maxLeft = 0;
   let activePointerId = null;
-  const dragThreshold = 5;
+  const dragThreshold = 4;
   let hasMovedPastThreshold = false;
+  let rafId = null;
 
   const buttons = () => [...nav.querySelectorAll('.nav-segment-btn')];
 
@@ -1269,6 +1270,11 @@ function initSegmentDrag() {
     activePointerId = e.pointerId;
     isDragging = true;
     hasMovedPastThreshold = false;
+
+    // 立即捕獲指標，避免被瀏覽器滾動或手勢攔截
+    try {
+      nav.setPointerCapture(activePointerId);
+    } catch {}
   });
 
   window.addEventListener('pointermove', (e) => {
@@ -1279,9 +1285,7 @@ function initSegmentDrag() {
       if (Math.abs(dx) > dragThreshold) {
         hasMovedPastThreshold = true;
         nav.classList.add('is-dragging');
-        try {
-          nav.setPointerCapture(activePointerId);
-        } catch {}
+        if (navigator.vibrate) navigator.vibrate(6);
       } else {
         return;
       }
@@ -1298,8 +1302,12 @@ function initSegmentDrag() {
 
     currentLeft = targetLeft;
     const stretchRatio = Math.min(1.08, 1 + Math.abs(dx) / 1200);
-    glider.style.width = `${Math.round(gliderWidth * stretchRatio)}px`;
-    glider.style.transform = `translateX(${Math.round(currentLeft)}px)`;
+
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      glider.style.width = `${Math.round(gliderWidth * stretchRatio)}px`;
+      glider.style.transform = `translate3d(${Math.round(currentLeft)}px, 0, 0)`;
+    });
   });
 
   const onPointerEnd = (e) => {
@@ -1308,6 +1316,7 @@ function initSegmentDrag() {
     isDragging = false;
     activePointerId = null;
     nav.classList.remove('is-dragging');
+    if (rafId) cancelAnimationFrame(rafId);
     try {
       nav.releasePointerCapture(e.pointerId);
     } catch {}
@@ -1331,17 +1340,66 @@ function initSegmentDrag() {
       });
 
       if (closestBtn && closestBtn.dataset.view) {
+        if (navigator.vibrate) navigator.vibrate(8);
         switchView(closestBtn.dataset.view);
       } else {
         updateGlider(document.body.dataset.view, true);
       }
     } else {
-      updateGlider(document.body.dataset.view, true);
+      // 點擊觸發
+      const targetBtn = e.target.closest('.nav-segment-btn');
+      if (targetBtn && targetBtn.dataset.view) {
+        if (navigator.vibrate) navigator.vibrate(6);
+        switchView(targetBtn.dataset.view);
+      } else {
+        updateGlider(document.body.dataset.view, true);
+      }
     }
   };
 
   window.addEventListener('pointerup', onPointerEnd);
   window.addEventListener('pointercancel', onPointerEnd);
+}
+
+/** 全螢幕 iOS 手勢左右滑動切換分頁 */
+function initPageSwipe() {
+  const main = $('#main');
+  if (!main) return;
+  const views = ['lectures', 'targets', 'calendar', 'settings'];
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchStartTime = 0;
+
+  main.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchStartTime = Date.now();
+  }, { passive: true });
+
+  main.addEventListener('touchend', (e) => {
+    if (e.changedTouches.length !== 1) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    const dt = Date.now() - touchStartTime;
+
+    // 水平滑動距離 > 55px，且水平幅度顯著大於垂直位移（避免干擾上下捲動）
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.6 && dt < 450) {
+      const currentView = document.body.dataset.view || 'lectures';
+      const idx = views.indexOf(currentView);
+      if (idx !== -1) {
+        if (dx < 0 && idx < views.length - 1) {
+          // 向左滑動 -> 下一個視圖
+          switchView(views[idx + 1]);
+          if (navigator.vibrate) navigator.vibrate(10);
+        } else if (dx > 0 && idx > 0) {
+          // 向右滑動 -> 上一個視圖
+          switchView(views[idx - 1]);
+          if (navigator.vibrate) navigator.vibrate(10);
+        }
+      }
+    }
+  }, { passive: true });
 }
 
 function switchView(viewName) {
@@ -1903,6 +1961,7 @@ window.addEventListener('keydown', (event) => {
 
 async function boot() {
   initSegmentDrag();
+  initPageSwipe();
   window.addEventListener('resize', () => {
     updateGlider(document.body.dataset.view, false);
   });
