@@ -40,7 +40,8 @@ export const DEFAULT_CONFIG = {
       health: 0,
       care: 0,
       innovation: 0,
-      excellence: 0
+      excellence: 0,
+      total: 0
     }
   },
   ai: {
@@ -78,15 +79,23 @@ export async function loadConfig() {
   }
 }
 
-export async function saveConfig(patch) {
-  const current = await loadConfig();
-  const next = merge(current, patch);
-  next.engine.intervalMs = clampNumber(next.engine.intervalMs, 1000, 30_000, DEFAULT_CONFIG.engine.intervalMs);
-  next.engine.burstIntervalMs = clampNumber(next.engine.burstIntervalMs, 300, 10_000, DEFAULT_CONFIG.engine.burstIntervalMs);
-  next.ai.maxTargets = clampNumber(next.ai.maxTargets, 1, 10, DEFAULT_CONFIG.ai.maxTargets);
-  await mkdir(DATA_DIR, { recursive: true });
-  await writeFile(CONFIG_FILE, JSON.stringify(next, null, 2), 'utf8');
-  return next;
+let configWriteQueue = Promise.resolve();
+
+export function saveConfig(patch) {
+  configWriteQueue = configWriteQueue.catch(() => {}).then(async () => {
+    const current = await loadConfig();
+    const next = merge(current, patch);
+    next.engine.intervalMs = clampNumber(next.engine.intervalMs, 1000, 30_000, DEFAULT_CONFIG.engine.intervalMs);
+    next.engine.burstIntervalMs = clampNumber(next.engine.burstIntervalMs, 300, 10_000, DEFAULT_CONFIG.engine.burstIntervalMs);
+    next.ai.maxTargets = clampNumber(next.ai.maxTargets, 1, 10, DEFAULT_CONFIG.ai.maxTargets);
+    if (next.graduation?.history) {
+      next.graduation.history.total = Math.max(0, Number(next.graduation.history.total || 0));
+    }
+    await mkdir(DATA_DIR, { recursive: true });
+    await writeFile(CONFIG_FILE, JSON.stringify(next, null, 2), 'utf8');
+    return next;
+  });
+  return configWriteQueue;
 }
 
 export async function loadState() {

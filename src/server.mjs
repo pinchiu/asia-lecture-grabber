@@ -143,7 +143,8 @@ function publicConfig() {
         health: Math.max(0, Number(config.graduation?.history?.health || 0)),
         care: Math.max(0, Number(config.graduation?.history?.care || 0)),
         innovation: Math.max(0, Number(config.graduation?.history?.innovation || 0)),
-        excellence: Math.max(0, Number(config.graduation?.history?.excellence || 0))
+        excellence: Math.max(0, Number(config.graduation?.history?.excellence || 0)),
+        total: Math.max(0, Number(config.graduation?.history?.total || 0))
       }
     }
   };
@@ -173,7 +174,8 @@ function snapshot() {
         health: Math.max(0, Number(config.graduation?.history?.health || 0)),
         care: Math.max(0, Number(config.graduation?.history?.care || 0)),
         innovation: Math.max(0, Number(config.graduation?.history?.innovation || 0)),
-        excellence: Math.max(0, Number(config.graduation?.history?.excellence || 0))
+        excellence: Math.max(0, Number(config.graduation?.history?.excellence || 0)),
+        total: Math.max(0, Number(config.graduation?.history?.total || 0))
       }
     },
     ai: ai.aiSummary(config.ai),
@@ -182,14 +184,17 @@ function snapshot() {
   };
 }
 
-/** 已報名講座的原始資料列：清單中 cnt_10>0 者 ＋ 已報名目標。 */
-function api_calendarRows() {
+/** 已報名講座的行事曆資料列：清單中 cnt_10>0 者 ＋ 已報名目標 ＋ 可選之校方已選清冊。 */
+function api_calendarRows(extraRegistered = []) {
   const rows = [];
   for (const row of engine.lectures) {
     if (Number(row.cnt_10 || 0) > 0) rows.push(row);
   }
   for (const target of engine.targets) {
     if (target.status === 'registered') rows.push(target);
+  }
+  if (Array.isArray(extraRegistered) && extraRegistered.length) {
+    rows.push(...extraRegistered);
   }
   return buildCalendar(rows);
 }
@@ -396,7 +401,8 @@ async function handleApi(req, res, url) {
               health: Math.max(0, Number(body.graduation.history?.health || 0)),
               care: Math.max(0, Number(body.graduation.history?.care || 0)),
               innovation: Math.max(0, Number(body.graduation.history?.innovation || 0)),
-              excellence: Math.max(0, Number(body.graduation.history?.excellence || 0))
+              excellence: Math.max(0, Number(body.graduation.history?.excellence || 0)),
+              total: Math.max(0, Number(body.graduation.history?.total || 0))
             }
           };
         }
@@ -425,21 +431,15 @@ async function handleApi(req, res, url) {
       }
 
       case 'GET /api/calendar': {
-        const rows = [];
-        for (const row of engine.lectures) {
-          if (Number(row.cnt_10 || 0) > 0) rows.push(row);
-        }
+        let registered = [];
         if (engine.session?.token) {
           try {
-            rows.push(...(await api.listRegistered(engine.session.token)));
+            registered = await api.listRegistered(engine.session.token);
           } catch {
             /* 盡力而為，失敗就沿用清單推斷 */
           }
         }
-        for (const target of engine.targets) {
-          if (target.status === 'registered') rows.push(target);
-        }
-        return ok(res, { events: buildCalendar(rows), fetchedAt: Date.now() });
+        return ok(res, { events: api_calendarRows(registered), fetchedAt: Date.now() });
       }
 
       case 'POST /api/schedule': {

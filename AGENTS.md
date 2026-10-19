@@ -1,13 +1,14 @@
 # AGENTS.md
 
-亞洲大學「講座自動報名助手與素養門檻追蹤系統」：零依賴 Node.js（>=20）ESM 服務 + 無框架前端 + Flutter 原生行動端 App。
-功能、API 逆向結果與引擎策略見 `README.md`；本檔只記錄容易踩雷、看檔案不易發現的事實與架構規範。
+亞洲大學「講座自動報名助手與素養門檻追蹤系統」：零依賴 Node.js（>=20）ESM 服務 + 極簡包浩斯與磨砂毛玻璃無框架前端 + Flutter 原生行動端 App。
+功能、API 逆向成果與引擎策略詳見 `README.md`；本檔記錄全專案之最新架構規範、設計約束與容易踩雷之核心事實。
 
 ## 指令
 
 ### 電腦網頁版與伺服器
 - 啟動後端與介面：`npm start`（= `node src/server.mjs`），或雙擊 `start.bat`。
 - 開發模式（後端檔變更自動重啟）：`npm run dev`（`node --watch`）。
+- 執行自動化單元測試：`npm test`（基於 Node.js 內建 `node:test` 與 `node:assert`）。
 - 桌面視窗喚起：`npm run desktop`（啟動後端並以 Chrome App 視窗模式或預設瀏覽器開啟）。
 - 產生 PWA 圖示：`npm run icons`。
 - 語法檢查：`node --check <file>`；功能驗證＝實際執行伺服器（打 JSON API）或以瀏覽器驅動。
@@ -23,15 +24,24 @@
 
 ## 架構
 
-- **後端單一鏈路**：`src/server.mjs`（HTTP、JSON API、靜態資源路由、路徑穿透隔離）→ `src/engine.mjs`（搶課狀態機、爆速與退避輪詢、快取防空保護）→ `src/asia.mjs`（校方 API 客戶端、AIA 中繼憑證修補、IIS 錯誤頁面防護）。
+- **後端單一鏈路**：
+  - `src/server.mjs`：HTTP 服務、JSON API 路由、靜態資源路由、路徑穿透隔離、開機自動登入調度。
+  - `src/engine.mjs`：搶課狀態機核心、爆速輪詢（0.8s）與禮貌間隔（2.5s）動態切換、請求最小間隔節流（600ms）、校方快取防空保護、手動快報與退選交易處理。
+  - `src/asia.mjs`：校方 API 客戶端、AIA 中繼憑證自動修補鏈路、KeepAlive 連線池、IIS 錯誤頁面與 BOM 字符過濾。
 - **輔助模組**：
-  - `src/schedule.mjs`：排程器（開放前 N 秒、特定時刻、每週時段三種模式）。
-  - `src/calendar.mjs`：已報名講座轉行事曆事件、四大素養標籤提取（`chk4`..`chk7` 與 `chk4_flg`..`chk7_flg` 相容）與民國年轉換。
-  - `src/ai.mjs`：AI 挑課代理（OpenAI 相容 API）與本機素養規則解析引擎。
-  - `src/storage.mjs`：`config.json`（設定、排程、帳密、歷年素養）與 `state.json`（搶課目標）之本地持久化。
-- **前端介面**：
-  - `public/index.html` / `app.js` / `style.css`：原生 JavaScript（Vanilla JS），曜石黑 Neo-Brutalist 美學，無框架、無打包建置。
-  - `app.js` 每 1.2 秒向 `/api/state` 輪詢後重繪畫面，包含四大基本素養（四力）門檻進度條與歷年累計補登計算。
+  - `src/schedule.mjs`：排程器（開放瞬間提前 N 秒、特定時刻、每週時段三種模式，支援邊緣觸發與跨午夜運算，且不強制覆寫使用者之全域停用開關）。
+  - `src/calendar.mjs`：已報名講座轉行事曆事件、四大素養標籤提取、民國年轉換與時間戳記排序。
+  - `src/ai.mjs`：智慧選課代理（OpenAI 相容 API）與本機離線規則解析雙引擎，具備 100% 清單存在性防幻覺校驗。
+  - `src/storage.mjs`：`config.json`（設定、排程、帳密、歷年素養）與 `state.json`（搶課目標）之本地持久化，內建 Promise 寫入串列佇列防範並行競爭。
+- **前端介面（新版本視覺與互動架構）**：
+  - `public/index.html` / `app.js` / `style.css`：原生 JavaScript（Vanilla JS），採**極簡包浩斯黑白灰（Bauhaus Less-is-more Monochrome）與蘋果液態磨砂毛玻璃（Apple Frosted Glass）美學**，具備圓角化分層導覽、液態滑動指示器與 iOS 原生級觸控拖曳手勢。
+  - 內建進階特色：
+    - **最速畢業選課路線推薦**：分析四大素養缺額與彼此衝堂關係，演算法自動推薦最少場次達標路線。
+    - **iCal 行事曆匯出**：一鍵產生標準 `.ics` 檔，支援 Apple Calendar 與 Google 日曆即時同步。
+    - **衝堂時間衝突預警**：自動交叉比對講座上課時段，標示衝突警告。
+    - **全域快捷鍵系統**：支援 `1`~`4` 切換分頁、`/` 聚焦搜尋、`R` 快速重新整理。
+    - **自動登入復原**：前端重整時若本機記住密碼，自動無感換證並復原身分。
+  - `app.js` 每 1.2 秒向 `/api/state` 輪詢後重繪畫面，包含四大基本素養（健康力、關懷力、創新力、卓越力）門檻進度條與歷年累計補登計算。
 - **Flutter 行動端**：
   - `mobile/lib/main.dart`：入口點與黑底終端風格主題配置。
   - `mobile/lib/screens/webview_screen.dart`：基於 `webview_flutter` 核心，具備硬體加速、連線失敗重試畫面與下拉重新整理。
@@ -43,7 +53,8 @@
 - **前端綁定為隱性**：`app.js` 以固定 `id` 與 `data-action` 屬性（單一 delegated click listener）操作 DOM。動到 `index.html` 的 id 或 `data-action` 必須同步更新 `app.js`，否則會靜默失效。
 - **靜態檔案動態讀取**：`public/` 每次請求均自磁碟即時讀取並帶有 `Cache-Control: no-store`，修改前端檔案無須重啟伺服器；但**修改 `src/*` 後端程式碼必須重啟伺服器**。
 - **TLS 憑證修復機制**：校方 IIS 只提供葉憑證、缺乏中繼 CA。`asia.mjs` 依據 AIA 規範自動抓取中繼憑證並快取至 `data/extra-ca.pem`。**嚴禁透過「關閉 TLS 驗證」方式處理**。
-- **報名權限安全封閉**：AI 模組與排程模組均無權限直接發起報名請求；報名動作必須由本機引擎（`engine.mjs`）或使用者主動點擊觸發。
+- **退選加密識別碼防護**：校方 `POST api/cfd10/DeleteData?reseid=` 端點必須傳入校方生成的加密流水碼（格式為 `ID...`）。在清冊尚未匹配到加密代碼前，**嚴禁在未成功呼叫校方 API 的情況下擅自將本機標記為退選成功**，以防學生面臨實體曠課處分。
+- **衝堂檢驗必須具備時間戳**：進行衝堂檢測時，比較之事件物件必須具備 `startAt` 與 `endAt` 數值時間戳記，不可直接拿未經解析的原始資料物件比對。
 - **手動報名與圖形驗證碼特性**：本系統完全支援「不靠 AI 手動搶課」（在網頁清單直接點「手動報名」或於輸入列輸入課程代號即送出）。校方伺服器端報名端點（`api/Cfd10/Save`）根本未校驗圖形驗證碼，因此後端通訊無需任何 OCR，零秒延遲且無驗證碼錯誤風險。
 - **排程依賴**：排程器由伺服器內部 10 秒計時器驅動；若伺服器未運行或電腦處於睡眠狀態，排程將不會觸發。
 - **嚴格規範**：

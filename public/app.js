@@ -334,7 +334,18 @@ function recommendOptimalLectures() {
     const helpsWith = lits.filter((l) => (currentDef.get(l) || 0) > 0);
     if (!helpsWith.length && neededTotal <= 0) continue;
 
-    const conflict = checkScheduleConflict(row, [...(S.snap?.calendar || []), ...picks.map((p) => ({ ...p, eid01: p.eid01 }))]);
+    const pickEvents = picks.map((p) => {
+      const tr = getLectureTimeRange(p);
+      return {
+        ...p,
+        eid01: String(p.eid01 || ''),
+        title: p.rescnm || '',
+        startAt: tr?.startAt || 0,
+        endAt: tr?.endAt || 0,
+        timeText: cleanHtml(p.resdat)
+      };
+    });
+    const conflict = checkScheduleConflict(row, [...(S.snap?.calendar || []), ...pickEvents]);
     if (conflict) continue;
 
     picks.push(row);
@@ -591,12 +602,14 @@ function computeGraduationStats(snap) {
     excellence: (Number(history.excellence) || 0) + current.excellence
   };
 
-  const historyTotal = (Number(history.health) || 0) +
-                       (Number(history.care) || 0) +
-                       (Number(history.innovation) || 0) +
-                       (Number(history.excellence) || 0);
+  const historyTotal = (history.total !== undefined && Number(history.total) > 0)
+    ? Number(history.total)
+    : (Number(history.health) || 0) +
+      (Number(history.care) || 0) +
+      (Number(history.innovation) || 0) +
+      (Number(history.excellence) || 0);
 
-  // 總場次：歷年補登加總 + 當期已報名場次（單場多素養不重複灌水計入總場次）
+  // 總場次：歷年補登總場次 + 當期已報名場次（單場多素養各指標分別累計，但總場次不灌水）
   const totalCompleted = historyTotal + current.total;
 
   const deficiencies = [];
@@ -673,11 +686,13 @@ function renderGraduation(snap) {
   const careIn = $('#gradHistCare');
   const innIn = $('#gradHistInnovation');
   const excIn = $('#gradHistExcellence');
+  const totalIn = $('#gradHistTotal');
 
   if (document.activeElement !== healthIn) healthIn.value = h.health || 0;
   if (document.activeElement !== careIn) careIn.value = h.care || 0;
   if (document.activeElement !== innIn) innIn.value = h.innovation || 0;
   if (document.activeElement !== excIn) excIn.value = h.excellence || 0;
+  if (totalIn && document.activeElement !== totalIn) totalIn.value = h.total || 0;
 }
 
 function renderAccount(snap) {
@@ -1161,6 +1176,7 @@ async function fillForms(snap) {
   $('#gradHistCare').value = history.care || 0;
   $('#gradHistInnovation').value = history.innovation || 0;
   $('#gradHistExcellence').value = history.excellence || 0;
+  if ($('#gradHistTotal')) $('#gradHistTotal').value = history.total || 0;
 
   const account = snap.account || {};
   const loginForm = $('#loginForm');
@@ -1439,7 +1455,8 @@ document.addEventListener('click', (event) => {
       health: '#gradHistHealth',
       care: '#gradHistCare',
       innovation: '#gradHistInnovation',
-      excellence: '#gradHistExcellence'
+      excellence: '#gradHistExcellence',
+      total: '#gradHistTotal'
     }[type];
     if (inputId) {
       const el = $(inputId);
@@ -1455,7 +1472,8 @@ document.addEventListener('click', (event) => {
         health: Math.max(0, Number($('#gradHistHealth').value) || 0),
         care: Math.max(0, Number($('#gradHistCare').value) || 0),
         innovation: Math.max(0, Number($('#gradHistInnovation').value) || 0),
-        excellence: Math.max(0, Number($('#gradHistExcellence').value) || 0)
+        excellence: Math.max(0, Number($('#gradHistExcellence').value) || 0),
+        total: Math.max(0, Number($('#gradHistTotal')?.value) || 0)
       };
       await post('/api/config', { graduation: { history } });
       toast('歷年累計素養場次已儲存', 'ok');
@@ -1895,6 +1913,22 @@ async function boot() {
   setTimeout(() => updateGlider(document.body.dataset.view, false), 60);
 
   await poll();
+
+  // 若本機已記住密碼但尚未完成登入或身分驗證（如頁面重新整理或 session 逾期），自動發起登入復原
+  if (S.snap?.account?.saved && S.snap?.account?.username && (!S.snap?.session?.loggedIn || !S.snap?.session?.identityVerified)) {
+    try {
+      await post('/api/login', {
+        username: S.snap.account.username,
+        password: '',
+        idLast4: S.snap.account.idLast4 || '',
+        remember: true
+      });
+      await poll();
+    } catch (err) {
+      console.warn('[auth] 前端自動登入復原失敗：', err.message);
+    }
+  }
+
   try {
     await refreshLectures();
   } catch (err) {
