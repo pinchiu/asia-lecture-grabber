@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../backend/in_app_server.dart';
@@ -26,8 +29,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
   bool _isLoading = true;
   bool _hasError = false;
   String _errorDescription = '';
-
-  bool get _isLocalMode => _currentUrl.contains('127.0.0.1') || _currentUrl.contains('localhost');
 
   @override
   void initState() {
@@ -103,86 +104,59 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final statusText = _isLocalMode ? '原生獨立運行（免電腦 Server）' : '連線目標：$_currentUrl';
-
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-        final canGoBack = await _controller.canGoBack();
-        if (canGoBack) {
-          await _controller.goBack();
-        } else if (mounted) {
-          Navigator.of(context).maybePop();
-        }
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: AppColors.surface,
-          elevation: 0,
-          titleSpacing: 16,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: AppColors.background,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          final canGoBack = await _controller.canGoBack();
+          if (canGoBack) {
+            await _controller.goBack();
+          } else if (mounted) {
+            Navigator.of(context).maybePop();
+          }
+        },
+        child: Scaffold(
+          backgroundColor: AppColors.background,
+          body: Stack(
             children: [
-              const Text(
-                AppConstants.appTitle,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                  letterSpacing: 0.5,
-                ),
+              // 主體 WebView：全螢幕沉浸式渲染，零層級嵌套，即時響應所有滑動與拖曳手勢
+              Positioned.fill(
+                child: _hasError
+                    ? SafeArea(child: _buildErrorView())
+                    : WebViewWidget(
+                        controller: _controller,
+                        gestureRecognizers: {
+                          Factory<OneSequenceGestureRecognizer>(
+                            () => EagerGestureRecognizer(),
+                          ),
+                        },
+                      ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                statusText,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontFamily: 'monospace',
-                  color: _isLocalMode ? AppColors.accentGreen : AppColors.accentCyan,
+
+              // 頂部細微進度條（僅於初次或重新整理載入時呈現）
+              if (_isLoading && _loadingProgress < 100)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: SafeArea(
+                    child: LinearProgressIndicator(
+                      value: _loadingProgress / 100.0,
+                      backgroundColor: Colors.transparent,
+                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      minHeight: 2,
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(2),
-            child: _isLoading && _loadingProgress < 100
-                ? LinearProgressIndicator(
-                    value: _loadingProgress / 100.0,
-                    backgroundColor: AppColors.surfaceBorder,
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                    minHeight: 2,
-                  )
-                : const Divider(height: 1, thickness: 1, color: AppColors.surfaceBorder),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh, color: AppColors.textPrimary, size: 20),
-              tooltip: '重新整理',
-              onPressed: () {
-                setState(() {
-                  _hasError = false;
-                  _isLoading = true;
-                });
-                _controller.reload();
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.settings_outlined, color: AppColors.textPrimary, size: 20),
-              tooltip: '設定',
-              onPressed: () {
-                SettingsModal.show(
-                  context,
-                  currentUrl: _currentUrl,
-                  onSaveUrl: _updateServerUrl,
-                );
-              },
-            ),
-          ],
-        ),
-        body: SafeArea(
-          child: _hasError ? _buildErrorView() : WebViewWidget(controller: _controller),
         ),
       ),
     );
