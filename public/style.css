@@ -1,68 +1,101 @@
 /* =========================================================================
-   亞洲大學講座自動報名助手與素養門檻追蹤系統
-   美學風格：Neo-Brutalist Academic Precision / 曜石黑科技終端
-   無表情符號・四大基本素養色彩識別・精準響應式手機/桌面版
+   亞洲大學講座自動報名助手與畢業素養門檻追蹤系統
+   設計規範：Apple Liquid Glass × Monochrome Slate (蘋果液態磨砂玻璃與單色太空灰)
+   權威標準：遵循 UI/UX Pro Max 規範 (WCAG 2.2 AA / Apple HIG / 零 AI 感 / 零表情符號)
+   色彩架構：單色太空灰階畫布 + 庫比蒂諾蔚藍 (#0a84ff) 專用選項與操作對比色
    ========================================================================= */
 
 :root {
   color-scheme: dark;
 
-  /* 曜石深黑表面 */
-  --obsidian-0: #07080c;
-  --obsidian-1: #0d0f16;
-  --obsidian-2: #121520;
-  --obsidian-3: #181c2b;
-  --obsidian-4: #202538;
+  /* 蘋果太空灰與純淨灰階系統 (Apple Space Gray System) */
+  --bg-canvas: #16171b;
+  --bg-surface: #1a1b20;
+  --bg-elevated: #22242b;
 
-  /* 結構邊框與光澤 */
-  --line-hairline: rgba(255, 255, 255, 0.07);
-  --line-strong: rgba(255, 255, 255, 0.14);
-  --line-focus: #f59e0b;
+  /* 蘋果高階磨砂玻璃材質 (Apple Liquid & Frosted Glass Materials) */
+  --glass-topbar: rgba(22, 23, 27, 0.76);
+  --glass-card: rgba(28, 30, 36, 0.65);
+  --glass-card-hover: rgba(34, 36, 44, 0.75);
+  --glass-subcard: rgba(20, 22, 27, 0.55);
+  --glass-control: rgba(36, 38, 46, 0.65);
+  --glass-control-hover: rgba(46, 49, 59, 0.82);
+  --glass-input: rgba(18, 19, 23, 0.65);
+  --glass-input-focus: rgba(24, 26, 32, 0.9);
+  --glass-modal: rgba(26, 28, 34, 0.88);
+  --glass-dock: rgba(22, 23, 27, 0.84);
 
-  /* 排版色彩 */
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  /* 玻璃光學微結構、極細反光邊框與環境柔陰影 (Optics & Specular Rims) */
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-strong: rgba(255, 255, 255, 0.14);
+  --glass-border-subtle: rgba(255, 255, 255, 0.05);
+  --glass-specular: inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+  --glass-specular-soft: inset 0 1px 0 0 rgba(255, 255, 255, 0.07);
+  --glass-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.38);
+  --glass-shadow-float: 0 20px 48px -8px rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.14);
 
-  /* 核心信號色 */
-  --amber-signal: #f59e0b;
-  --amber-dark: #b45309;
-  --amber-glow: rgba(245, 158, 11, 0.16);
+  /* 乾淨高級的單色排版灰階 (Monochrome Typography - WCAG 2.2 AA Verified) */
+  --text-primary: #f5f6f8;
+  --text-secondary: #9da3af;
+  --text-muted: #6b7280;
+  --text-dim: #4b5260;
 
-  /* 四大基本素養 (四力) 色彩代碼 */
-  --lit-health: #10b981;
-  --lit-health-bg: rgba(16, 185, 129, 0.12);
-  --lit-health-line: rgba(16, 185, 129, 0.35);
+  /* 單一選項與互動對比強調色：庫比蒂諾蔚藍 (Apple Cupertino Blue - 理性、乾淨、專注、零 AI 感) */
+  --accent: #0a84ff;
+  --accent-hover: #3395ff;
+  --accent-active: #0071e3;
+  --accent-contrast: #ffffff;
+  --accent-subtle: rgba(10, 132, 255, 0.12);
+  --accent-border: rgba(10, 132, 255, 0.38);
+  --accent-glow: 0 0 0 3px rgba(10, 132, 255, 0.35);
 
-  --lit-care: #06b6d4;
-  --lit-care-bg: rgba(6, 182, 212, 0.12);
-  --lit-care-line: rgba(6, 182, 212, 0.35);
+  /* 狀態識別色 (克制、純粹，僅以指示點或輕量徽章呈現，不干擾畫面) */
+  --status-ok: #30d158;
+  --status-ok-bg: rgba(48, 209, 88, 0.12);
+  --status-ok-border: rgba(48, 209, 88, 0.32);
 
-  --lit-innovation: #f59e0b;
-  --lit-innovation-bg: rgba(245, 158, 11, 0.12);
-  --lit-innovation-line: rgba(245, 158, 11, 0.35);
+  --status-warn: #ff9f0a;
+  --status-warn-bg: rgba(255, 159, 10, 0.12);
+  --status-warn-border: rgba(255, 159, 10, 0.32);
 
-  --lit-excellence: #8b5cf6;
-  --lit-excellence-bg: rgba(139, 92, 246, 0.12);
-  --lit-excellence-line: rgba(139, 92, 246, 0.35);
+  --status-dead: #6b7280;
+  --status-dead-bg: rgba(255, 255, 255, 0.04);
+  --status-dead-border: rgba(255, 255, 255, 0.08);
 
-  /* 狀態識別色 */
-  --status-ok: #10b981;
-  --status-warn: #f59e0b;
-  --status-dead: #64748b;
-  --status-err: #ef4444;
-  --status-manual: #38bdf8;
+  --status-err: #ff453a;
+  --status-err-bg: rgba(255, 69, 58, 0.12);
+  --status-err-border: rgba(255, 69, 58, 0.35);
 
-  /* 字體堆疊 */
-  --font-sans: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei UI", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-  --font-mono: ui-monospace, "JetBrains Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  --status-manual: #64d2ff;
+  --status-manual-bg: rgba(100, 210, 255, 0.12);
+  --status-manual-border: rgba(100, 210, 255, 0.32);
 
-  /* 尺寸與邊界半徑 */
-  --r-card: 14px;
-  --r-control: 8px;
-  --r-chip: 5px;
+  /* 四大素養標籤 (轉化為冷靜的透光灰晶片，告別雜亂心煩的彩虹色) */
+  --lit-chip-bg: rgba(255, 255, 255, 0.045);
+  --lit-chip-border: rgba(255, 255, 255, 0.08);
+  --lit-chip-text: #e5e7eb;
 
-  /* 圖層 */
+  /* 素養微點色彩 (僅 5px 精緻微點辨識) */
+  --dot-health: #30d158;
+  --dot-care: #0a84ff;
+  --dot-innovation: #ff9f0a;
+  --dot-excellence: #bf5af2;
+
+  /* 字體堆疊 (Apple SF Pro 原生體驗優先) */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", "PingFang TC", "Noto Sans TC", sans-serif;
+  --font-mono: "SF Mono", ui-monospace, Menlo, Monaco, Consolas, "Cascadia Code", monospace;
+
+  /* 蘋果標準曲率半徑 (Apple Squircle Aesthetics) */
+  --r-card: 16px;
+  --r-control: 10px;
+  --r-chip: 6px;
+  --r-pill: 999px;
+
+  /* 蘋果微動效時間常數 (Apple Spring Timings) */
+  --motion-snappy: 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-smooth: 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* 圖層層級 (Layering System) */
   --z-sticky: 30;
   --z-modal: 50;
   --z-toast: 70;
@@ -81,61 +114,83 @@ html {
 body {
   margin: 0;
   min-height: 100dvh;
-  background-color: var(--obsidian-0);
+  background-color: var(--bg-canvas);
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    radial-gradient(circle 600px at 90% 0%, rgba(245, 158, 11, 0.06), transparent 70%),
-    radial-gradient(circle 600px at 10% 100%, rgba(16, 185, 129, 0.04), transparent 70%);
-  background-size: 40px 40px, 40px 40px, auto, auto;
+    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(45, 48, 58, 0.4) 0%, transparent 80%),
+    radial-gradient(ellipse 70% 40% at 50% 100%, rgba(20, 22, 27, 0.75) 0%, transparent 100%);
   background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: 13.5px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* 標題與基礎標籤重設 */
-h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+h1, h2, h3, h4 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+}
 p { margin: 0; }
 img, svg { display: block; flex-shrink: 0; }
 button, input, select, textarea { font: inherit; color: inherit; }
 a { color: inherit; text-decoration: none; }
 
-/* 無障礙跳轉 */
+/* 蘋果風格細緻滾動條 */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: var(--r-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+/* 無障礙跳轉錨點 */
 .skip {
   position: fixed;
   left: 14px;
   top: -60px;
   z-index: var(--z-skip);
-  padding: 8px 14px;
+  padding: 8px 16px;
   border-radius: var(--r-control);
-  background: var(--amber-signal);
-  color: #07080c;
-  font-weight: 700;
-  transition: top 0.16s ease;
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(10, 132, 255, 0.4);
+  transition: top var(--motion-snappy);
 }
-.skip:focus { top: 12px; }
+.skip:focus { top: 14px; }
 
 :focus-visible {
-  outline: 2px solid var(--line-focus);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--accent-glow);
 }
 
 /* =========================================================================
-   頂部導覽 Topbar
+   頂部導覽列 Topbar (Apple Frosted Glass Header)
    ========================================================================= */
 
 .topbar {
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  background: rgba(7, 8, 12, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--line-hairline);
+  background: var(--glass-topbar);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: var(--glass-specular-soft), 0 4px 20px rgba(0, 0, 0, 0.25);
   padding-top: env(safe-area-inset-top);
+  transition: background var(--motion-smooth);
 }
 
 .topbar-inner {
@@ -158,18 +213,20 @@ a { color: inherit; text-decoration: none; }
 .logo {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 10px;
-  background: var(--obsidian-2);
-  border: 1px solid var(--line-strong);
-  color: var(--amber-signal);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  background: var(--glass-control);
+  border: 1px solid var(--glass-border-strong);
+  color: var(--accent);
+  box-shadow: var(--glass-specular), 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .brand-text h1 {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -184,13 +241,13 @@ a { color: inherit; text-decoration: none; }
 
 .badge-core {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   font-family: var(--font-mono);
-  padding: 1px 7px;
-  border-radius: 4px;
-  background: var(--amber-glow);
-  color: var(--amber-signal);
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--accent-subtle);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
 }
 
 .sub {
@@ -212,39 +269,48 @@ a { color: inherit; text-decoration: none; }
   gap: 8px;
 }
 
+/* 蘋果膠囊狀態標籤 */
 .pill {
   font-size: 12px;
   font-family: var(--font-mono);
-  padding: 4px 10px;
-  border-radius: var(--r-chip);
-  background: var(--obsidian-2);
-  border: 1px solid var(--line-hairline);
+  padding: 4px 11px;
+  border-radius: var(--r-pill);
+  background: var(--glass-control);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-border);
   color: var(--text-secondary);
+  box-shadow: var(--glass-specular-soft);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--motion-snappy);
 }
 
 .pill.on {
   color: var(--status-ok);
-  border-color: rgba(16, 185, 129, 0.3);
-  background: rgba(16, 185, 129, 0.08);
+  border-color: var(--status-ok-border);
+  background: var(--status-ok-bg);
 }
 
 .pill.run {
-  color: var(--amber-signal);
-  border-color: rgba(245, 158, 11, 0.35);
-  background: var(--amber-glow);
-  font-weight: 700;
+  color: #ffffff;
+  background: var(--accent);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 10px rgba(10, 132, 255, 0.4);
+  font-weight: 600;
 }
 
 .pill.sched {
-  color: var(--lit-care);
-  border-color: var(--lit-care-line);
-  background: var(--lit-care-bg);
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-subtle);
 }
 
 .pill.err {
   color: var(--status-err);
-  border-color: rgba(239, 68, 68, 0.3);
-  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--status-err-border);
+  background: var(--status-err-bg);
 }
 
 .head-actions {
@@ -258,7 +324,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* =========================================================================
-   按鈕與控制項 Buttons & Controls
+   按鈕與控制項 Buttons & Controls (Apple Native Glass & Accent Actions)
    ========================================================================= */
 
 .btn {
@@ -266,64 +332,78 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: center;
   gap: 7px;
-  padding: 7px 14px;
+  padding: 7px 15px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   border-radius: var(--r-control);
   border: 1px solid transparent;
   cursor: pointer;
   user-select: none;
-  transition: all 0.14s ease;
+  transition: all var(--motion-snappy);
   white-space: nowrap;
+  min-height: 34px;
 }
 
 .btn:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: scale(0.975);
 }
 
 .btn:disabled {
-  opacity: 0.4;
+  opacity: 0.38;
   cursor: not-allowed;
+  box-shadow: none !important;
 }
 
+/* 主要操作按鈕：庫比蒂諾蔚藍高對比實心 */
 .btn.primary {
-  background: var(--amber-signal);
-  color: #07080c;
-  border-color: rgba(245, 158, 11, 0.5);
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 2px 10px rgba(10, 132, 255, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 .btn.primary:hover:not(:disabled) {
-  background: #fbbf24;
+  background: var(--accent-hover);
+  box-shadow: 0 4px 14px rgba(10, 132, 255, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+.btn.primary:active:not(:disabled) {
+  background: var(--accent-active);
 }
 
+/* 次要／幽靈按鈕：透光磨砂玻璃 */
 .btn.ghost {
-  background: var(--obsidian-2);
+  background: var(--glass-control);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   color: var(--text-primary);
-  border-color: var(--line-hairline);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-specular-soft);
 }
 .btn.ghost:hover:not(:disabled) {
-  background: var(--obsidian-3);
-  border-color: var(--line-strong);
+  background: var(--glass-control-hover);
+  border-color: var(--glass-border-strong);
+  color: #ffffff;
 }
 
 .btn.danger {
-  background: rgba(239, 68, 68, 0.12);
-  color: #fca5a5;
-  border-color: rgba(239, 68, 68, 0.3);
+  background: var(--status-err-bg);
+  color: #ff9994;
+  border-color: var(--status-err-border);
 }
 .btn.danger:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.22);
+  background: rgba(255, 69, 58, 0.22);
+  color: #ffffff;
 }
 
 .btn.sm {
-  padding: 4px 9px;
+  padding: 4px 10px;
   font-size: 12px;
-  border-radius: 6px;
+  min-height: 28px;
+  border-radius: 7px;
 }
 
 .btn.icon {
   padding: 4px 8px;
-  min-width: 28px;
+  min-width: 32px;
 }
 
 .btn.wide {
@@ -331,9 +411,9 @@ a { color: inherit; text-decoration: none; }
 }
 
 .btn-pwa {
-  color: var(--amber-signal);
-  border-color: rgba(245, 158, 11, 0.35);
-  background: rgba(245, 158, 11, 0.08);
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-subtle);
 }
 
 /* =========================================================================
@@ -343,7 +423,7 @@ a { color: inherit; text-decoration: none; }
 .layout {
   max-width: 1520px;
   margin: 0 auto;
-  padding: 20px clamp(14px, 2vw, 28px) 60px;
+  padding: 22px clamp(14px, 2vw, 28px) 60px;
   display: grid;
   grid-template-columns: 360px 1fr;
   gap: 22px;
@@ -367,13 +447,20 @@ a { color: inherit; text-decoration: none; }
   min-width: 0;
 }
 
-/* 卡片基底 */
+/* 蘋果透光磨砂玻璃卡片基底 (Apple Frosted Glass Card) */
 .card {
-  background: var(--obsidian-1);
-  border: 1px solid var(--line-hairline);
+  background: var(--glass-card);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--glass-border);
   border-radius: var(--r-card);
-  padding: 18px 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  padding: 20px 22px;
+  box-shadow: var(--glass-shadow), var(--glass-specular);
+  transition: border-color var(--motion-smooth), box-shadow var(--motion-smooth);
+}
+
+.card:hover {
+  border-color: var(--glass-border-strong);
 }
 
 .card-head {
@@ -381,13 +468,13 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
 }
 
 .card-head h2 {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -396,16 +483,17 @@ a { color: inherit; text-decoration: none; }
 .idx {
   font-family: var(--font-mono);
   font-size: 12px;
-  color: var(--amber-signal);
-  font-weight: 700;
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .count {
   font-family: var(--font-mono);
   font-size: 12px;
-  padding: 1px 7px;
-  border-radius: 4px;
-  background: var(--obsidian-3);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--glass-subcard);
+  border: 1px solid var(--glass-border);
   color: var(--text-secondary);
 }
 
@@ -417,13 +505,13 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* =========================================================================
-   表單組件 Form Controls
+   表單組件 Form Controls (Apple macOS Style)
    ========================================================================= */
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 13px;
 }
 
 .form label {
@@ -440,13 +528,14 @@ a { color: inherit; text-decoration: none; }
 .form textarea,
 .tools input,
 .tools select {
-  background: var(--obsidian-2);
-  border: 1px solid var(--line-hairline);
+  background: var(--glass-input);
+  border: 1px solid var(--glass-border);
   border-radius: var(--r-control);
   color: var(--text-primary);
-  padding: 8px 11px;
+  padding: 8px 12px;
   font-size: 13px;
-  transition: border-color 0.14s ease;
+  transition: all var(--motion-snappy);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 .form input:focus,
@@ -454,7 +543,10 @@ a { color: inherit; text-decoration: none; }
 .form textarea:focus,
 .tools input:focus,
 .tools select:focus {
-  border-color: var(--line-focus);
+  background: var(--glass-input-focus);
+  border-color: var(--accent);
+  box-shadow: var(--accent-glow), inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  outline: none;
 }
 
 .form input::placeholder,
@@ -463,18 +555,62 @@ a { color: inherit; text-decoration: none; }
   color: var(--text-muted);
 }
 
+/* 蘋果原生切換開關與核選方塊 */
 .check {
   display: flex !important;
   flex-direction: row !important;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   cursor: pointer;
   font-size: 13px;
+  color: var(--text-secondary);
   user-select: none;
+  transition: color var(--motion-snappy);
+}
+.check:hover {
+  color: var(--text-primary);
 }
 
 .check.inline {
   display: inline-flex !important;
+}
+
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 17px;
+  height: 17px;
+  border-radius: 5px;
+  background: var(--glass-input);
+  border: 1px solid var(--glass-border-strong);
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: all var(--motion-snappy);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+input[type="checkbox"]:hover {
+  border-color: var(--accent-border);
+}
+
+input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 1px 6px rgba(10, 132, 255, 0.35);
+}
+
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 .hint {
@@ -492,34 +628,35 @@ a { color: inherit; text-decoration: none; }
 
 .divider {
   border: none;
-  border-top: 1px solid var(--line-hairline);
+  border-top: 1px solid var(--glass-border-subtle);
   margin: 6px 0;
 }
 
 /* =========================================================================
-   四大素養畢業門檻儀表板 Graduation Dashboard
+   四大素養畢業門檻儀表板 Graduation Dashboard (Monochrome & Pure Azure)
    ========================================================================= */
 
 .grad-card {
-  border: 1px solid rgba(245, 158, 11, 0.22);
-  background: linear-gradient(180deg, rgba(20, 24, 38, 0.7) 0%, rgba(13, 15, 22, 0.95) 100%);
   position: relative;
   overflow: hidden;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-specular);
 }
 
+/* 移除原先五顏六色的彩虹線，改為細緻純淨的高階玻璃頂緣反光 */
 .grad-card::before {
   content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--lit-health), var(--lit-care), var(--lit-innovation), var(--lit-excellence));
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.18) 50%, transparent 100%);
 }
 
 .grad-head {
   align-items: flex-start;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .grad-title-row {
@@ -530,13 +667,13 @@ a { color: inherit; text-decoration: none; }
 }
 
 .grad-icon {
-  color: var(--amber-signal);
+  color: var(--accent);
 }
 
 .grad-desc {
   font-size: 13px;
   color: var(--text-secondary);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .grad-head-actions {
@@ -548,52 +685,56 @@ a { color: inherit; text-decoration: none; }
 .grad-status-badge {
   font-size: 12px;
   font-family: var(--font-mono);
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: var(--r-chip);
-  background: var(--obsidian-3);
-  border: 1px solid var(--line-hairline);
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: var(--r-pill);
+  background: var(--glass-control);
+  border: 1px solid var(--glass-border);
   color: var(--text-secondary);
+  box-shadow: var(--glass-specular-soft);
 }
 
 .grad-status-badge.ok {
-  background: rgba(16, 185, 129, 0.15);
+  background: var(--status-ok-bg);
   color: var(--status-ok);
-  border-color: rgba(16, 185, 129, 0.4);
+  border-color: var(--status-ok-border);
 }
 
 .grad-status-badge.pending {
-  background: var(--amber-glow);
-  color: var(--amber-signal);
-  border-color: rgba(245, 158, 11, 0.35);
+  background: var(--accent-subtle);
+  color: var(--accent);
+  border-color: var(--accent-border);
 }
 
 /* 歷年累計補登面板 */
 .grad-history-panel {
-  background: var(--obsidian-2);
-  border: 1px solid var(--line-strong);
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin-bottom: 16px;
+  background: var(--glass-subcard);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .hist-lead strong {
   color: var(--text-primary);
   font-size: 13px;
+  font-weight: 600;
 }
 
 .hist-hint {
   font-size: 12px;
   color: var(--text-muted);
-  margin-top: 3px;
-  margin-bottom: 12px;
+  margin-top: 4px;
+  margin-bottom: 14px;
 }
 
 .hist-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .hist-field {
@@ -605,8 +746,8 @@ a { color: inherit; text-decoration: none; }
 .stepper {
   display: flex;
   align-items: center;
-  background: var(--obsidian-1);
-  border: 1px solid var(--line-hairline);
+  background: var(--glass-input);
+  border: 1px solid var(--glass-border);
   border-radius: var(--r-control);
   overflow: hidden;
 }
@@ -615,13 +756,14 @@ a { color: inherit; text-decoration: none; }
   background: transparent;
   border: none;
   color: var(--text-primary);
-  padding: 6px 10px;
+  padding: 6px 11px;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 600;
   font-family: var(--font-mono);
+  transition: background var(--motion-snappy);
 }
 .step-btn:hover {
-  background: var(--obsidian-3);
+  background: var(--glass-control-hover);
 }
 
 .stepper input {
@@ -630,8 +772,9 @@ a { color: inherit; text-decoration: none; }
   background: transparent;
   text-align: center;
   font-family: var(--font-mono);
-  font-weight: 700;
+  font-weight: 600;
   padding: 6px 4px;
+  box-shadow: none;
 }
 
 .hist-actions {
@@ -639,7 +782,7 @@ a { color: inherit; text-decoration: none; }
   gap: 8px;
 }
 
-/* 五大指標卡片格 */
+/* 五大素養指標卡片格 (Apple Translucent Glass Tiles) */
 .grad-metrics-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -647,18 +790,20 @@ a { color: inherit; text-decoration: none; }
 }
 
 .grad-metric {
-  background: var(--obsidian-2);
-  border: 1px solid var(--line-hairline);
-  border-radius: 10px;
-  padding: 12px 14px;
+  background: var(--glass-subcard);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 14px 15px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: all 0.16s ease;
+  box-shadow: var(--glass-specular-soft);
+  transition: all var(--motion-snappy);
 }
 
 .grad-metric:hover {
-  border-color: var(--line-strong);
+  border-color: var(--glass-border-strong);
+  background: rgba(34, 37, 46, 0.6);
   transform: translateY(-1px);
 }
 
@@ -671,7 +816,8 @@ a { color: inherit; text-decoration: none; }
 
 .metric-name {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .metric-state {
@@ -682,7 +828,7 @@ a { color: inherit; text-decoration: none; }
 
 .metric-state.ok {
   color: var(--status-ok);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .metric-val {
@@ -693,9 +839,10 @@ a { color: inherit; text-decoration: none; }
 
 .val-num {
   font-family: var(--font-mono);
-  font-size: 22px;
-  font-weight: 800;
+  font-size: 24px;
+  font-weight: 700;
   color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
 
 .val-denom {
@@ -703,25 +850,30 @@ a { color: inherit; text-decoration: none; }
   color: var(--text-muted);
 }
 
+/* 蘋果玻璃膠囊進度條 (Minimalist Azure Fill) */
 .progress-track {
   width: 100%;
   height: 6px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--r-pill);
   overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 .progress-fill {
   height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
+  border-radius: var(--r-pill);
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--accent);
 }
 
-.progress-fill.total { background: linear-gradient(90deg, #f59e0b, #10b981); }
-.progress-fill.health { background: var(--lit-health); }
-.progress-fill.care { background: var(--lit-care); }
-.progress-fill.innovation { background: var(--lit-innovation); }
-.progress-fill.excellence { background: var(--lit-excellence); }
+.progress-fill.total {
+  background: linear-gradient(90deg, #0a84ff, #30d158);
+}
+.progress-fill.health { background: var(--dot-health); }
+.progress-fill.care { background: var(--dot-care); }
+.progress-fill.innovation { background: var(--dot-innovation); }
+.progress-fill.excellence { background: var(--dot-excellence); }
 
 .metric-sub {
   font-size: 11px;
@@ -736,71 +888,69 @@ a { color: inherit; text-decoration: none; }
   font-size: 11px;
   color: var(--text-muted);
   cursor: pointer;
-  transition: color 0.14s ease;
+  transition: color var(--motion-snappy);
 }
 .metric-filter-btn:hover {
-  color: var(--text-primary);
+  color: var(--accent);
 }
 
-/* 素養色彩標籤通用樣式 */
-.lit-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.3;
-  white-space: nowrap;
-}
-
-.lit-tag.l-health {
-  color: var(--lit-health);
-  background: var(--lit-health-bg);
-  border: 1px solid var(--lit-health-line);
-}
-
-.lit-tag.l-care {
-  color: var(--lit-care);
-  background: var(--lit-care-bg);
-  border: 1px solid var(--lit-care-line);
-}
-
-.lit-tag.l-innovation {
-  color: var(--lit-innovation);
-  background: var(--lit-innovation-bg);
-  border: 1px solid var(--lit-innovation-line);
-}
-
-.lit-tag.l-excellence {
-  color: var(--lit-excellence);
-  background: var(--lit-excellence-bg);
-  border: 1px solid var(--lit-excellence-line);
-}
-
-.lit-tag.l-none {
-  color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--line-hairline);
-}
+/* =========================================================================
+   四大素養標籤通用樣式 (Translucent Glass Chips with Subtle Indicator Dots)
+   ========================================================================= */
 
 .lit-tags-wrap {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 5px;
 }
+
+.lit-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: var(--r-chip);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  background: var(--lit-chip-bg);
+  border: 1px solid var(--lit-chip-border);
+  color: var(--lit-chip-text);
+  box-shadow: var(--glass-specular-soft);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.lit-tag::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.lit-tag.l-health::before { background: var(--dot-health); box-shadow: 0 0 6px rgba(48, 209, 88, 0.4); }
+.lit-tag.l-care::before { background: var(--dot-care); box-shadow: 0 0 6px rgba(10, 132, 255, 0.4); }
+.lit-tag.l-innovation::before { background: var(--dot-innovation); box-shadow: 0 0 6px rgba(255, 159, 10, 0.4); }
+.lit-tag.l-excellence::before { background: var(--dot-excellence); box-shadow: 0 0 6px rgba(191, 90, 242, 0.4); }
+
+.lit-tag.l-none {
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--glass-border-subtle);
+}
+.lit-tag.l-none::before { display: none; }
 
 .lit-label-sm {
   font-size: 11px;
-  font-weight: 700;
-  padding: 1px 6px;
+  font-weight: 600;
+  padding: 2px 7px;
   border-radius: 4px;
+  background: var(--glass-control);
+  color: var(--text-secondary);
 }
-.lit-label-sm.l-health { color: var(--lit-health); background: var(--lit-health-bg); }
-.lit-label-sm.l-care { color: var(--lit-care); background: var(--lit-care-bg); }
-.lit-label-sm.l-innovation { color: var(--lit-innovation); background: var(--lit-innovation-bg); }
-.lit-label-sm.l-excellence { color: var(--lit-excellence); background: var(--lit-excellence-bg); }
 
 /* =========================================================================
    資料表格與狀態標籤 Tables & Status Badges
@@ -826,24 +976,26 @@ table.grid {
 table.grid th {
   position: sticky;
   top: 0;
-  background: var(--obsidian-2);
+  background: rgba(26, 28, 34, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   color: var(--text-muted);
   font-weight: 600;
   font-size: 12px;
-  padding: 9px 12px;
-  border-bottom: 1px solid var(--line-strong);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--glass-border-strong);
   z-index: 2;
   white-space: nowrap;
 }
 
 table.grid td {
-  padding: 11px 12px;
-  border-bottom: 1px solid var(--line-hairline);
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--glass-border-subtle);
   vertical-align: middle;
 }
 
 table.grid tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 table.grid th.right,
@@ -861,26 +1013,30 @@ table.grid td.right {
   font-size: 12px;
   color: var(--text-muted);
   font-family: var(--font-mono);
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .cell-time {
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.4;
+  color: var(--text-secondary);
 }
 
 /* 狀態徽章 Badge */
 .badge-status {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 2px 7px;
-  border-radius: var(--r-chip);
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   font-family: var(--font-mono);
   white-space: nowrap;
+  background: var(--glass-control);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
 }
 
 .badge-status::before {
@@ -889,56 +1045,79 @@ table.grid td.right {
   width: 6px;
   height: 6px;
   border-radius: 50%;
+  background: var(--text-muted);
 }
 
 .badge-status.k-ok {
   color: var(--status-ok);
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: var(--status-ok-bg);
+  border-color: var(--status-ok-border);
 }
 .badge-status.k-ok::before { background: var(--status-ok); }
 
 .badge-status.k-warn {
   color: var(--status-warn);
-  background: var(--amber-glow);
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: var(--status-warn-bg);
+  border-color: var(--status-warn-border);
 }
 .badge-status.k-warn::before { background: var(--status-warn); }
 
 .badge-status.k-muted {
   color: var(--text-secondary);
-  background: var(--obsidian-3);
-  border: 1px solid var(--line-hairline);
+  background: var(--glass-subcard);
+  border-color: var(--glass-border);
 }
 .badge-status.k-muted::before { background: var(--text-muted); }
 
 .badge-status.k-dead {
-  color: var(--text-muted);
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--line-hairline);
+  color: var(--text-dim);
+  background: rgba(0, 0, 0, 0.25);
+  border-color: var(--glass-border-subtle);
 }
-.badge-status.k-dead::before { background: var(--status-dead); }
+.badge-status.k-dead::before { background: var(--text-dim); }
 
 .badge-status.k-done {
   color: var(--status-ok);
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid rgba(16, 185, 129, 0.5);
+  background: var(--status-ok-bg);
+  border-color: var(--status-ok-border);
+  font-weight: 600;
 }
 .badge-status.k-done::before { background: var(--status-ok); }
 
 .badge-status.k-manual {
   color: var(--status-manual);
-  background: rgba(56, 189, 248, 0.1);
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: var(--status-manual-bg);
+  border-color: var(--status-manual-border);
 }
 .badge-status.k-manual::before { background: var(--status-manual); }
 
 .badge-status.k-unknown {
   color: var(--text-muted);
-  background: var(--obsidian-2);
-  border: 1px solid var(--line-hairline);
+  background: var(--glass-subcard);
+  border-color: var(--glass-border);
 }
 .badge-status.k-unknown::before { background: var(--text-muted); }
+
+.tag.live {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+  background: var(--status-ok-bg);
+  color: var(--status-ok);
+  border: 1px solid var(--status-ok-border);
+}
+
+.tag {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+  background: var(--glass-control);
+  color: var(--text-muted);
+  border: 1px solid var(--glass-border);
+}
 
 .btn-group {
   display: inline-flex;
@@ -948,22 +1127,24 @@ table.grid td.right {
 
 .empty {
   text-align: center;
-  padding: 32px 16px;
+  padding: 36px 16px;
   color: var(--text-muted);
   font-size: 13px;
 }
 
+/* 手動快報列 (Apple Pro Bar) */
 .manual-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   padding: 10px 14px;
-  margin-bottom: 12px;
-  background: var(--obsidian-3);
-  border: 1px solid var(--line-hairline);
-  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+  background: var(--glass-subcard);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-control);
+  box-shadow: var(--glass-specular-soft);
 }
 
 .manual-input-wrap {
@@ -976,27 +1157,28 @@ table.grid td.right {
 
 .manual-tag {
   font-size: 11px;
-  font-weight: 700;
-  padding: 3px 6px;
-  background: var(--flame-glow);
-  color: var(--flame-orange);
-  border: 1px solid rgba(255, 59, 0, 0.4);
-  border-radius: 3px;
+  font-weight: 600;
+  padding: 3px 8px;
+  background: var(--accent-subtle);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--r-chip);
   white-space: nowrap;
 }
 
 .manual-input-wrap input {
   flex: 1;
-  padding: 6px 10px;
+  padding: 7px 11px;
   font-size: 13px;
-  background: var(--obsidian-1);
-  border: 1px solid var(--line-hairline);
+  background: var(--glass-input);
+  border: 1px solid var(--glass-border);
   color: var(--text-primary);
-  border-radius: var(--radius-xs);
+  border-radius: var(--r-control);
 }
 
 .manual-input-wrap input:focus {
-  border-color: var(--flame-orange);
+  border-color: var(--accent);
+  box-shadow: var(--accent-glow);
   outline: none;
 }
 
@@ -1006,27 +1188,37 @@ table.grid td.right {
 }
 
 /* =========================================================================
-   AI 代理與排程 AI & Automation
+   智慧挑課與排程指令列 (Apple Spotlight Style - Zero AI Gimmick)
    ========================================================================= */
 
 .agent-bar {
   display: flex;
   gap: 10px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .agent-bar textarea {
   flex: 1;
   resize: vertical;
   min-height: 52px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.spark {
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
 }
 
 .agent-plan {
   margin-top: 14px;
-  background: var(--obsidian-2);
-  border: 1px solid var(--line-hairline);
+  background: var(--glass-subcard);
+  border: 1px solid var(--glass-border);
   border-radius: var(--r-control);
   padding: 14px 16px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .plan-grid {
@@ -1040,12 +1232,14 @@ table.grid td.right {
   font-size: 13px;
   color: var(--text-secondary);
   margin-bottom: 6px;
+  font-weight: 600;
 }
 
 .plan-schedule {
   font-family: var(--font-mono);
   font-size: 13px;
-  color: var(--amber-signal);
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .pick-list {
@@ -1075,15 +1269,15 @@ table.grid td.right {
 }
 
 .pick-why {
-  color: var(--amber-signal);
+  color: var(--accent);
 }
 
 .plan-actions {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding-top: 8px;
-  border-top: 1px solid var(--line-hairline);
+  padding-top: 10px;
+  border-top: 1px solid var(--glass-border-subtle);
 }
 
 /* 排程項目 */
@@ -1094,28 +1288,29 @@ table.grid td.right {
 }
 
 .sched-item {
-  background: var(--obsidian-2);
-  border: 1px solid var(--line-hairline);
+  background: var(--glass-subcard);
+  border: 1px solid var(--glass-border);
   border-radius: var(--r-control);
-  padding: 8px 12px;
+  padding: 9px 13px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  transition: all var(--motion-snappy);
 }
 
 .sched-item.off {
-  opacity: 0.5;
+  opacity: 0.45;
 }
 
 .sched-item.active {
-  border-color: rgba(245, 158, 11, 0.4);
-  background: var(--amber-glow);
+  border-color: var(--accent-border);
+  background: var(--accent-subtle);
 }
 
 .sched-desc {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .sched-actions {
@@ -1125,7 +1320,7 @@ table.grid td.right {
 
 .day-row {
   display: flex;
-  gap: 4px;
+  gap: 5px;
 }
 
 .day {
@@ -1140,30 +1335,32 @@ table.grid td.right {
   display: block;
   padding: 6px 0;
   border-radius: var(--r-chip);
-  background: var(--obsidian-2);
-  border: 1px solid var(--line-hairline);
+  background: var(--glass-input);
+  border: 1px solid var(--glass-border);
   font-size: 12px;
   font-weight: 600;
-  transition: all 0.12s ease;
+  color: var(--text-secondary);
+  transition: all var(--motion-snappy);
 }
 
 .day input:checked + span {
-  background: var(--amber-glow);
-  color: var(--amber-signal);
-  border-color: rgba(245, 158, 11, 0.4);
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+  box-shadow: 0 1px 6px rgba(10, 132, 255, 0.35);
 }
 
 /* =========================================================================
-   行事曆 Calendar
+   行事曆 Calendar (Apple Style Grid)
    ========================================================================= */
 
 .cal-wrap {
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .cal-month {
   font-family: var(--font-mono);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 13px;
   padding: 0 4px;
 }
@@ -1171,7 +1368,7 @@ table.grid td.right {
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 5px;
 }
 
 .cal-dow {
@@ -1183,13 +1380,14 @@ table.grid td.right {
 }
 
 .cal-cell {
-  min-height: 64px;
-  background: var(--obsidian-2);
-  border: 1px solid var(--line-hairline);
-  border-radius: 6px;
-  padding: 4px;
+  min-height: 66px;
+  background: var(--glass-subcard);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 8px;
+  padding: 5px;
   display: flex;
   flex-direction: column;
+  transition: border-color var(--motion-snappy);
 }
 
 .cal-cell.blank {
@@ -1198,11 +1396,12 @@ table.grid td.right {
 }
 
 .cal-cell.today {
-  border-color: rgba(245, 158, 11, 0.4);
+  border-color: var(--accent);
+  background: rgba(10, 132, 255, 0.06);
 }
 
 .cal-cell.today .cal-day {
-  color: var(--amber-signal);
+  color: var(--accent);
   font-weight: 700;
 }
 
@@ -1216,14 +1415,14 @@ table.grid td.right {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .cal-chip {
-  background: var(--obsidian-3);
-  border: 1px solid var(--line-hairline);
-  border-radius: 3px;
-  padding: 1px 4px;
+  background: var(--glass-control);
+  border: 1px solid var(--glass-border);
+  border-radius: 4px;
+  padding: 2px 5px;
   font-size: 11px;
   text-align: left;
   cursor: pointer;
@@ -1231,14 +1430,16 @@ table.grid td.right {
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--text-primary);
+  transition: all var(--motion-snappy);
 }
 .cal-chip:hover {
-  background: var(--obsidian-4);
+  background: var(--glass-control-hover);
+  border-color: var(--accent-border);
 }
 
 .cal-chip b {
   font-family: var(--font-mono);
-  color: var(--amber-signal);
+  color: var(--accent);
   margin-right: 4px;
   font-weight: 600;
 }
@@ -1246,7 +1447,7 @@ table.grid td.right {
 .cal-upcoming {
   list-style: none;
   padding: 0;
-  margin: 14px 0 0;
+  margin: 16px 0 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1257,11 +1458,12 @@ table.grid td.right {
   grid-template-columns: 85px 95px 1fr auto;
   gap: 12px;
   align-items: center;
-  padding: 8px 12px;
-  background: var(--obsidian-2);
-  border: 1px solid var(--line-hairline);
+  padding: 9px 14px;
+  background: var(--glass-subcard);
+  border: 1px solid var(--glass-border);
   border-radius: var(--r-control);
   font-size: 13px;
+  box-shadow: var(--glass-specular-soft);
 }
 
 .up-date {
@@ -1276,7 +1478,7 @@ table.grid td.right {
 
 .up-time {
   font-family: var(--font-mono);
-  color: var(--amber-signal);
+  color: var(--accent);
 }
 
 .up-title {
@@ -1292,21 +1494,22 @@ table.grid td.right {
 }
 
 /* =========================================================================
-   日誌與浮動通知 Logs & Toasts
+   日誌與浮動通知 Logs & Toasts (Apple Glass Notifications)
    ========================================================================= */
 
 .log {
   max-height: 220px;
   overflow-y: auto;
-  background: var(--obsidian-0);
-  border: 1px solid var(--line-hairline);
+  background: var(--glass-input);
+  border: 1px solid var(--glass-border);
   border-radius: var(--r-control);
-  padding: 8px 12px;
+  padding: 10px 14px;
   font-family: var(--font-mono);
   font-size: 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .log .row {
@@ -1335,32 +1538,34 @@ table.grid td.right {
 
 .toast {
   pointer-events: auto;
-  background: var(--obsidian-3);
-  border: 1px solid var(--line-strong);
+  background: var(--glass-modal);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid var(--glass-border-strong);
   border-radius: var(--r-control);
-  padding: 10px 16px;
+  padding: 11px 18px;
   font-size: 13px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  animation: toastIn 0.2s ease-out;
+  box-shadow: var(--glass-shadow-float);
+  animation: toastIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .toast.ok {
-  border-color: rgba(16, 185, 129, 0.4);
-  color: #a7f3d0;
+  border-color: var(--status-ok-border);
+  color: #c0f4d3;
 }
 
 .toast.err {
-  border-color: rgba(239, 68, 68, 0.4);
-  color: #fca5a5;
+  border-color: var(--status-err-border);
+  color: #ffd0ce;
 }
 
 @keyframes toastIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* =========================================================================
-   手機端專用底部導航列 Mobile Nav
+   手機端專用底部導航列 Mobile Dock (Apple Floating Glass Dock)
    ========================================================================= */
 
 .mobile-nav {
@@ -1368,7 +1573,7 @@ table.grid td.right {
 }
 
 /* =========================================================================
-   響應式設計 Responsive Adaptations
+   響應式設計 Responsive Adaptations (Apple HIG Standards)
    ========================================================================= */
 
 @media (max-width: 1100px) {
@@ -1381,6 +1586,10 @@ table.grid td.right {
 }
 
 @media (max-width: 800px) {
+  .layout {
+    padding-bottom: 90px;
+  }
+
   .grad-metrics-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -1392,7 +1601,7 @@ table.grid td.right {
     display: inline-flex;
   }
 
-  /* 側邊欄抽屜化 */
+  /* 手機端側邊抽屜：深階磨砂玻璃 */
   .side {
     position: fixed;
     top: 0;
@@ -1400,14 +1609,16 @@ table.grid td.right {
     bottom: 0;
     width: 86vw;
     max-width: 380px;
-    background: var(--obsidian-1);
-    border-left: 1px solid var(--line-strong);
+    background: var(--glass-modal);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border-left: 1px solid var(--glass-border-strong);
     padding: 20px;
     z-index: var(--z-modal);
     overflow-y: auto;
     transform: translateX(100%);
-    transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.7);
   }
 
   .side.open {
@@ -1418,8 +1629,8 @@ table.grid td.right {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--line-hairline);
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--glass-border-subtle);
   }
 
   /* 表格在手機端卡片化 */
@@ -1439,11 +1650,12 @@ table.grid td.right {
   }
 
   table.grid tr {
-    background: var(--obsidian-2);
-    border: 1px solid var(--line-hairline);
-    border-radius: 10px;
-    padding: 12px;
-    margin-bottom: 12px;
+    background: var(--glass-subcard);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+    box-shadow: var(--glass-specular-soft);
   }
 
   table.grid td {
@@ -1456,31 +1668,33 @@ table.grid td.right {
 
   table.grid td:first-child {
     padding-top: 0;
-    margin-bottom: 6px;
-    border-bottom: 1px solid var(--line-hairline);
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--glass-border-subtle);
     padding-bottom: 8px;
   }
 
   table.grid td.right {
     margin-top: 10px;
-    padding-top: 8px;
-    border-top: 1px solid var(--line-hairline);
+    padding-top: 10px;
+    border-top: 1px solid var(--glass-border-subtle);
     justify-content: flex-end;
   }
 
-  /* 手機端底部導航 */
+  /* 蘋果 iOS 浮動磨砂玻璃 Dock (Apple Floating Glass Dock) */
   .mobile-nav {
     display: flex;
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 14px;
+    left: 14px;
+    right: 14px;
     z-index: var(--z-sticky);
-    background: rgba(7, 8, 12, 0.94);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border-top: 1px solid var(--line-hairline);
-    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    background: var(--glass-dock);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid var(--glass-border-strong);
+    border-radius: 20px;
+    padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+    box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.55), var(--glass-specular);
     justify-content: space-around;
   }
 
@@ -1493,23 +1707,45 @@ table.grid td.right {
     align-items: center;
     gap: 3px;
     font-size: 10px;
-    font-weight: 600;
-    padding: 4px 8px;
+    font-weight: 500;
+    padding: 6px 12px;
     cursor: pointer;
-    transition: color 0.14s ease;
+    border-radius: 12px;
+    min-height: 44px; /* 滿足觸控規範 */
+    transition: all var(--motion-snappy);
   }
 
   .mob-tab.active {
-    color: var(--amber-signal);
+    color: var(--accent);
+    background: var(--accent-subtle);
+    font-weight: 600;
   }
 
   body {
-    padding-bottom: 70px;
+    padding-bottom: 86px;
   }
 
   .toasts {
-    bottom: 80px;
+    bottom: 96px;
     left: 14px;
     right: 14px;
+  }
+}
+
+/* 尊重使用者降低動態與透明度偏好 (WCAG 2.2 AA / Apple HIG Accessibility) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .topbar, .card, .pill, .btn.ghost, .mobile-nav, .side, .toast {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: var(--bg-surface) !important;
   }
 }
