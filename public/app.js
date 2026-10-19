@@ -495,14 +495,27 @@ function renderCalendar(snap) {
     .sort((a, b) => a.startAt - b.startAt)
     .slice(0, 6);
 
+  const badge = $('#navCalBadge');
+  if (badge) {
+    badge.textContent = String(events.length);
+    badge.hidden = events.length === 0;
+  }
+
   upcoming.innerHTML = nextUp
     .map(
       (ev) => `
       <li class="up-item">
-        <span class="up-date">${esc(ev.dateLabel)}<b>${esc(ev.weekdayLabel)}</b></span>
-        <span class="up-time">${esc(ev.timeText)}</span>
-        <span class="up-title">${esc(ev.title)} ${renderLiteracyBadges(ev.literacies)}</span>
-        <span class="up-place">${esc(ev.place || '')}</span>
+        <div class="up-time-col">
+          <span class="up-date">${esc(ev.dateLabel)}<b>${esc(ev.weekdayLabel)}</b></span>
+          <span class="up-time">${esc(ev.timeText)}</span>
+        </div>
+        <div class="up-main-col">
+          <span class="up-title">${esc(ev.title)}</span>
+          <div class="up-meta">${renderLiteracyBadges(ev.literacies)} <span class="up-place">${esc(ev.place || '')}</span></div>
+        </div>
+        <div class="up-action-col">
+          <button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(ev.reseid || ev.eid01)}" title="取消報名（退選）">取消報名</button>
+        </div>
       </li>`
     )
     .join('');
@@ -549,6 +562,11 @@ function renderTargets(snap) {
   const body = $('#targetBody');
   const hint = $('#targetHint');
   $('#targetCount').textContent = String(targets.length);
+  const badgeEl = $('#navTargetBadge');
+  if (badgeEl) {
+    badgeEl.textContent = String(targets.length);
+    badgeEl.hidden = targets.length === 0;
+  }
 
   if (!targets.length) {
     body.innerHTML = '';
@@ -574,7 +592,7 @@ function renderTargets(snap) {
         actions.push(`<button class="btn sm primary" data-action="register-target" data-eid="${esc(target.eid01)}">手動報名</button>`);
       }
       if (target.status === 'registered') {
-        actions.push(`<button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(target.reseid)}">退選</button>`);
+        actions.push(`<button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(target.reseid || target.eid01)}" title="取消報名（退選）">取消報名</button>`);
       }
       actions.push(`<button class="btn sm ghost" data-action="remove-target" data-eid="${esc(target.eid01)}">移除</button>`);
 
@@ -660,6 +678,16 @@ function renderLectures(snap) {
   lectureSig = sig;
 
   $('#lectureCount').textContent = `${rows.length}/${S.lectures.length}`;
+  const bridge = $('#lecturesBridgeBar');
+  const bridgeText = $('#lecturesBridgeText');
+  if (bridge && bridgeText) {
+    if (watched.size > 0) {
+      bridgeText.textContent = `目前已選取 ${watched.size} 場搶課目標，可點擊切換至排程中心設定啟動時機。`;
+      bridge.hidden = false;
+    } else {
+      bridge.hidden = true;
+    }
+  }
 
   if (!rows.length) {
     body.innerHTML = '';
@@ -681,6 +709,7 @@ function renderLectures(snap) {
 
       if (isRegistered) {
         actions.push(`<span class="tag live">已報名</span>`);
+        actions.push(`<button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(row.reseid || row.eid01)}" title="取消報名（退選）">取消報名</button>`);
       } else {
         if (canapp === 'Y') {
           actions.push(`<button class="btn sm primary" data-action="quick-register" data-eid="${esc(row.eid01)}" title="不經 AI，直接送出本機報名">手動報名</button>`);
@@ -817,12 +846,42 @@ async function fillForms(snap) {
   S.filled = true;
 }
 
+/* ------------------------------ 分層視圖導覽切換 ------------------------------ */
+
+function switchView(viewName) {
+  const allowed = ['lectures', 'targets', 'calendar', 'settings'];
+  if (!allowed.includes(viewName)) viewName = 'lectures';
+  document.body.dataset.view = viewName;
+  document.querySelectorAll('.view-panel').forEach((el) => {
+    el.hidden = el.dataset.view !== viewName;
+  });
+  document.querySelectorAll('[data-action="switch-view"]').forEach((btn) => {
+    const active = btn.dataset.view === viewName;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  document.querySelectorAll('.mob-tab').forEach((tab) => {
+    tab.classList.toggle('active', tab.dataset.view === viewName);
+  });
+  try {
+    localStorage.setItem('au_lecture_view', viewName);
+    history.replaceState(null, '', `#${viewName}`);
+  } catch {}
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 /* ------------------------------ 事件監聽與代理 ------------------------------ */
 
 document.addEventListener('click', (event) => {
   const button = event.target.closest('[data-action]');
   if (!button) return;
   const action = button.dataset.action;
+
+  if (action === 'switch-view' || action === 'mob-tab') {
+    const view = button.dataset.view || button.dataset.target?.replace('card', '').toLowerCase();
+    switchView(view);
+    return;
+  }
 
   if (action === 'start') {
     return guard(async () => {
@@ -907,20 +966,6 @@ document.addEventListener('click', (event) => {
     return;
   }
 
-  if (action === 'mob-tab') {
-    const targetId = button.dataset.target;
-    $$('.mob-tab').forEach((tab) => tab.classList.remove('active'));
-    button.classList.add('active');
-
-    if (targetId === 'cardAccount') {
-      $('#sidePanel').classList.add('open');
-    } else {
-      $('#sidePanel').classList.remove('open');
-      const el = $(`#${targetId}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    }
-    return;
-  }
 
   if (action === 'save-settings') {
     return guard(async () => {
@@ -1130,11 +1175,26 @@ document.addEventListener('click', (event) => {
     });
   }
 
-  if (action === 'cancel-target') {
-    if (!window.confirm('確定要退選這場講座嗎？（若未出席可能累積缺曠紀錄）')) return;
+  if (action === 'manual-code-cancel') {
+    const input = $('#manualCourseCode');
+    const code = input ? input.value.trim() : '';
+    if (!code) return toast('請先輸入課程代號（如 1151074）', 'err');
+    if (!window.confirm(`確定要取消報名（退選）代號 ${code} 的講座嗎？`)) return;
     return guard(async () => {
-      await post('/api/cancel', { reseid: button.dataset.reseid });
-      toast('已完成退選作業');
+      const res = await post('/api/cancel', { reseid: code });
+      toast(res.message || '已成功取消報名', 'ok');
+      if (input) input.value = '';
+      await refreshLectures();
+      await poll();
+    });
+  }
+
+  if (action === 'cancel-target') {
+    if (!window.confirm('確定要取消報名（退選）這場講座嗎？（若未出席可能累積缺曠紀錄）')) return;
+    return guard(async () => {
+      const res = await post('/api/cancel', { reseid: button.dataset.reseid });
+      toast(res.message || '已成功取消報名', 'ok');
+      await refreshLectures();
       await poll();
     });
   }
@@ -1244,6 +1304,10 @@ if ('serviceWorker' in navigator) {
 /* ------------------------------ 系統開機初始化 ------------------------------ */
 
 async function boot() {
+  const hash = window.location.hash.replace('#', '');
+  const saved = localStorage.getItem('au_lecture_view');
+  switchView(hash || saved || 'lectures');
+
   await poll();
   try {
     await refreshLectures();

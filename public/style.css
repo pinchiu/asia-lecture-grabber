@@ -81,11 +81,12 @@
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "Arial", sans-serif;
   --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
 
-  /* 包浩斯幾何尺度 (Bauhaus Disciplined Geometry - 告別浮腫圓角) */
-  --r-card: 6px;
-  --r-control: 4px;
-  --r-chip: 3px;
-  --r-pill: 4px;
+  /* 蘋果 Squircle 與包浩斯極簡幾何尺度 (高雅 r 角，告別生硬方角) */
+  --r-card: 16px;
+  --r-control: 10px;
+  --r-chip: 6px;
+  --r-pill: 999px;
+  --r-modal: 18px;
 
   /* 物理機械微動效 (Tactile Snappy Motion) */
   --motion-fast: 0.12s cubic-bezier(0.2, 0, 0, 1);
@@ -205,16 +206,75 @@ a { color: inherit; text-decoration: none; }
   gap: 10px;
 }
 
-.logo {
+.logo-mark {
   display: grid;
   place-items: center;
   width: 32px;
   height: 32px;
   border-radius: var(--r-control);
-  background: var(--glass-control);
-  border: 1px solid var(--line-strong);
+  background: #ffffff;
+  color: #000000;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.25);
+  user-select: none;
+}
+
+/* 核心層級分頁導覽列 (Segmented Control) */
+.nav-segments {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line-hairline);
+  box-shadow: var(--glass-specular-soft);
+}
+
+.nav-segment-btn {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 5px 14px;
+  border-radius: 9px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--motion-fast);
+}
+
+.nav-segment-btn:hover:not(.active) {
   color: #ffffff;
-  box-shadow: var(--glass-specular);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.nav-segment-btn.active {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.seg-badge {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.2);
+  color: #000000;
+}
+
+.nav-segment-btn:not(.active) .seg-badge {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
 }
 
 .brand-text h1 {
@@ -379,12 +439,22 @@ a { color: inherit; text-decoration: none; }
 
 .btn.danger {
   background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
-  border-color: var(--line-strong);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: var(--glass-specular-soft);
 }
 .btn.danger:hover:not(:disabled) {
   background: #ffffff;
   color: #000000;
+  border-color: #ffffff;
+  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.25);
+  font-weight: 600;
+}
+
+.btn.danger-hover:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
 }
 
 .btn.sm {
@@ -414,30 +484,68 @@ a { color: inherit; text-decoration: none; }
    ========================================================================= */
 
 .layout {
-  max-width: 1520px;
+  max-width: 1460px;
   margin: 0 auto;
-  padding: 20px clamp(14px, 2vw, 28px) 60px;
+  padding: 24px clamp(16px, 2vw, 32px) 80px;
+}
+
+.view-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: panelIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.view-panel[hidden] {
+  display: none !important;
+}
+
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 跨視圖跳轉橋樑列 */
+.view-bridge-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 16px;
+  border-radius: var(--r-control);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line-hairline);
+  box-shadow: var(--glass-specular-soft);
+  font-size: 12px;
+}
+
+.view-bridge-bar[hidden] {
+  display: none !important;
+}
+
+.bridge-text {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+/* 系統設定分層四格控制中心 */
+.settings-grid {
   display: grid;
-  grid-template-columns: 340px 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   gap: 20px;
   align-items: start;
 }
 
-.side {
+.sched-form-grid {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.side-header-mobile {
-  display: none;
-}
-
-.main {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  min-width: 0;
+  gap: 12px;
 }
 
 /* 建築級透光卡片 (Bauhaus Architectural Panes) */
@@ -1382,52 +1490,108 @@ table.grid td.right {
   font-weight: 600;
 }
 
+.upcoming-wrap {
+  margin-top: 20px;
+  border-top: 1px solid var(--line-hairline);
+  padding-top: 16px;
+}
+
+.upcoming-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.upcoming-head h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
 .cal-upcoming {
   list-style: none;
   padding: 0;
-  margin: 12px 0 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .up-item {
-  display: grid;
-  grid-template-columns: 80px 90px 1fr auto;
-  gap: 10px;
+  display: flex;
   align-items: center;
-  padding: 8px 12px;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 14px;
   background: var(--glass-subcard);
   border: 1px solid var(--line-hairline);
   border-radius: var(--r-control);
   font-size: 12px;
+  transition: all var(--motion-fast);
+}
+
+.up-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--line-strong);
+}
+
+.up-time-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 96px;
 }
 
 .up-date {
   font-family: var(--font-mono);
   color: var(--text-secondary);
+  font-size: 12px;
 }
 
 .up-date b {
-  margin-left: 4px;
+  margin-left: 5px;
   color: #ffffff;
+  font-weight: 600;
 }
 
 .up-time {
   font-family: var(--font-mono);
-  color: #ffffff;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.up-main-col {
+  flex: 1;
+  min-width: 0;
 }
 
 .up-title {
   font-weight: 600;
+  color: var(--text-primary);
+  font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.up-meta {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .up-place {
   color: var(--text-muted);
-  font-size: 11.5px;
+  font-size: 11px;
+}
+
+.up-action-col {
+  flex-shrink: 0;
 }
 
 /* =========================================================================
@@ -1614,7 +1778,11 @@ table.grid td.right {
     justify-content: flex-end;
   }
 
-  /* 包浩斯單色浮動底欄 */
+  .nav-segments {
+    display: none;
+  }
+
+  /* 蘋果高階單色浮動底欄 */
   .mobile-nav {
     display: flex;
     position: fixed;
@@ -1626,8 +1794,8 @@ table.grid td.right {
     backdrop-filter: blur(28px) saturate(140%);
     -webkit-backdrop-filter: blur(28px) saturate(140%);
     border: 1px solid var(--line-strong);
-    border-radius: 10px;
-    padding: 5px 8px calc(5px + env(safe-area-inset-bottom));
+    border-radius: var(--r-card);
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
     justify-content: space-around;
   }
@@ -1639,10 +1807,10 @@ table.grid td.right {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
-    font-size: 10px;
+    gap: 4px;
+    font-size: 11px;
     font-weight: 500;
-    padding: 5px 10px;
+    padding: 6px 12px;
     cursor: pointer;
     border-radius: var(--r-control);
     min-height: 44px;
@@ -1653,6 +1821,22 @@ table.grid td.right {
     color: #ffffff;
     background: rgba(255, 255, 255, 0.1);
     font-weight: 600;
+  }
+
+  .mob-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--line-hairline);
+  }
+
+  .mob-tab.active .mob-badge {
+    background: #ffffff;
+    color: #000000;
+    border-color: #ffffff;
   }
 
   body {
