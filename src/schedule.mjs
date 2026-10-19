@@ -124,6 +124,25 @@ export class Scheduler {
     return entry;
   }
 
+  ensureOpenSchedule() {
+    let openEntry = this.entries.find((entry) => entry.mode === 'open');
+    if (!openEntry) {
+      openEntry = this.add({
+        mode: 'open',
+        leadSec: 15,
+        label: '目標開放瞬間自動搶課',
+        enabled: true
+      });
+      this.log('info', '已自動為搶課目標建立「開放瞬間」自動排程（開放前 15 秒啟動）');
+    } else if (!openEntry.enabled) {
+      openEntry.enabled = true;
+      this.log('info', '已重新啟用「開放瞬間」自動搶課排程');
+    }
+    this.enabled = true;
+    this.persist();
+    return openEntry;
+  }
+
   remove(id) {
     this.entries = this.entries.filter((entry) => entry.id !== id);
     this._runtime.delete(id);
@@ -160,7 +179,7 @@ export class Scheduler {
   shouldStart(entry, now) {
     const rt = this.runtime(entry);
     if (entry.mode === 'open') {
-      const openAt = this.earliestOpenAt();
+      const openAt = this.earliestOpenAt(now);
       if (!openAt) return false;
       const triggerAt = openAt - entry.leadSec * 1000;
       if (rt.openFiredFor === openAt) return false;
@@ -207,10 +226,12 @@ export class Scheduler {
     return minutes >= start && minutes < stop;
   }
 
-  earliestOpenAt() {
+  earliestOpenAt(now = Date.now()) {
     let min = 0;
     for (const target of this.engine.activeTargets()) {
       if (!target.openAt) continue;
+      // 忽略已開放超過寬限期的過去時間，鎖定尚未開放或即將開放的目標
+      if (target.openAt + OPEN_TAIL_MS < now) continue;
       if (!min || target.openAt < min) min = target.openAt;
     }
     return min;
@@ -279,7 +300,7 @@ export class Scheduler {
       let candidate = 0;
 
       if (entry.mode === 'open') {
-        const openAt = this.earliestOpenAt();
+        const openAt = this.earliestOpenAt(now);
         if (openAt) candidate = openAt - entry.leadSec * 1000;
       } else if (entry.mode === 'at') {
         if (entry.startAt > now) candidate = entry.startAt;

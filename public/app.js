@@ -1645,6 +1645,7 @@ document.addEventListener('click', (event) => {
     return guard(async () => {
       const eid01 = button.dataset.eid;
       await post('/api/targets', { eid01s: [eid01] });
+      toast('已加入搶課目標，已自動設定開放排程', 'ok');
       await poll();
     });
   }
