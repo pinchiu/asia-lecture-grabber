@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#16171b">
+  <meta name="theme-color" content="#0c0d10">
   <meta name="description" content="亞洲大學通識講座自動報名助手與四大基本素養（健康力、關懷力、創新力、卓越力）畢業門檻追蹤系統">
   <title>亞洲大學講座報名系統 · 畢業素養門檻追蹤與自動搶課</title>
 
@@ -401,6 +401,7 @@
             <label class="check inline"><input type="checkbox" id="showFullToggle"> 顯示已額滿</label>
             <label class="check inline"><input type="checkbox" id="missingOnlyToggle"> 只看我缺少的素養</label>
             <button class="btn ghost sm" data-action="refresh">重新整理</button>
+          </div>
         </div>
 
         <div class="manual-bar">
@@ -460,29 +461,22 @@
         </div>
       </section>
 
-      <!-- 智慧挑課與排程指令 -->
+      <!-- 快速規劃指令列 -->
       <section class="card agent" id="cardAgent">
         <div class="card-head">
           <h2>
-            <span class="spark" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="4 17 10 11 4 5"/>
-                <line x1="12" y1="19" x2="20" y2="19"/>
-              </svg>
-            </span>
-            智慧挑課與快速規劃指令
-            <span class="tag" id="agentSource">待命</span>
+            <span class="idx">&gt;_</span>
+            快速規劃指令列
+            <span class="tag" id="agentSource">本機規則</span>
           </h2>
           <div class="tools">
-            <button class="btn ghost sm" data-action="agent-examples">參考範例</button>
+            <button class="btn ghost sm" data-action="agent-examples">範例指令</button>
           </div>
         </div>
 
-        <p class="lead">用一句話描述你的目標與時間，支援指定四大素養。系統會自動篩選場次並規劃排程，經你確認後才會加入監控。</p>
-
         <div class="agent-bar">
-          <textarea id="agentPrompt" rows="2" placeholder="例如：我想補 2 場創新力跟 1 場健康力講座，明天晚上搶課"></textarea>
-          <button class="btn primary" data-action="agent-plan">智慧規劃</button>
+          <input type="text" id="agentPrompt" placeholder="輸入排程需求（例如：補 2 場創新力，明天晚上搶課）" autocomplete="off">
+          <button class="btn primary sm" data-action="agent-plan">執行規劃</button>
         </div>
 
         <div class="agent-plan" id="agentPlan" hidden>
@@ -564,6 +558,6 @@
   <!-- 浮動通知容器 -->
   <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
 
-  <script src="./app.js?v=2.2"></script>
+  <script src="./app.js?v=2.3"></script>
 </body>
 </html>
