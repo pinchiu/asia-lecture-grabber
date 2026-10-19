@@ -1,101 +1,97 @@
 /* =========================================================================
    亞洲大學講座自動報名助手與畢業素養門檻追蹤系統
-   設計規範：Apple Liquid Glass × Monochrome Slate (蘋果液態磨砂玻璃與單色太空灰)
-   權威標準：遵循 UI/UX Pro Max 規範 (WCAG 2.2 AA / Apple HIG / 零 AI 感 / 零表情符號)
-   色彩架構：單色太空灰階畫布 + 庫比蒂諾蔚藍 (#0a84ff) 專用選項與操作對比色
+   美學風格：Bauhaus Minimalist Functionalism × Pure Monotone (黑白灰極簡包浩斯)
+   設計哲學：Less is More · Form Follows Function (形式服從功能 · 零 AI 感 · 零表情符號)
+   色彩架構：純粹黑白灰階階梯 (Black, White & Slate Gray) + 純白 (#ffffff) 專用操作高對比
+   視覺材質：蘋果透光磨砂玻璃 (Liquid Frosted Glass) + 建築級精密細線 (Architectural Hairlines)
    ========================================================================= */
 
 :root {
   color-scheme: dark;
 
-  /* 蘋果太空灰與純淨灰階系統 (Apple Space Gray System) */
-  --bg-canvas: #16171b;
-  --bg-surface: #1a1b20;
-  --bg-elevated: #22242b;
+  /* 畫布與黑白灰底層系統 (Achromatic Bauhaus Palette) */
+  --bg-canvas: #0c0d10;
+  --bg-surface: #141519;
+  --bg-elevated: #1b1d22;
 
-  /* 蘋果高階磨砂玻璃材質 (Apple Liquid & Frosted Glass Materials) */
-  --glass-topbar: rgba(22, 23, 27, 0.76);
-  --glass-card: rgba(28, 30, 36, 0.65);
-  --glass-card-hover: rgba(34, 36, 44, 0.75);
-  --glass-subcard: rgba(20, 22, 27, 0.55);
-  --glass-control: rgba(36, 38, 46, 0.65);
-  --glass-control-hover: rgba(46, 49, 59, 0.82);
-  --glass-input: rgba(18, 19, 23, 0.65);
-  --glass-input-focus: rgba(24, 26, 32, 0.9);
-  --glass-modal: rgba(26, 28, 34, 0.88);
-  --glass-dock: rgba(22, 23, 27, 0.84);
+  /* 蘋果高階磨砂玻璃材質 (Smoked Frosted Optical Glass) */
+  --glass-topbar: rgba(14, 15, 19, 0.82);
+  --glass-card: rgba(20, 22, 27, 0.72);
+  --glass-card-hover: rgba(25, 27, 33, 0.82);
+  --glass-subcard: rgba(16, 17, 21, 0.58);
+  --glass-control: rgba(255, 255, 255, 0.05);
+  --glass-control-hover: rgba(255, 255, 255, 0.1);
+  --glass-input: rgba(10, 11, 14, 0.75);
+  --glass-input-focus: rgba(14, 15, 19, 0.95);
+  --glass-modal: rgba(18, 19, 24, 0.92);
+  --glass-dock: rgba(14, 15, 19, 0.88);
 
-  /* 玻璃光學微結構、極細反光邊框與環境柔陰影 (Optics & Specular Rims) */
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-border-strong: rgba(255, 255, 255, 0.14);
-  --glass-border-subtle: rgba(255, 255, 255, 0.05);
-  --glass-specular: inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
-  --glass-specular-soft: inset 0 1px 0 0 rgba(255, 255, 255, 0.07);
-  --glass-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.38);
-  --glass-shadow-float: 0 20px 48px -8px rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.14);
+  /* 建築級細線、頂部玻璃高光反光與環境陰影 (Architectural Hairlines & Optics) */
+  --line-hairline: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --line-subtle: rgba(255, 255, 255, 0.05);
+  --glass-specular: inset 0 1px 0 0 rgba(255, 255, 255, 0.14);
+  --glass-specular-soft: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  --glass-shadow-float: 0 16px 40px rgba(0, 0, 0, 0.65), inset 0 1px 0 0 rgba(255, 255, 255, 0.18);
 
-  /* 乾淨高級的單色排版灰階 (Monochrome Typography - WCAG 2.2 AA Verified) */
-  --text-primary: #f5f6f8;
-  --text-secondary: #9da3af;
-  --text-muted: #6b7280;
-  --text-dim: #4b5260;
+  /* 黑白灰文字階層 (Achromatic Typography - WCAG 2.2 AAA Verified) */
+  --text-pure: #ffffff;
+  --text-primary: #ededef;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --text-dim: #3f3f46;
 
-  /* 單一選項與互動對比強調色：庫比蒂諾蔚藍 (Apple Cupertino Blue - 理性、乾淨、專注、零 AI 感) */
-  --accent: #0a84ff;
-  --accent-hover: #3395ff;
-  --accent-active: #0071e3;
-  --accent-contrast: #ffffff;
-  --accent-subtle: rgba(10, 132, 255, 0.12);
-  --accent-border: rgba(10, 132, 255, 0.38);
-  --accent-glow: 0 0 0 3px rgba(10, 132, 255, 0.35);
+  /* 包浩斯純白操作與選項高對比 (High-Contrast Pure White Accent) */
+  --accent: #ffffff;
+  --accent-text: #000000;
+  --accent-hover: #f4f4f5;
+  --accent-active: #e4e4e7;
+  --accent-subtle: rgba(255, 255, 255, 0.08);
+  --accent-border: rgba(255, 255, 255, 0.28);
+  --accent-glow: 0 0 0 2px rgba(255, 255, 255, 0.4);
 
-  /* 狀態識別色 (克制、純粹，僅以指示點或輕量徽章呈現，不干擾畫面) */
-  --status-ok: #30d158;
-  --status-ok-bg: rgba(48, 209, 88, 0.12);
-  --status-ok-border: rgba(48, 209, 88, 0.32);
+  /* 功能狀態識別 (純粹黑白灰階階層，無雜色干擾) */
+  --status-ok: #ffffff;
+  --status-ok-bg: rgba(255, 255, 255, 0.08);
+  --status-ok-border: rgba(255, 255, 255, 0.24);
 
-  --status-warn: #ff9f0a;
-  --status-warn-bg: rgba(255, 159, 10, 0.12);
-  --status-warn-border: rgba(255, 159, 10, 0.32);
+  --status-warn: #a1a1aa;
+  --status-warn-bg: rgba(255, 255, 255, 0.04);
+  --status-warn-border: rgba(255, 255, 255, 0.12);
 
-  --status-dead: #6b7280;
-  --status-dead-bg: rgba(255, 255, 255, 0.04);
-  --status-dead-border: rgba(255, 255, 255, 0.08);
+  --status-dead: #52525b;
+  --status-dead-bg: rgba(0, 0, 0, 0.3);
+  --status-dead-border: rgba(255, 255, 255, 0.05);
 
-  --status-err: #ff453a;
-  --status-err-bg: rgba(255, 69, 58, 0.12);
-  --status-err-border: rgba(255, 69, 58, 0.35);
+  --status-err: #ffffff;
+  --status-err-bg: rgba(255, 255, 255, 0.06);
+  --status-err-border: rgba(255, 255, 255, 0.3);
 
-  --status-manual: #64d2ff;
-  --status-manual-bg: rgba(100, 210, 255, 0.12);
-  --status-manual-border: rgba(100, 210, 255, 0.32);
+  --status-manual: #d4d4d8;
+  --status-manual-bg: rgba(255, 255, 255, 0.05);
+  --status-manual-border: rgba(255, 255, 255, 0.16);
 
-  /* 四大素養標籤 (轉化為冷靜的透光灰晶片，告別雜亂心煩的彩虹色) */
-  --lit-chip-bg: rgba(255, 255, 255, 0.045);
-  --lit-chip-border: rgba(255, 255, 255, 0.08);
-  --lit-chip-text: #e5e7eb;
+  /* 四大素養標籤 (包浩斯幾何晶片，清爽大方) */
+  --lit-chip-bg: rgba(255, 255, 255, 0.04);
+  --lit-chip-border: rgba(255, 255, 255, 0.1);
+  --lit-chip-text: #ffffff;
 
-  /* 素養微點色彩 (僅 5px 精緻微點辨識) */
-  --dot-health: #30d158;
-  --dot-care: #0a84ff;
-  --dot-innovation: #ff9f0a;
-  --dot-excellence: #bf5af2;
+  /* 字體堆疊 (瑞士國際主義與蘋果系統字體) */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "Arial", sans-serif;
+  --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
 
-  /* 字體堆疊 (Apple SF Pro 原生體驗優先) */
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", "PingFang TC", "Noto Sans TC", sans-serif;
-  --font-mono: "SF Mono", ui-monospace, Menlo, Monaco, Consolas, "Cascadia Code", monospace;
+  /* 包浩斯幾何尺度 (Bauhaus Disciplined Geometry - 告別浮腫圓角) */
+  --r-card: 6px;
+  --r-control: 4px;
+  --r-chip: 3px;
+  --r-pill: 4px;
 
-  /* 蘋果標準曲率半徑 (Apple Squircle Aesthetics) */
-  --r-card: 16px;
-  --r-control: 10px;
-  --r-chip: 6px;
-  --r-pill: 999px;
+  /* 物理機械微動效 (Tactile Snappy Motion) */
+  --motion-fast: 0.12s cubic-bezier(0.2, 0, 0, 1);
+  --motion-smooth: 0.2s cubic-bezier(0.2, 0, 0, 1);
 
-  /* 蘋果微動效時間常數 (Apple Spring Timings) */
-  --motion-snappy: 0.16s cubic-bezier(0.16, 1, 0.3, 1);
-  --motion-smooth: 0.24s cubic-bezier(0.16, 1, 0.3, 1);
-
-  /* 圖層層級 (Layering System) */
+  /* 圖層 */
   --z-sticky: 30;
   --z-modal: 50;
   --z-toast: 70;
@@ -116,46 +112,46 @@ body {
   min-height: 100dvh;
   background-color: var(--bg-canvas);
   background-image:
-    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(45, 48, 58, 0.4) 0%, transparent 80%),
-    radial-gradient(ellipse 70% 40% at 50% 100%, rgba(20, 22, 27, 0.75) 0%, transparent 100%);
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(30, 32, 40, 0.45) 0%, transparent 80%),
+    radial-gradient(ellipse 60% 30% at 50% 100%, rgba(18, 19, 24, 0.8) 0%, transparent 100%);
   background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-sans);
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 標題與基礎標籤重設 */
+/* 標題與基礎重設：包浩斯形式服從功能 */
 h1, h2, h3, h4 {
   margin: 0;
   font-weight: 600;
-  letter-spacing: -0.015em;
-  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  color: var(--text-pure);
 }
 p { margin: 0; }
 img, svg { display: block; flex-shrink: 0; }
 button, input, select, textarea { font: inherit; color: inherit; }
 a { color: inherit; text-decoration: none; }
 
-/* 蘋果風格細緻滾動條 */
+/* 極簡滾動條 */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
-  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.26);
+  background: rgba(255, 255, 255, 0.32);
 }
 
-/* 無障礙跳轉錨點 */
+/* 無障礙跳轉 */
 .skip {
   position: fixed;
   left: 14px;
@@ -163,13 +159,13 @@ a { color: inherit; text-decoration: none; }
   z-index: var(--z-skip);
   padding: 8px 16px;
   border-radius: var(--r-control);
-  background: var(--accent);
-  color: #ffffff;
+  background: #ffffff;
+  color: #000000;
   font-weight: 600;
-  box-shadow: 0 4px 16px rgba(10, 132, 255, 0.4);
-  transition: top var(--motion-snappy);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  transition: top var(--motion-fast);
 }
-.skip:focus { top: 14px; }
+.skip:focus { top: 12px; }
 
 :focus-visible {
   outline: none;
@@ -177,7 +173,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* =========================================================================
-   頂部導覽列 Topbar (Apple Frosted Glass Header)
+   頂部導覽列 Topbar (Bauhaus Architectural Header)
    ========================================================================= */
 
 .topbar {
@@ -185,18 +181,17 @@ a { color: inherit; text-decoration: none; }
   top: 0;
   z-index: var(--z-sticky);
   background: var(--glass-topbar);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-bottom: 1px solid var(--glass-border);
-  box-shadow: var(--glass-specular-soft), 0 4px 20px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border-bottom: 1px solid var(--line-hairline);
+  box-shadow: var(--glass-specular-soft), 0 4px 20px rgba(0, 0, 0, 0.4);
   padding-top: env(safe-area-inset-top);
-  transition: background var(--motion-smooth);
 }
 
 .topbar-inner {
   max-width: 1520px;
   margin: 0 auto;
-  padding: 12px clamp(14px, 2vw, 28px);
+  padding: 10px clamp(14px, 2vw, 28px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -207,30 +202,28 @@ a { color: inherit; text-decoration: none; }
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .logo {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-control);
   background: var(--glass-control);
-  border: 1px solid var(--glass-border-strong);
-  color: var(--accent);
-  box-shadow: var(--glass-specular), 0 4px 12px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--line-strong);
+  color: #ffffff;
+  box-shadow: var(--glass-specular);
 }
 
 .brand-text h1 {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--text-primary);
+  color: #ffffff;
 }
 
 .brand-title-wrap {
@@ -240,18 +233,18 @@ a { color: inherit; text-decoration: none; }
 }
 
 .badge-core {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   font-family: var(--font-mono);
-  padding: 2px 8px;
-  border-radius: var(--r-pill);
-  background: var(--accent-subtle);
-  color: var(--accent);
-  border: 1px solid var(--accent-border);
+  padding: 1px 6px;
+  border-radius: var(--r-chip);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border: 1px solid var(--line-strong);
 }
 
 .sub {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
   font-family: var(--font-mono);
 }
@@ -259,58 +252,57 @@ a { color: inherit; text-decoration: none; }
 .head-state {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .pills {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-/* 蘋果膠囊狀態標籤 */
+/* 包浩斯單色指標條 (Monochrome Indicators) */
 .pill {
-  font-size: 12px;
+  font-size: 11px;
   font-family: var(--font-mono);
-  padding: 4px 11px;
-  border-radius: var(--r-pill);
+  padding: 3px 9px;
+  border-radius: var(--r-chip);
   background: var(--glass-control);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--line-hairline);
   color: var(--text-secondary);
   box-shadow: var(--glass-specular-soft);
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: all var(--motion-snappy);
+  transition: all var(--motion-fast);
 }
 
 .pill.on {
-  color: var(--status-ok);
-  border-color: var(--status-ok-border);
-  background: var(--status-ok-bg);
-}
-
-.pill.run {
   color: #ffffff;
-  background: var(--accent);
-  border-color: rgba(255, 255, 255, 0.25);
-  box-shadow: 0 2px 10px rgba(10, 132, 255, 0.4);
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.1);
   font-weight: 600;
 }
 
+.pill.run {
+  color: #000000;
+  background: #ffffff;
+  border-color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 1px 8px rgba(255, 255, 255, 0.35);
+}
+
 .pill.sched {
-  color: var(--accent);
-  border-color: var(--accent-border);
-  background: var(--accent-subtle);
+  color: #ffffff;
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .pill.err {
-  color: var(--status-err);
-  border-color: var(--status-err-border);
-  background: var(--status-err-bg);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .head-actions {
@@ -324,86 +316,87 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* =========================================================================
-   按鈕與控制項 Buttons & Controls (Apple Native Glass & Accent Actions)
+   按鈕與控制項 (Bauhaus High-Contrast White & Smoked Glass)
    ========================================================================= */
 
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  padding: 7px 15px;
-  font-size: 13px;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 12.5px;
   font-weight: 500;
   border-radius: var(--r-control);
   border: 1px solid transparent;
   cursor: pointer;
   user-select: none;
-  transition: all var(--motion-snappy);
+  transition: all var(--motion-fast);
   white-space: nowrap;
-  min-height: 34px;
+  min-height: 32px;
 }
 
 .btn:active:not(:disabled) {
-  transform: scale(0.975);
+  transform: scale(0.98);
 }
 
 .btn:disabled {
-  opacity: 0.38;
+  opacity: 0.35;
   cursor: not-allowed;
   box-shadow: none !important;
 }
 
-/* 主要操作按鈕：庫比蒂諾蔚藍高對比實心 */
+/* 主要操作按鈕：包浩斯純白高對比實心 (Pure White CTA) */
 .btn.primary {
-  background: var(--accent);
-  color: var(--accent-contrast);
-  border-color: rgba(255, 255, 255, 0.16);
-  box-shadow: 0 2px 10px rgba(10, 132, 255, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  background: #ffffff;
+  color: #000000;
+  font-weight: 600;
+  border-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 .btn.primary:hover:not(:disabled) {
-  background: var(--accent-hover);
-  box-shadow: 0 4px 14px rgba(10, 132, 255, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  background: #f4f4f5;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
 }
 .btn.primary:active:not(:disabled) {
-  background: var(--accent-active);
+  background: #e4e4e7;
 }
 
-/* 次要／幽靈按鈕：透光磨砂玻璃 */
+/* 次要幽靈按鈕：透光黑灰磨砂玻璃 */
 .btn.ghost {
   background: var(--glass-control);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: var(--text-primary);
-  border-color: var(--glass-border);
+  border-color: var(--line-hairline);
   box-shadow: var(--glass-specular-soft);
 }
 .btn.ghost:hover:not(:disabled) {
   background: var(--glass-control-hover);
-  border-color: var(--glass-border-strong);
+  border-color: var(--line-strong);
   color: #ffffff;
 }
 
 .btn.danger {
-  background: var(--status-err-bg);
-  color: #ff9994;
-  border-color: var(--status-err-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  border-color: var(--line-strong);
 }
 .btn.danger:hover:not(:disabled) {
-  background: rgba(255, 69, 58, 0.22);
-  color: #ffffff;
+  background: #ffffff;
+  color: #000000;
 }
 
 .btn.sm {
-  padding: 4px 10px;
-  font-size: 12px;
-  min-height: 28px;
-  border-radius: 7px;
+  padding: 3px 9px;
+  font-size: 11.5px;
+  min-height: 26px;
+  border-radius: var(--r-control);
 }
 
 .btn.icon {
-  padding: 4px 8px;
-  min-width: 32px;
+  padding: 3px 7px;
+  min-width: 28px;
 }
 
 .btn.wide {
@@ -411,29 +404,29 @@ a { color: inherit; text-decoration: none; }
 }
 
 .btn-pwa {
-  color: var(--accent);
-  border-color: var(--accent-border);
-  background: var(--accent-subtle);
+  color: #ffffff;
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 /* =========================================================================
-   佈局架構 Layout
+   佈局架構 Layout (Bauhaus Functional Grid)
    ========================================================================= */
 
 .layout {
   max-width: 1520px;
   margin: 0 auto;
-  padding: 22px clamp(14px, 2vw, 28px) 60px;
+  padding: 20px clamp(14px, 2vw, 28px) 60px;
   display: grid;
-  grid-template-columns: 360px 1fr;
-  gap: 22px;
+  grid-template-columns: 340px 1fr;
+  gap: 20px;
   align-items: start;
 }
 
 .side {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
 .side-header-mobile {
@@ -443,24 +436,24 @@ a { color: inherit; text-decoration: none; }
 .main {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 18px;
   min-width: 0;
 }
 
-/* 蘋果透光磨砂玻璃卡片基底 (Apple Frosted Glass Card) */
+/* 建築級透光卡片 (Bauhaus Architectural Panes) */
 .card {
   background: var(--glass-card);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(24px) saturate(130%);
+  -webkit-backdrop-filter: blur(24px) saturate(130%);
+  border: 1px solid var(--line-hairline);
   border-radius: var(--r-card);
-  padding: 20px 22px;
+  padding: 16px 18px;
   box-shadow: var(--glass-shadow), var(--glass-specular);
-  transition: border-color var(--motion-smooth), box-shadow var(--motion-smooth);
+  transition: border-color var(--motion-fast);
 }
 
 .card:hover {
-  border-color: var(--glass-border-strong);
+  border-color: var(--line-strong);
 }
 
 .card-head {
@@ -468,32 +461,33 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   flex-wrap: wrap;
 }
 
 .card-head h2 {
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 8px;
+  color: #ffffff;
 }
 
 .idx {
   font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--accent);
-  font-weight: 600;
+  font-size: 11px;
+  color: #ffffff;
+  font-weight: 700;
 }
 
 .count {
   font-family: var(--font-mono);
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: var(--r-pill);
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: var(--r-chip);
   background: var(--glass-subcard);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--line-hairline);
   color: var(--text-secondary);
 }
 
@@ -505,20 +499,20 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* =========================================================================
-   表單組件 Form Controls (Apple macOS Style)
+   表單組件 Form Controls (Disciplined Geometric Inputs)
    ========================================================================= */
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 13px;
+  gap: 11px;
 }
 
 .form label {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  font-size: 13px;
+  gap: 4px;
+  font-size: 12px;
   color: var(--text-secondary);
   font-weight: 500;
 }
@@ -529,13 +523,12 @@ a { color: inherit; text-decoration: none; }
 .tools input,
 .tools select {
   background: var(--glass-input);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--line-hairline);
   border-radius: var(--r-control);
-  color: var(--text-primary);
-  padding: 8px 12px;
-  font-size: 13px;
-  transition: all var(--motion-snappy);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  color: var(--text-pure);
+  padding: 7px 10px;
+  font-size: 12.5px;
+  transition: all var(--motion-fast);
 }
 
 .form input:focus,
@@ -544,8 +537,8 @@ a { color: inherit; text-decoration: none; }
 .tools input:focus,
 .tools select:focus {
   background: var(--glass-input-focus);
-  border-color: var(--accent);
-  box-shadow: var(--accent-glow), inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  border-color: #ffffff;
+  box-shadow: 0 0 0 1px #ffffff;
   outline: none;
 }
 
@@ -555,20 +548,19 @@ a { color: inherit; text-decoration: none; }
   color: var(--text-muted);
 }
 
-/* 蘋果原生切換開關與核選方塊 */
+/* 極簡幾何核選方塊 */
 .check {
   display: flex !important;
   flex-direction: row !important;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary);
   user-select: none;
-  transition: color var(--motion-snappy);
 }
 .check:hover {
-  color: var(--text-primary);
+  color: #ffffff;
 }
 
 .check.inline {
@@ -578,43 +570,41 @@ a { color: inherit; text-decoration: none; }
 input[type="checkbox"] {
   appearance: none;
   -webkit-appearance: none;
-  width: 17px;
-  height: 17px;
-  border-radius: 5px;
+  width: 15px;
+  height: 15px;
+  border-radius: var(--r-chip);
   background: var(--glass-input);
-  border: 1px solid var(--glass-border-strong);
+  border: 1px solid var(--line-strong);
   cursor: pointer;
   position: relative;
   vertical-align: middle;
   flex-shrink: 0;
-  transition: all var(--motion-snappy);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: all var(--motion-fast);
 }
 
 input[type="checkbox"]:hover {
-  border-color: var(--accent-border);
+  border-color: #ffffff;
 }
 
 input[type="checkbox"]:checked {
-  background: var(--accent);
-  border-color: var(--accent);
-  box-shadow: 0 1px 6px rgba(10, 132, 255, 0.35);
+  background: #ffffff;
+  border-color: #ffffff;
 }
 
 input[type="checkbox"]:checked::after {
   content: "";
   position: absolute;
-  left: 5px;
-  top: 2px;
+  left: 4px;
+  top: 1px;
   width: 4px;
   height: 8px;
-  border: solid white;
+  border: solid #000000;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
 
 .hint {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
   line-height: 1.5;
   white-space: pre-line;
@@ -628,126 +618,111 @@ input[type="checkbox"]:checked::after {
 
 .divider {
   border: none;
-  border-top: 1px solid var(--glass-border-subtle);
-  margin: 6px 0;
+  border-top: 1px solid var(--line-subtle);
+  margin: 4px 0;
 }
 
 /* =========================================================================
-   四大素養畢業門檻儀表板 Graduation Dashboard (Monochrome & Pure Azure)
+   四大素養畢業門檻儀表板 (Bauhaus Architectural Metric Ribbon)
    ========================================================================= */
 
 .grad-card {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow), var(--glass-specular);
-}
-
-/* 移除原先五顏六色的彩虹線，改為細緻純淨的高階玻璃頂緣反光 */
-.grad-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.18) 50%, transparent 100%);
+  padding: 14px 16px;
 }
 
 .grad-head {
-  align-items: flex-start;
-  margin-bottom: 18px;
+  align-items: center;
+  margin-bottom: 12px;
 }
 
 .grad-title-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 4px;
+  gap: 8px;
 }
 
 .grad-icon {
-  color: var(--accent);
+  color: #ffffff;
 }
 
 .grad-desc {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary);
-  line-height: 1.55;
+  margin-top: 2px;
 }
 
 .grad-head-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .grad-status-badge {
-  font-size: 12px;
+  font-size: 11px;
   font-family: var(--font-mono);
   font-weight: 600;
-  padding: 4px 12px;
-  border-radius: var(--r-pill);
+  padding: 3px 10px;
+  border-radius: var(--r-chip);
   background: var(--glass-control);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--line-hairline);
   color: var(--text-secondary);
-  box-shadow: var(--glass-specular-soft);
 }
 
 .grad-status-badge.ok {
-  background: var(--status-ok-bg);
-  color: var(--status-ok);
-  border-color: var(--status-ok-border);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: #ffffff;
+  font-weight: 700;
 }
 
 .grad-status-badge.pending {
-  background: var(--accent-subtle);
-  color: var(--accent);
-  border-color: var(--accent-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border-color: var(--line-hairline);
 }
 
-/* 歷年累計補登面板 */
+/* 歷年累計補登折疊面板 */
 .grad-history-panel {
   background: var(--glass-subcard);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 16px 18px;
-  margin-bottom: 18px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--r-card);
+  padding: 12px 14px;
+  margin-bottom: 14px;
 }
 
 .hist-lead strong {
-  color: var(--text-primary);
-  font-size: 13px;
+  color: #ffffff;
+  font-size: 12.5px;
   font-weight: 600;
 }
 
 .hist-hint {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
-  margin-top: 4px;
-  margin-bottom: 14px;
+  margin-top: 3px;
+  margin-bottom: 10px;
 }
 
 .hist-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 12px;
-  margin-bottom: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .hist-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .stepper {
   display: flex;
   align-items: center;
   background: var(--glass-input);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--line-hairline);
   border-radius: var(--r-control);
   overflow: hidden;
 }
@@ -755,12 +730,12 @@ input[type="checkbox"]:checked::after {
 .step-btn {
   background: transparent;
   border: none;
-  color: var(--text-primary);
-  padding: 6px 11px;
+  color: var(--text-pure);
+  padding: 4px 9px;
   cursor: pointer;
   font-weight: 600;
   font-family: var(--font-mono);
-  transition: background var(--motion-snappy);
+  transition: background var(--motion-fast);
 }
 .step-btn:hover {
   background: var(--glass-control-hover);
@@ -773,8 +748,7 @@ input[type="checkbox"]:checked::after {
   text-align: center;
   font-family: var(--font-mono);
   font-weight: 600;
-  padding: 6px 4px;
-  box-shadow: none;
+  padding: 4px;
 }
 
 .hist-actions {
@@ -782,101 +756,91 @@ input[type="checkbox"]:checked::after {
   gap: 8px;
 }
 
-/* 五大素養指標卡片格 (Apple Translucent Glass Tiles) */
+/* 五大素養指標橫向儀表 (Bauhaus Modular Ribbon) */
 .grad-metrics-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
+  gap: 8px;
 }
 
 .grad-metric {
   background: var(--glass-subcard);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 14px 15px;
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--r-control);
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  box-shadow: var(--glass-specular-soft);
-  transition: all var(--motion-snappy);
+  gap: 6px;
+  transition: all var(--motion-fast);
 }
 
 .grad-metric:hover {
-  border-color: var(--glass-border-strong);
-  background: rgba(34, 37, 46, 0.6);
-  transform: translateY(-1px);
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .metric-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 4px;
 }
 
 .metric-name {
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-pure);
 }
 
 .metric-state {
-  font-size: 11px;
+  font-size: 10.5px;
   font-family: var(--font-mono);
   color: var(--text-muted);
 }
 
 .metric-state.ok {
-  color: var(--status-ok);
-  font-weight: 600;
+  color: #ffffff;
+  font-weight: 700;
 }
 
 .metric-val {
   display: flex;
   align-items: baseline;
-  gap: 5px;
+  gap: 4px;
 }
 
 .val-num {
   font-family: var(--font-mono);
-  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+  font-size: 20px;
   font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.02em;
+  color: #ffffff;
+  letter-spacing: -0.03em;
 }
 
 .val-denom {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
 }
 
-/* 蘋果玻璃膠囊進度條 (Minimalist Azure Fill) */
+/* 包浩斯純白線條進度指示 (Bauhaus Minimal Line) */
 .progress-track {
   width: 100%;
-  height: 6px;
+  height: 3px;
   background: rgba(255, 255, 255, 0.08);
-  border-radius: var(--r-pill);
+  border-radius: 1px;
   overflow: hidden;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 .progress-fill {
   height: 100%;
-  border-radius: var(--r-pill);
-  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  background: var(--accent);
+  border-radius: 1px;
+  background: #ffffff;
+  transition: width 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
-
-.progress-fill.total {
-  background: linear-gradient(90deg, #0a84ff, #30d158);
-}
-.progress-fill.health { background: var(--dot-health); }
-.progress-fill.care { background: var(--dot-care); }
-.progress-fill.innovation { background: var(--dot-innovation); }
-.progress-fill.excellence { background: var(--dot-excellence); }
 
 .metric-sub {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text-muted);
 }
 
@@ -885,32 +849,32 @@ input[type="checkbox"]:checked::after {
   border: none;
   padding: 0;
   text-align: left;
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text-muted);
   cursor: pointer;
-  transition: color var(--motion-snappy);
+  transition: color var(--motion-fast);
 }
 .metric-filter-btn:hover {
-  color: var(--accent);
+  color: #ffffff;
 }
 
 /* =========================================================================
-   四大素養標籤通用樣式 (Translucent Glass Chips with Subtle Indicator Dots)
+   四大素養標籤 (Bauhaus Monochrome Geometric Chips)
    ========================================================================= */
 
 .lit-tags-wrap {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 4px;
 }
 
 .lit-tag {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 8px;
+  gap: 4px;
+  padding: 2px 7px;
   border-radius: var(--r-chip);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   line-height: 1.3;
   white-space: nowrap;
@@ -918,38 +882,22 @@ input[type="checkbox"]:checked::after {
   border: 1px solid var(--lit-chip-border);
   color: var(--lit-chip-text);
   box-shadow: var(--glass-specular-soft);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
-
-.lit-tag::before {
-  content: "";
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--text-muted);
-}
-
-.lit-tag.l-health::before { background: var(--dot-health); box-shadow: 0 0 6px rgba(48, 209, 88, 0.4); }
-.lit-tag.l-care::before { background: var(--dot-care); box-shadow: 0 0 6px rgba(10, 132, 255, 0.4); }
-.lit-tag.l-innovation::before { background: var(--dot-innovation); box-shadow: 0 0 6px rgba(255, 159, 10, 0.4); }
-.lit-tag.l-excellence::before { background: var(--dot-excellence); box-shadow: 0 0 6px rgba(191, 90, 242, 0.4); }
 
 .lit-tag.l-none {
   color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.03);
-  border-color: var(--glass-border-subtle);
+  border-color: var(--line-hairline);
+  background: transparent;
 }
-.lit-tag.l-none::before { display: none; }
 
 .lit-label-sm {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 4px;
+  padding: 1px 6px;
+  border-radius: var(--r-chip);
   background: var(--glass-control);
-  color: var(--text-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--line-hairline);
 }
 
 /* =========================================================================
@@ -970,32 +918,32 @@ table.grid {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  font-size: 13px;
+  font-size: 12.5px;
 }
 
 table.grid th {
   position: sticky;
   top: 0;
-  background: rgba(26, 28, 34, 0.88);
+  background: rgba(18, 19, 24, 0.94);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   color: var(--text-muted);
   font-weight: 600;
-  font-size: 12px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--glass-border-strong);
+  font-size: 11.5px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line-strong);
   z-index: 2;
   white-space: nowrap;
 }
 
 table.grid td {
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--glass-border-subtle);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line-hairline);
   vertical-align: middle;
 }
 
 table.grid tr:hover td {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.025);
 }
 
 table.grid th.right,
@@ -1005,146 +953,143 @@ table.grid td.right {
 
 .cell-name {
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-pure);
   line-height: 1.4;
 }
 
 .cell-sub {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--text-muted);
   font-family: var(--font-mono);
-  margin-top: 3px;
+  margin-top: 2px;
 }
 
 .cell-time {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-size: 11.5px;
   line-height: 1.4;
   color: var(--text-secondary);
 }
 
-/* 狀態徽章 Badge */
+/* 狀態徽章 (Monochrome Precision Status) */
 .badge-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
-  border-radius: var(--r-pill);
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: var(--r-chip);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   font-family: var(--font-mono);
   white-space: nowrap;
   background: var(--glass-control);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--line-hairline);
   color: var(--text-secondary);
 }
 
 .badge-status::before {
   content: "";
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--text-muted);
 }
 
 .badge-status.k-ok {
-  color: var(--status-ok);
-  background: var(--status-ok-bg);
-  border-color: var(--status-ok-border);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
 }
-.badge-status.k-ok::before { background: var(--status-ok); }
+.badge-status.k-ok::before { background: #ffffff; }
 
 .badge-status.k-warn {
-  color: var(--status-warn);
-  background: var(--status-warn-bg);
-  border-color: var(--status-warn-border);
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--line-hairline);
 }
-.badge-status.k-warn::before { background: var(--status-warn); }
+.badge-status.k-warn::before { background: var(--text-muted); }
 
 .badge-status.k-muted {
-  color: var(--text-secondary);
-  background: var(--glass-subcard);
-  border-color: var(--glass-border);
+  color: var(--text-muted);
+  background: transparent;
+  border-color: var(--line-hairline);
 }
-.badge-status.k-muted::before { background: var(--text-muted); }
+.badge-status.k-muted::before { background: var(--text-dim); }
 
 .badge-status.k-dead {
   color: var(--text-dim);
-  background: rgba(0, 0, 0, 0.25);
-  border-color: var(--glass-border-subtle);
+  background: transparent;
+  border-color: transparent;
 }
 .badge-status.k-dead::before { background: var(--text-dim); }
 
 .badge-status.k-done {
-  color: var(--status-ok);
-  background: var(--status-ok-bg);
-  border-color: var(--status-ok-border);
-  font-weight: 600;
+  color: #000000;
+  background: #ffffff;
+  border-color: #ffffff;
+  font-weight: 700;
 }
-.badge-status.k-done::before { background: var(--status-ok); }
+.badge-status.k-done::before { background: #000000; }
 
 .badge-status.k-manual {
-  color: var(--status-manual);
-  background: var(--status-manual-bg);
-  border-color: var(--status-manual-border);
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--line-hairline);
 }
-.badge-status.k-manual::before { background: var(--status-manual); }
+.badge-status.k-manual::before { background: var(--text-secondary); }
 
 .badge-status.k-unknown {
   color: var(--text-muted);
-  background: var(--glass-subcard);
-  border-color: var(--glass-border);
 }
-.badge-status.k-unknown::before { background: var(--text-muted); }
 
 .tag.live {
   font-size: 11px;
   font-family: var(--font-mono);
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: var(--r-pill);
-  background: var(--status-ok-bg);
-  color: var(--status-ok);
-  border: 1px solid var(--status-ok-border);
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--r-chip);
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #ffffff;
 }
 
 .tag {
-  font-size: 11px;
+  font-size: 10.5px;
   font-family: var(--font-mono);
-  padding: 2px 7px;
-  border-radius: var(--r-pill);
+  padding: 1px 6px;
+  border-radius: var(--r-chip);
   background: var(--glass-control);
   color: var(--text-muted);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--line-hairline);
 }
 
 .btn-group {
   display: inline-flex;
-  gap: 6px;
+  gap: 5px;
   justify-content: flex-end;
 }
 
 .empty {
   text-align: center;
-  padding: 36px 16px;
+  padding: 32px 16px;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 12.5px;
 }
 
-/* 手動快報列 (Apple Pro Bar) */
+/* 手動快報條 (Integrated Utilitarian Toolbar) */
 .manual-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 10px 14px;
-  margin-bottom: 14px;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
   background: var(--glass-subcard);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--line-hairline);
   border-radius: var(--r-control);
-  box-shadow: var(--glass-specular-soft);
 }
 
 .manual-input-wrap {
@@ -1152,34 +1097,27 @@ table.grid td.right {
   align-items: center;
   gap: 8px;
   flex: 1;
-  min-width: 280px;
+  min-width: 260px;
 }
 
 .manual-tag {
   font-size: 11px;
   font-weight: 600;
-  padding: 3px 8px;
-  background: var(--accent-subtle);
-  color: var(--accent);
-  border: 1px solid var(--accent-border);
+  padding: 2px 6px;
+  background: #ffffff;
+  color: #000000;
   border-radius: var(--r-chip);
   white-space: nowrap;
 }
 
 .manual-input-wrap input {
   flex: 1;
-  padding: 7px 11px;
-  font-size: 13px;
+  padding: 5px 9px;
+  font-size: 12px;
   background: var(--glass-input);
-  border: 1px solid var(--glass-border);
-  color: var(--text-primary);
+  border: 1px solid var(--line-hairline);
+  color: #ffffff;
   border-radius: var(--r-control);
-}
-
-.manual-input-wrap input:focus {
-  border-color: var(--accent);
-  box-shadow: var(--accent-glow);
-  outline: none;
 }
 
 .manual-hint {
@@ -1188,57 +1126,56 @@ table.grid td.right {
 }
 
 /* =========================================================================
-   智慧挑課與排程指令列 (Apple Spotlight Style - Zero AI Gimmick)
+   快速規劃指令列 (Bauhaus Minimal CLI Prompt - 徹底去除 AI 感)
    ========================================================================= */
 
 .agent-bar {
   display: flex;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.agent-bar textarea {
-  flex: 1;
-  resize: vertical;
-  min-height: 52px;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.spark {
-  color: var(--accent);
-  display: inline-flex;
+  gap: 8px;
   align-items: center;
 }
 
-.agent-plan {
-  margin-top: 14px;
-  background: var(--glass-subcard);
-  border: 1px solid var(--glass-border);
+.agent-bar input {
+  flex: 1;
+  background: var(--glass-input);
+  border: 1px solid var(--line-hairline);
   border-radius: var(--r-control);
-  padding: 14px 16px;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  padding: 7px 11px;
+  font-size: 12.5px;
+  color: #ffffff;
+}
+
+.agent-bar input:focus {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 1px #ffffff;
+}
+
+.agent-plan {
+  margin-top: 12px;
+  background: var(--glass-subcard);
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--r-control);
+  padding: 12px 14px;
 }
 
 .plan-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 12px;
+  gap: 14px;
+  margin-bottom: 10px;
 }
 
 .plan-block h3 {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary);
-  margin-bottom: 6px;
+  margin-bottom: 5px;
   font-weight: 600;
 }
 
 .plan-schedule {
   font-family: var(--font-mono);
-  font-size: 13px;
-  color: var(--accent);
+  font-size: 12px;
+  color: #ffffff;
   font-weight: 600;
 }
 
@@ -1248,17 +1185,17 @@ table.grid td.right {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .pick-list li {
-  font-size: 12px;
+  font-size: 11.5px;
   line-height: 1.4;
 }
 
 .pick-name {
   font-weight: 600;
-  color: var(--text-primary);
+  color: #ffffff;
   margin-right: 6px;
 }
 
@@ -1269,58 +1206,58 @@ table.grid td.right {
 }
 
 .pick-why {
-  color: var(--accent);
+  color: var(--text-secondary);
 }
 
 .plan-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--glass-border-subtle);
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-subtle);
 }
 
 /* 排程項目 */
 .sched-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .sched-item {
   background: var(--glass-subcard);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--line-hairline);
   border-radius: var(--r-control);
-  padding: 9px 13px;
+  padding: 8px 11px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  transition: all var(--motion-snappy);
+  gap: 8px;
+  transition: all var(--motion-fast);
 }
 
 .sched-item.off {
-  opacity: 0.45;
+  opacity: 0.4;
 }
 
 .sched-item.active {
-  border-color: var(--accent-border);
-  background: var(--accent-subtle);
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .sched-desc {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
 }
 
 .sched-actions {
   display: flex;
-  gap: 6px;
+  gap: 5px;
 }
 
 .day-row {
   display: flex;
-  gap: 5px;
+  gap: 4px;
 }
 
 .day {
@@ -1333,61 +1270,61 @@ table.grid td.right {
 
 .day span {
   display: block;
-  padding: 6px 0;
+  padding: 5px 0;
   border-radius: var(--r-chip);
   background: var(--glass-input);
-  border: 1px solid var(--glass-border);
-  font-size: 12px;
+  border: 1px solid var(--line-hairline);
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--text-secondary);
-  transition: all var(--motion-snappy);
+  transition: all var(--motion-fast);
 }
 
 .day input:checked + span {
-  background: var(--accent);
-  color: #ffffff;
-  border-color: var(--accent);
-  box-shadow: 0 1px 6px rgba(10, 132, 255, 0.35);
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
 }
 
 /* =========================================================================
-   行事曆 Calendar (Apple Style Grid)
+   行事曆 Calendar (Bauhaus Architectural Grid)
    ========================================================================= */
 
 .cal-wrap {
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .cal-month {
   font-family: var(--font-mono);
   font-weight: 600;
-  font-size: 13px;
+  font-size: 12.5px;
   padding: 0 4px;
+  color: #ffffff;
 }
 
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
+  gap: 4px;
 }
 
 .cal-dow {
   text-align: center;
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text-muted);
   font-weight: 600;
-  padding: 4px 0;
+  padding: 3px 0;
 }
 
 .cal-cell {
-  min-height: 66px;
+  min-height: 60px;
   background: var(--glass-subcard);
-  border: 1px solid var(--glass-border-subtle);
-  border-radius: 8px;
-  padding: 5px;
+  border: 1px solid var(--line-subtle);
+  border-radius: var(--r-control);
+  padding: 4px;
   display: flex;
   flex-direction: column;
-  transition: border-color var(--motion-snappy);
+  transition: border-color var(--motion-fast);
 }
 
 .cal-cell.blank {
@@ -1396,17 +1333,17 @@ table.grid td.right {
 }
 
 .cal-cell.today {
-  border-color: var(--accent);
-  background: rgba(10, 132, 255, 0.06);
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .cal-cell.today .cal-day {
-  color: var(--accent);
+  color: #ffffff;
   font-weight: 700;
 }
 
 .cal-day {
-  font-size: 11px;
+  font-size: 10.5px;
   font-family: var(--font-mono);
   color: var(--text-muted);
 }
@@ -1415,55 +1352,55 @@ table.grid td.right {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-top: 3px;
+  margin-top: 2px;
 }
 
 .cal-chip {
   background: var(--glass-control);
-  border: 1px solid var(--glass-border);
-  border-radius: 4px;
-  padding: 2px 5px;
-  font-size: 11px;
+  border: 1px solid var(--line-hairline);
+  border-radius: 2px;
+  padding: 1px 4px;
+  font-size: 10.5px;
   text-align: left;
   cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--text-primary);
-  transition: all var(--motion-snappy);
+  transition: all var(--motion-fast);
 }
 .cal-chip:hover {
-  background: var(--glass-control-hover);
-  border-color: var(--accent-border);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--line-strong);
+  color: #ffffff;
 }
 
 .cal-chip b {
   font-family: var(--font-mono);
-  color: var(--accent);
-  margin-right: 4px;
+  color: #ffffff;
+  margin-right: 3px;
   font-weight: 600;
 }
 
 .cal-upcoming {
   list-style: none;
   padding: 0;
-  margin: 16px 0 0;
+  margin: 12px 0 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .up-item {
   display: grid;
-  grid-template-columns: 85px 95px 1fr auto;
-  gap: 12px;
+  grid-template-columns: 80px 90px 1fr auto;
+  gap: 10px;
   align-items: center;
-  padding: 9px 14px;
+  padding: 8px 12px;
   background: var(--glass-subcard);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--line-hairline);
   border-radius: var(--r-control);
-  font-size: 13px;
-  box-shadow: var(--glass-specular-soft);
+  font-size: 12px;
 }
 
 .up-date {
@@ -1473,12 +1410,12 @@ table.grid td.right {
 
 .up-date b {
   margin-left: 4px;
-  color: var(--text-primary);
+  color: #ffffff;
 }
 
 .up-time {
   font-family: var(--font-mono);
-  color: var(--accent);
+  color: #ffffff;
 }
 
 .up-title {
@@ -1490,40 +1427,39 @@ table.grid td.right {
 
 .up-place {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 11.5px;
 }
 
 /* =========================================================================
-   日誌與浮動通知 Logs & Toasts (Apple Glass Notifications)
+   日誌與浮動通知 Logs & Toasts
    ========================================================================= */
 
 .log {
-  max-height: 220px;
+  max-height: 200px;
   overflow-y: auto;
   background: var(--glass-input);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--line-hairline);
   border-radius: var(--r-control);
-  padding: 10px 14px;
+  padding: 9px 12px;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11.5px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+  gap: 4px;
 }
 
 .log .row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
-.log .row.success .m { color: var(--status-ok); }
-.log .row.warn .m { color: var(--status-warn); }
-.log .row.error .m { color: var(--status-err); }
+.log .row.success .m { color: #ffffff; font-weight: 600; }
+.log .row.warn .m { color: var(--text-secondary); }
+.log .row.error .m { color: #ffffff; text-decoration: underline; }
 .log .row.info .m { color: var(--text-secondary); }
 
 .log .t { color: var(--text-muted); }
-.log .placeholder { color: var(--text-muted); padding: 8px 0; }
+.log .placeholder { color: var(--text-muted); padding: 6px 0; }
 
 .toasts {
   position: fixed;
@@ -1541,31 +1477,30 @@ table.grid td.right {
   background: var(--glass-modal);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
-  border: 1px solid var(--glass-border-strong);
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-control);
-  padding: 11px 18px;
-  font-size: 13px;
+  padding: 10px 16px;
+  font-size: 12.5px;
   box-shadow: var(--glass-shadow-float);
-  animation: toastIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: toastIn 0.18s cubic-bezier(0.2, 0, 0, 1);
+  color: #ffffff;
 }
 
 .toast.ok {
-  border-color: var(--status-ok-border);
-  color: #c0f4d3;
+  border-color: #ffffff;
 }
 
 .toast.err {
-  border-color: var(--status-err-border);
-  color: #ffd0ce;
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 @keyframes toastIn {
-  from { opacity: 0; transform: translateY(10px) scale(0.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* =========================================================================
-   手機端專用底部導航列 Mobile Dock (Apple Floating Glass Dock)
+   手機端專用底部導航列 Mobile Nav (Bauhaus Monotone Dock)
    ========================================================================= */
 
 .mobile-nav {
@@ -1573,7 +1508,7 @@ table.grid td.right {
 }
 
 /* =========================================================================
-   響應式設計 Responsive Adaptations (Apple HIG Standards)
+   響應式設計 Responsive Adaptations
    ========================================================================= */
 
 @media (max-width: 1100px) {
@@ -1587,7 +1522,7 @@ table.grid td.right {
 
 @media (max-width: 800px) {
   .layout {
-    padding-bottom: 90px;
+    padding-bottom: 80px;
   }
 
   .grad-metrics-grid {
@@ -1601,24 +1536,24 @@ table.grid td.right {
     display: inline-flex;
   }
 
-  /* 手機端側邊抽屜：深階磨砂玻璃 */
+  /* 手機端側邊抽屜 */
   .side {
     position: fixed;
     top: 0;
     right: 0;
     bottom: 0;
     width: 86vw;
-    max-width: 380px;
+    max-width: 360px;
     background: var(--glass-modal);
     backdrop-filter: blur(32px);
     -webkit-backdrop-filter: blur(32px);
-    border-left: 1px solid var(--glass-border-strong);
-    padding: 20px;
+    border-left: 1px solid var(--line-strong);
+    padding: 18px;
     z-index: var(--z-modal);
     overflow-y: auto;
     transform: translateX(100%);
-    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.7);
+    transition: transform 0.24s cubic-bezier(0.2, 0, 0, 1);
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.8);
   }
 
   .side.open {
@@ -1629,8 +1564,8 @@ table.grid td.right {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-bottom: 14px;
-    border-bottom: 1px solid var(--glass-border-subtle);
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line-subtle);
   }
 
   /* 表格在手機端卡片化 */
@@ -1651,15 +1586,14 @@ table.grid td.right {
 
   table.grid tr {
     background: var(--glass-subcard);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 14px;
-    box-shadow: var(--glass-specular-soft);
+    border: 1px solid var(--line-hairline);
+    border-radius: var(--r-control);
+    padding: 12px;
+    margin-bottom: 12px;
   }
 
   table.grid td {
-    padding: 6px 0;
+    padding: 5px 0;
     border: none;
     display: flex;
     justify-content: space-between;
@@ -1668,33 +1602,33 @@ table.grid td.right {
 
   table.grid td:first-child {
     padding-top: 0;
-    margin-bottom: 8px;
-    border-bottom: 1px solid var(--glass-border-subtle);
-    padding-bottom: 8px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--line-subtle);
+    padding-bottom: 6px;
   }
 
   table.grid td.right {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--glass-border-subtle);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line-subtle);
     justify-content: flex-end;
   }
 
-  /* 蘋果 iOS 浮動磨砂玻璃 Dock (Apple Floating Glass Dock) */
+  /* 包浩斯單色浮動底欄 */
   .mobile-nav {
     display: flex;
     position: fixed;
-    bottom: 14px;
-    left: 14px;
-    right: 14px;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
     z-index: var(--z-sticky);
     background: var(--glass-dock);
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
-    border: 1px solid var(--glass-border-strong);
-    border-radius: 20px;
-    padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
-    box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.55), var(--glass-specular);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 5px 8px calc(5px + env(safe-area-inset-bottom));
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
     justify-content: space-around;
   }
 
@@ -1708,31 +1642,31 @@ table.grid td.right {
     gap: 3px;
     font-size: 10px;
     font-weight: 500;
-    padding: 6px 12px;
+    padding: 5px 10px;
     cursor: pointer;
-    border-radius: 12px;
-    min-height: 44px; /* 滿足觸控規範 */
-    transition: all var(--motion-snappy);
+    border-radius: var(--r-control);
+    min-height: 44px;
+    transition: all var(--motion-fast);
   }
 
   .mob-tab.active {
-    color: var(--accent);
-    background: var(--accent-subtle);
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
     font-weight: 600;
   }
 
   body {
-    padding-bottom: 86px;
+    padding-bottom: 80px;
   }
 
   .toasts {
-    bottom: 96px;
-    left: 14px;
-    right: 14px;
+    bottom: 90px;
+    left: 12px;
+    right: 12px;
   }
 }
 
-/* 尊重使用者降低動態與透明度偏好 (WCAG 2.2 AA / Apple HIG Accessibility) */
+/* 尊重系統無障礙設定 */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
