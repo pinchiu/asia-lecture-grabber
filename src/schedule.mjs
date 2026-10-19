@@ -138,7 +138,7 @@ export class Scheduler {
       openEntry.enabled = true;
       this.log('info', '已重新啟用「開放瞬間」自動搶課排程');
     }
-    this.enabled = true;
+    // 尊重使用者全域排程開關設定，不強行將已手動停用的排程覆寫為啟用
     this.persist();
     return openEntry;
   }

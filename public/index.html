@@ -160,6 +160,14 @@
                   <button type="button" class="step-btn" data-action="hist-inc" data-type="excellence">＋</button>
                 </div>
               </label>
+              <label class="hist-field">
+                <span class="lit-label-sm l-none" style="background: rgba(255,255,255,0.08); color: #fff;">已修總場次</span>
+                <div class="stepper">
+                  <button type="button" class="step-btn" data-action="hist-dec" data-type="total">−</button>
+                  <input type="number" id="gradHistTotal" min="0" max="100" value="0" title="若歷年有單場符合多素養之講座，可填寫實際已修總場次（留空或0＝由各素養自動計算）">
+                  <button type="button" class="step-btn" data-action="hist-inc" data-type="total">＋</button>
+                </div>
+              </label>
             </div>
             <div class="hist-actions">
               <button class="btn primary sm" data-action="save-grad-history">儲存歷年累計</button>

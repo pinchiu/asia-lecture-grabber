@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asia-lecture-grabber-v9';
+const CACHE_NAME = 'asia-lecture-grabber-v10';
 const PRECACHE = [
   '/',
   '/index.html',
@@ -46,7 +46,7 @@ self.addEventListener('fetch', (event) => {
 
   // 靜態資源走快取優先，並背景更新
   event.respondWith(
-    caches.match(event.request).then((cached) => {
+    caches.match(event.request, { ignoreSearch: true }).then((cached) => {
       const networked = fetch(event.request)
         .then((response) => {
           if (response && response.status === 200 && response.type === 'basic') {

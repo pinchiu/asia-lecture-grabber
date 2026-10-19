@@ -216,7 +216,7 @@ asia-lecture-grabber/
 │  └ server.mjs                  HTTP 伺服器與 JSON API
 ├ public/
 │  ├ index.html                  主介面（素養門檻、講座情報、行事曆）
-│  ├ style.css                   Neo-Brutalist 曜石黑終端美學樣式表
+│  ├ style.css                   包浩斯極簡黑白灰與蘋果液態磨砂毛玻璃高質感樣式表
 │  ├ app.js                      前端邏輯控制（無外部建置依賴）
 │  ├ manifest.webmanifest        PWA 應用程式清單
 │  ├ sw.js                       Service Worker 離線快取

@@ -317,31 +317,49 @@ export class Engine extends EventEmitter {
     const lec = this.lectures.find((item) => item.reseid === id || item.eid01 === id);
 
     let registeredList = [];
+    let listError = null;
     try {
       registeredList = await api.listRegistered(this.session.token);
     } catch (err) {
+      listError = err;
       this.log('warn', `查詢已報名清單失敗：${err.message}`);
     }
 
     const match = registeredList.find((r) =>
       (id && (r.eid === id || r.reseid === id || r.eid01 === id)) ||
-      (options.eid && r.eid === options.eid) ||
-      (options.reseid && r.reseid === options.reseid) ||
+      (options.eid && (r.eid === options.eid || r.reseid === options.eid)) ||
+      (options.reseid && (r.reseid === options.reseid || r.eid === options.reseid)) ||
       (options.eid01 && r.eid01 === options.eid01) ||
-      (target?.reseid && r.reseid === target.reseid) ||
+      (target?.reseid && (r.reseid === target.reseid || r.eid === target.reseid)) ||
       (target?.eid01 && r.eid01 === target.eid01) ||
-      (lec?.reseid && r.reseid === lec.reseid) ||
+      (lec?.reseid && (r.reseid === lec.reseid || r.eid === lec.reseid)) ||
       (lec?.eid01 && r.eid01 === lec.eid01)
     );
 
     const title = match?.rescnm || target?.rescnm || lec?.rescnm || id;
 
-    if (match?.eid) {
-      await api.cancelLecture(this.session.token, match.eid);
-    } else if (/^ID[A-Za-z0-9+/=]+$/.test(id)) {
-      await api.cancelLecture(this.session.token, id);
+    // 取得校方 DeleteData 所需之加密流水代號（通常以 ID 開頭，或記錄於 eid / reseid 欄位）
+    const isEncryptedId = (val) => typeof val === 'string' && /^ID[A-Za-z0-9+/=]+$/.test(val.trim());
+
+    let cancelEid = '';
+    if (isEncryptedId(match?.eid)) cancelEid = match.eid.trim();
+    else if (isEncryptedId(options.eid)) cancelEid = options.eid.trim();
+    else if (isEncryptedId(id)) cancelEid = id.trim();
+    else if (isEncryptedId(match?.reseid)) cancelEid = match.reseid.trim();
+    else if (isEncryptedId(target?.eid)) cancelEid = target.eid.trim();
+    else if (isEncryptedId(options.reseid)) cancelEid = options.reseid.trim();
+
+    if (cancelEid) {
+      await api.cancelLecture(this.session.token, cancelEid);
     } else {
-      this.log('info', `校方清冊無此報名紀錄，同步重設本機狀態：${title}`);
+      const wasRegistered = Number(lec?.cnt_10 || 0) > 0 || target?.status === 'registered';
+      if (wasRegistered) {
+        const reason = listError
+          ? `無法連線已選清單（${listError.message}）`
+          : '校方清冊查無此講座之退選加密代碼（可能已退選或超過退選時限）';
+        throw new Error(`退選失敗：${reason}，請重新整理或至校方系統確認「${title}」`);
+      }
+      this.log('info', `校方清冊與本機皆無此報名紀錄，同步清理本機目標：${title}`);
     }
 
     if (target) {
