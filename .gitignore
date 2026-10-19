@@ -24,3 +24,6 @@ mobile/ios/.symlinks/
 mobile/ios/Pods/
 mobile/ios/Podfile.lock
 
+
+graphify-out/.*
+graphify-out/cache/
