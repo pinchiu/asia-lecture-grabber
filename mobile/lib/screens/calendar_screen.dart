@@ -178,7 +178,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
