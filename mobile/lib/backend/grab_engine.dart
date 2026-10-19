@@ -1,0 +1,435 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'asia_api.dart';
+import 'calendar_helper.dart';
+
+class GrabEngine {
+  final AsiaApi api;
+  Map<String, dynamic>? session;
+  Map<String, dynamic>? stdInfo;
+
+  List<Map<String, dynamic>> lectures = [];
+  List<Map<String, dynamic>> targets = [];
+  final List<Map<String, dynamic>> logs = [];
+  int _logSeq = 0;
+
+  bool running = false;
+  Timer? _timer;
+  bool _ticking = false;
+
+  Map<String, dynamic> settings = {
+    'intervalMs': 2500,
+    'burstIntervalMs': 800,
+    'burstLeadMs': 60000,
+    'postOpenBurstMs': 30000,
+    'retryGapMs': 1500,
+    'minRequestGapMs': 400,
+    'stopWhenAllDone': true,
+    'bfree': 'N',
+  };
+
+  Map<String, dynamic> graduation = {
+    'history': {
+      'health': 0,
+      'care': 0,
+      'innovation': 0,
+      'excellence': 0,
+      'total': 0,
+    }
+  };
+
+  Map<String, dynamic> schedule = {
+    'enabled': true,
+    'entries': [],
+  };
+
+  Map<String, dynamic> stats = {
+    'requests': 0,
+    'registrations': 0,
+    'ticks': 0,
+    'startedAt': 0,
+    'lastSyncAt': 0,
+    'lastError': '',
+  };
+
+  GrabEngine({AsiaApi? apiInstance}) : api = apiInstance ?? AsiaApi();
+
+  void log(String level, String message) {
+    _logSeq++;
+    final entry = {
+      'seq': _logSeq,
+      'time': DateTime.now().toIso8601String(),
+      'level': level,
+      'message': message,
+    };
+    logs.add(entry);
+    if (logs.length > 500) {
+      logs.removeRange(0, logs.length - 500);
+    }
+  }
+
+  List<Map<String, dynamic>> logsSince(int sinceSeq) {
+    if (sinceSeq <= 0) return List.from(logs);
+    return logs.where((l) => (l['seq'] as int) > sinceSeq).toList();
+  }
+
+  Future<void> initFromStorage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final configStr = prefs.getString('engine_config');
+    if (configStr != null && configStr.isNotEmpty) {
+      try {
+        final cfg = jsonDecode(configStr);
+        if (cfg is Map) {
+          if (cfg['engine'] is Map) settings.addAll(Map<String, dynamic>.from(cfg['engine']));
+          if (cfg['graduation'] is Map) graduation.addAll(Map<String, dynamic>.from(cfg['graduation']));
+          if (cfg['schedule'] is Map) schedule.addAll(Map<String, dynamic>.from(cfg['schedule']));
+          if (cfg['account'] is Map) {
+            final acc = Map<String, dynamic>.from(cfg['account']);
+            if (acc['username'] != null && acc['username'].toString().isNotEmpty) {
+              session = {
+                'username': acc['username'],
+                'password': acc['password'] ?? '',
+                'idLast4': acc['idLast4'] ?? '',
+                'emp_id': acc['username'],
+                'emp_nm': acc['emp_nm'] ?? '',
+                'emp_rl': acc['emp_rl'] ?? 'Student',
+              };
+            }
+          }
+        }
+      } catch (_) {}
+    }
+  }
+
+  Future<void> persistConfig([Map<String, dynamic>? patch]) async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = {
+      'engine': settings,
+      'graduation': graduation,
+      'schedule': schedule,
+      'account': {
+        'username': session?['username'] ?? '',
+        'password': session?['password'] ?? '',
+        'idLast4': session?['idLast4'] ?? '',
+        'emp_nm': session?['emp_nm'] ?? '',
+        'emp_rl': session?['emp_rl'] ?? 'Student',
+      }
+    };
+    await prefs.setString('engine_config', jsonEncode(data));
+  }
+
+  void setSession(Map<String, dynamic>? newSession) {
+    session = newSession != null ? Map<String, dynamic>.from(newSession) : null;
+    stdInfo = null;
+    if (session == null) {
+      if (running) stop('使用者登出');
+    } else {
+      log('info', '已登入：${session!['emp_nm'] ?? session!['emp_id']}');
+    }
+  }
+
+  Future<Map<String, dynamic>> ensureIdentity() async {
+    if (stdInfo != null) return stdInfo!;
+    final token = session?['token']?.toString();
+    if (token == null || token.isEmpty) throw Exception('請先登入');
+    final idLast4 = session?['idLast4']?.toString() ?? '';
+    if (!RegExp(r'^\d{4}$').hasMatch(idLast4)) {
+      throw Exception('請先填寫身分證字號末四碼（報名時需要身分驗證）');
+    }
+
+    final info = await api.verifyIdentity(
+      token,
+      pNo: session!['emp_id'].toString(),
+      pId: idLast4,
+      pType: session!['emp_rl'] == 'Student' ? 'S' : 'T',
+    );
+    stdInfo = info;
+    log('info', '身分驗證成功：${info['chi_name'] ?? session!['emp_nm'] ?? session!['emp_id']}');
+    return info;
+  }
+
+  List<Map<String, dynamic>> activeTargets() {
+    return targets.where((t) {
+      final s = (t['status'] ?? '').toString();
+      return s != 'registered' && s != 'closed' && s != 'error';
+    }).toList();
+  }
+
+  Future<void> start() async {
+    if (running) return;
+    if (session?['token'] == null) throw Exception('請先登入再啟動');
+    final active = activeTargets();
+    if (active.isEmpty) throw Exception('請先加入至少一個目標講座');
+
+    await ensureIdentity();
+    running = true;
+    stats['startedAt'] = DateTime.now().millisecondsSinceEpoch;
+    stats['lastError'] = '';
+    log('info', '開始監控 ${active.length} 場目標講座（一般間隔 ${settings['intervalMs']} ms）');
+    _scheduleTick(0);
+  }
+
+  void stop([String reason = '']) {
+    final wasRunning = running;
+    running = false;
+    _timer?.cancel();
+    _timer = null;
+    if (wasRunning) {
+      log('info', '停止監控${reason.isNotEmpty ? "：$reason" : ""}');
+      stats['startedAt'] = 0;
+    }
+  }
+
+  void _scheduleTick(int delayMs) {
+    if (!running) return;
+    _timer?.cancel();
+    _timer = Timer(Duration(milliseconds: max(0, delayMs)), () {
+      _timer = null;
+      tick().catchError((err) {
+        log('error', '輪詢發生異常：$err');
+        _scheduleTick(5000);
+      });
+    });
+  }
+
+  Future<void> tick() async {
+    if (!running || _ticking) return;
+    _ticking = true;
+    try {
+      final token = session?['token']?.toString();
+      final rows = await api.listLectures(token);
+      stats['ticks'] = ((stats['ticks'] as int?) ?? 0) + 1;
+      stats['lastSyncAt'] = DateTime.now().millisecondsSinceEpoch;
+      lectures = rows;
+
+      bool needBurst = false;
+      final active = activeTargets();
+
+      for (final target in active) {
+        final eid01 = target['eid01']?.toString();
+        final row = lectures.firstWhere((r) => r['eid01']?.toString() == eid01, orElse: () => {});
+        if (row.isEmpty) continue;
+
+        final canapp = (row['canapp'] ?? '').toString();
+        final count = int.tryParse((row['cnt_10'] ?? '0').toString()) ?? 0;
+
+        if (count > 0) {
+          target['status'] = 'registered';
+          target['message'] = '系統顯示已完成報名';
+          log('info', '目標【${target['title']}】已成功報名');
+          continue;
+        }
+
+        if (canapp == 'Y') {
+          needBurst = true;
+          log('info', '目標【${target['title']}】開放報名，立即送出請求！');
+          await _attemptRegister(target);
+        } else if (canapp == 'F') {
+          // 已額滿，維持監控搶釋出名額
+          target['status'] = 'waiting';
+          target['message'] = '已額滿，持續監控等待退選釋出';
+        } else if (canapp == 'N1') {
+          // 檢查距離開放時間是否小於 burstLeadMs
+          final openTimeMs = _parseOpenTime(row);
+          if (openTimeMs != null) {
+            final diff = openTimeMs - DateTime.now().millisecondsSinceEpoch;
+            if (diff > 0 && diff <= ((settings['burstLeadMs'] as int?) ?? 60000)) {
+              needBurst = true;
+            }
+          }
+          target['status'] = 'waiting';
+          target['message'] = '尚未開放報名';
+        } else if (canapp == 'N2') {
+          target['status'] = 'closed';
+          target['message'] = '報名已截止';
+        }
+      }
+
+      if (settings['stopWhenAllDone'] == true && activeTargets().isEmpty) {
+        stop('所有目標皆已處理完成');
+        return;
+      }
+
+      final nextDelay = needBurst
+          ? ((settings['burstIntervalMs'] as int?) ?? 800)
+          : ((settings['intervalMs'] as int?) ?? 2500);
+      _scheduleTick(nextDelay);
+    } finally {
+      _ticking = false;
+    }
+  }
+
+  int? _parseOpenTime(Map<String, dynamic> row) {
+    final sdate = (row['sdate'] ?? row['rescsd'] ?? '').toString();
+    final stime = (row['stime'] ?? '').toString();
+    final ymd = CalendarHelper.parseYmd(sdate);
+    final hm = CalendarHelper.parseHm(stime);
+    if (ymd != null && hm.isNotEmpty) {
+      final dt = DateTime.tryParse('${ymd}T$hm:00');
+      return dt?.millisecondsSinceEpoch;
+    }
+    return null;
+  }
+
+  Future<void> _attemptRegister(Map<String, dynamic> target) async {
+    final token = session?['token']?.toString();
+    if (token == null) return;
+    try {
+      final info = await ensureIdentity();
+      final res = await api.registerLecture(
+        token,
+        stdInfo: info,
+        eid01: target['eid01'].toString(),
+        reseid: target['reseid']?.toString() ?? '',
+      );
+
+      stats['requests'] = ((stats['requests'] as int?) ?? 0) + 1;
+      if (res['ok'] == true) {
+        stats['registrations'] = ((stats['registrations'] as int?) ?? 0) + 1;
+        target['status'] = 'registered';
+        target['message'] = res['message']?.toString() ?? '報名成功';
+        log('info', '恭喜！【${target['title']}】報名成功！');
+      } else {
+        target['message'] = res['message']?.toString() ?? '報名未成功';
+        log('warn', '【${target['title']}】報名回應：${target['message']}');
+      }
+    } catch (e) {
+      target['message'] = '送出失敗：$e';
+      log('error', '【${target['title']}】報名失敗：$e');
+    }
+  }
+
+  Future<String> manualRegister(String eid01) async {
+    final token = session?['token']?.toString();
+    if (token == null) throw Exception('請先登入');
+    final info = await ensureIdentity();
+    final row = lectures.firstWhere((r) => r['eid01']?.toString() == eid01, orElse: () => {});
+    final reseid = (row['reseid'] ?? '').toString();
+
+    final res = await api.registerLecture(
+      token,
+      stdInfo: info,
+      eid01: eid01,
+      reseid: reseid,
+    );
+    final msg = res['message']?.toString() ?? '完成';
+    log('info', '手動報名 [$eid01] 回應：$msg');
+    return msg;
+  }
+
+  Future<String> cancelTarget(String id, {String? eid, String? reseid, String? eid01}) async {
+    final token = session?['token']?.toString();
+    if (token == null) throw Exception('請先登入');
+
+    String regEid = '';
+    String title = id;
+
+    // 校方退選需要加密代碼（以 ID 開頭）
+    if (id.startsWith('ID')) {
+      regEid = id;
+    } else {
+      final registered = await api.listRegistered(token);
+      final match = registered.firstWhere((r) {
+        final rEid = (r['eid'] ?? '').toString();
+        final rEid01 = (r['eid01'] ?? '').toString();
+        final rReseid = (r['reseid'] ?? '').toString();
+        return (eid != null && eid.isNotEmpty && rEid == eid) ||
+            (eid01 != null && eid01.isNotEmpty && rEid01 == eid01) ||
+            (reseid != null && reseid.isNotEmpty && rReseid == reseid) ||
+            rEid == id ||
+            rEid01 == id ||
+            rReseid == id;
+      }, orElse: () => {});
+
+      if (match.isNotEmpty) {
+        regEid = (match['reseid'] ?? match['eid'] ?? '').toString();
+        title = (match['reseid_name'] ?? match['name'] ?? id).toString();
+      }
+    }
+
+    if (regEid.isEmpty || !regEid.startsWith('ID')) {
+      throw Exception('在已報名清冊查無可退選代碼，請確認是否已向校方完成報名');
+    }
+
+    await api.cancelLecture(token, regEid);
+    targets.removeWhere((t) => t['eid01']?.toString() == eid01 || t['reseid']?.toString() == reseid);
+    log('info', '已成功取消報名：$title');
+    return title;
+  }
+
+  List<Map<String, dynamic>> addTargets(List<Map<String, dynamic>> rows) {
+    final added = <Map<String, dynamic>>[];
+    for (final row in rows) {
+      final eid01 = (row['eid01'] ?? '').toString();
+      if (eid01.isEmpty) continue;
+      if (targets.any((t) => t['eid01']?.toString() == eid01)) continue;
+
+      final entry = {
+        'eid01': eid01,
+        'reseid': (row['reseid'] ?? '').toString(),
+        'title': (row['reseid_name'] ?? row['name'] ?? eid01).toString(),
+        'status': 'waiting',
+        'message': '已加入目標佇列',
+        'canapp': (row['canapp'] ?? '').toString(),
+        'cnt_10': (row['cnt_10'] ?? '0').toString(),
+        'rescsd': (row['rescsd'] ?? row['sdate'] ?? '').toString(),
+        'stime': (row['stime'] ?? '').toString(),
+        'etime': (row['etime'] ?? '').toString(),
+        'place': (row['place'] ?? '').toString(),
+      };
+      targets.add(entry);
+      added.add(entry);
+      log('info', '新增搶課目標：【${entry['title']}】');
+    }
+    return added;
+  }
+
+  void removeTarget(String eid01) {
+    targets.removeWhere((t) => t['eid01']?.toString() == eid01);
+    log('info', '已移除搶課目標：[$eid01]');
+  }
+
+  void clearTargets() {
+    targets.removeWhere((t) {
+      final s = (t['status'] ?? '').toString();
+      return s == 'registered' || s == 'closed' || s == 'error';
+    });
+    log('info', '已清理已完成之目標');
+  }
+
+  Map<String, dynamic> snapshot() {
+    return {
+      'now': DateTime.now().millisecondsSinceEpoch,
+      'baseUrl': api.baseUrl,
+      'session': session != null
+          ? {
+              'username': session!['username'] ?? session!['emp_id'] ?? '',
+              'name': session!['emp_nm'] ?? '',
+              'role': session!['emp_rl'] ?? '',
+              'idLast4': session!['idLast4'] ?? '',
+            }
+          : null,
+      'engine': {
+        'running': running,
+        'stats': stats,
+        'settings': settings,
+        'targets': targets,
+        'activeCount': activeTargets().length,
+      },
+      'notify': {'sound': true, 'desktop': true},
+      'account': {
+        'username': session?['username'] ?? '',
+        'idLast4': session?['idLast4'] ?? '',
+        'saved': (session?['password'] ?? '').toString().isNotEmpty,
+      },
+      'graduation': {
+        'threshold': {'total': 8, 'health': 2, 'care': 2, 'innovation': 2, 'excellence': 2},
+        'history': graduation['history'] ?? {'health': 0, 'care': 0, 'innovation': 0, 'excellence': 0, 'total': 0},
+      },
+      'schedule': schedule,
+      'calendar': CalendarHelper.buildCalendar(lectures),
+    };
+  }
+}
