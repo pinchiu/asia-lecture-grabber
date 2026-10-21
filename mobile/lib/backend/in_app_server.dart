@@ -272,6 +272,26 @@ class InAppServer {
           'fetchedAt': DateTime.now().millisecondsSinceEpoch,
         });
 
+      case 'GET /api/calendar.ics':
+        List<Map<String, dynamic>> registered = [];
+        final token = engine.session?['token']?.toString();
+        if (token != null) {
+          try {
+            registered = await engine.api.listRegistered(token);
+          } catch (_) {}
+        }
+        final all = [...engine.lectures, ...registered];
+        final icsContent = CalendarHelper.generateIcs(all);
+        final icsBytes = utf8.encode(icsContent);
+        res.statusCode = HttpStatus.ok;
+        res.headers.set(HttpHeaders.contentTypeHeader, 'text/calendar; charset=utf-8');
+        res.headers.set('Content-Disposition', 'inline; filename="asia-lectures.ics"');
+        res.headers.set(HttpHeaders.cacheControlHeader, 'no-cache');
+        res.headers.set(HttpHeaders.contentLengthHeader, icsBytes.length.toString());
+        res.add(icsBytes);
+        await res.close();
+        return;
+
       case 'POST /api/config':
         final body = await _readJson(request);
         if (body['graduation'] is Map && body['graduation']['history'] is Map) {

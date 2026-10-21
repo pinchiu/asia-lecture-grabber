@@ -279,9 +279,12 @@ class GrabEngine extends ChangeNotifier {
     if (token == null) return;
     try {
       final info = await ensureIdentity();
+      final infoWithBfree = Map<String, dynamic>.from(info);
+      infoWithBfree['bfree'] = (settings['bfree'] ?? 'N').toString().toUpperCase() == 'Y' ? 'Y' : 'N';
+
       final res = await api.registerLecture(
         token,
-        stdInfo: info,
+        stdInfo: infoWithBfree,
         eid01: target['eid01'].toString(),
         reseid: target['reseid']?.toString() ?? '',
       );
@@ -306,17 +309,32 @@ class GrabEngine extends ChangeNotifier {
     final token = session?['token']?.toString();
     if (token == null) throw Exception('請先登入');
     final info = await ensureIdentity();
+    final infoWithBfree = Map<String, dynamic>.from(info);
+    infoWithBfree['bfree'] = (settings['bfree'] ?? 'N').toString().toUpperCase() == 'Y' ? 'Y' : 'N';
+
     final row = lectures.firstWhere((r) => r['eid01']?.toString() == eid01, orElse: () => {});
     final reseid = (row['reseid'] ?? '').toString();
 
     final res = await api.registerLecture(
       token,
-      stdInfo: info,
+      stdInfo: infoWithBfree,
       eid01: eid01,
       reseid: reseid,
     );
     final msg = res['message']?.toString() ?? '完成';
-    log('info', '手動報名 [$eid01] 回應：$msg');
+    if (res['ok'] != true) {
+      throw Exception(msg);
+    }
+
+    stats['registrations'] = ((stats['registrations'] as int?) ?? 0) + 1;
+    row['cnt_10'] = 1;
+    final target = targets.firstWhere((t) => t['eid01']?.toString() == eid01, orElse: () => {});
+    if (target.isNotEmpty) {
+      target['status'] = 'registered';
+      target['message'] = msg;
+    }
+    log('info', '手動報名 [$eid01] 成功：$msg');
+    notifyListeners();
     return msg;
   }
 
@@ -327,36 +345,65 @@ class GrabEngine extends ChangeNotifier {
     String regEid = '';
     String title = id;
 
-    // 校方退選需要加密代碼（以 ID 開頭）
-    if (id.startsWith('ID')) {
-      regEid = id;
-    } else {
-      final registered = await api.listRegistered(token);
-      final match = registered.firstWhere((r) {
-        final rEid = (r['eid'] ?? '').toString();
-        final rEid01 = (r['eid01'] ?? '').toString();
-        final rReseid = (r['reseid'] ?? '').toString();
-        return (eid != null && eid.isNotEmpty && rEid == eid) ||
-            (eid01 != null && eid01.isNotEmpty && rEid01 == eid01) ||
-            (reseid != null && reseid.isNotEmpty && rReseid == reseid) ||
-            rEid == id ||
-            rEid01 == id ||
-            rReseid == id;
-      }, orElse: () => {});
-
-      if (match.isNotEmpty) {
-        regEid = (match['reseid'] ?? match['eid'] ?? '').toString();
-        title = CalendarHelper.extractTitle(match);
-      }
+    bool isEncryptedId(dynamic val) {
+      if (val == null) return false;
+      final s = val.toString().trim();
+      return RegExp(r'^ID[A-Za-z0-9+/=]+$').hasMatch(s);
     }
 
-    if (regEid.isEmpty || !regEid.startsWith('ID')) {
-      throw Exception('在已報名清冊查無可退選代碼，請確認是否已向校方完成報名');
+    if (isEncryptedId(id)) {
+      regEid = id.trim();
+    } else if (isEncryptedId(eid)) {
+      regEid = eid!.trim();
+    } else if (isEncryptedId(reseid)) {
+      regEid = reseid!.trim();
+    }
+
+    final registered = await api.listRegistered(token);
+    final match = registered.firstWhere((r) {
+      final rEid = (r['eid'] ?? '').toString();
+      final rEid01 = (r['eid01'] ?? '').toString();
+      final rReseid = (r['reseid'] ?? '').toString();
+      return (eid != null && eid.isNotEmpty && (rEid == eid || rReseid == eid)) ||
+          (eid01 != null && eid01.isNotEmpty && rEid01 == eid01) ||
+          (reseid != null && reseid.isNotEmpty && (rReseid == reseid || rEid == reseid)) ||
+          rEid == id ||
+          rEid01 == id ||
+          rReseid == id;
+    }, orElse: () => {});
+
+    if (match.isNotEmpty) {
+      if (regEid.isEmpty) {
+        if (isEncryptedId(match['eid'])) {
+          regEid = match['eid'].toString().trim();
+        } else if (isEncryptedId(match['reseid'])) {
+          regEid = match['reseid'].toString().trim();
+        }
+      }
+      title = CalendarHelper.extractTitle(match);
+    }
+
+    if (regEid.isEmpty) {
+      throw Exception('在已報名清冊查無可退選代碼，請確認是否已向校方完成報名或已過退選時限');
     }
 
     await api.cancelLecture(token, regEid);
-    targets.removeWhere((t) => t['eid01']?.toString() == eid01 || t['reseid']?.toString() == reseid);
+    targets.removeWhere((t) =>
+        (eid01 != null && t['eid01']?.toString() == eid01) ||
+        (reseid != null && t['reseid']?.toString() == reseid) ||
+        t['eid01']?.toString() == id ||
+        t['reseid']?.toString() == id);
+
+    for (final lec in lectures) {
+      if ((eid01 != null && lec['eid01']?.toString() == eid01) ||
+          (reseid != null && lec['reseid']?.toString() == reseid) ||
+          lec['eid01']?.toString() == id) {
+        lec['cnt_10'] = 0;
+      }
+    }
+
     log('info', '已成功取消報名：$title');
+    notifyListeners();
     return title;
   }
 

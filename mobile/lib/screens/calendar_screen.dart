@@ -198,7 +198,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget _buildRegisteredCard(Map<String, dynamic> row, bool hasConflict) {
     final title = CalendarHelper.extractTitle(row);
     final eid01 = (row['eid01'] ?? '').toString();
-    final reseid = (row['reseid'] ?? row['eid'] ?? '').toString();
+    final reseid = (row['reseid'] ?? '').toString();
+    final eid = (row['eid'] ?? '').toString();
     final date = (row['rescsd'] ?? row['sdate'] ?? '').toString();
     final dateStr = CalendarHelper.parseYmd(date) ?? date;
     final stime = (row['stime'] ?? '').toString();
@@ -292,7 +293,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 color: AppColors.surfaceElevated,
                 borderRadius: BorderRadius.circular(8),
-                onPressed: () => _confirmCancel(eid01, reseid, title),
+                onPressed: () => _confirmCancel(eid01: eid01, reseid: reseid, eid: eid, title: title),
                 child: const Text(
                   '取消報名（退選）',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.accentRed),
@@ -305,7 +306,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  void _confirmCancel(String eid01, String reseid, String title) {
+  void _confirmCancel({required String eid01, required String reseid, required String eid, required String title}) {
     showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(
@@ -322,8 +323,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
               Navigator.pop(context);
               HapticFeedback.mediumImpact();
               try {
-                final targetId = reseid.isNotEmpty ? reseid : eid01;
-                await widget.engine.cancelTarget(targetId, eid01: eid01, reseid: reseid);
+                final targetId = eid.isNotEmpty ? eid : (reseid.isNotEmpty ? reseid : eid01);
+                await widget.engine.cancelTarget(targetId, eid01: eid01, reseid: reseid, eid: eid);
                 _showMsg('已成功取消報名');
                 await _loadRegistered();
                 await widget.engine.refreshLectures();
@@ -344,18 +345,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
       for (int j = i + 1; j < list.length; j++) {
         final a = list[i];
         final b = list[j];
-        final dateA = a['rescsd'] ?? a['sdate'];
-        final dateB = b['rescsd'] ?? b['sdate'];
-        if (dateA != null && dateA == dateB) {
-          final stimeA = (a['stime'] ?? '').toString();
-          final etimeA = (a['etime'] ?? '').toString();
-          final stimeB = (b['stime'] ?? '').toString();
-          final etimeB = (b['etime'] ?? '').toString();
+        final rawDateA = a['rescsd'] ?? a['sdate'];
+        final rawDateB = b['rescsd'] ?? b['sdate'];
+        if (rawDateA == null || rawDateB == null) continue;
+
+        final dateA = CalendarHelper.parseYmd(rawDateA.toString()) ?? rawDateA.toString().trim();
+        final dateB = CalendarHelper.parseYmd(rawDateB.toString()) ?? rawDateB.toString().trim();
+
+        if (dateA.isNotEmpty && dateA == dateB) {
+          final stimeA = CalendarHelper.parseHm((a['stime'] ?? '').toString());
+          final etimeA = CalendarHelper.parseHm((a['etime'] ?? '').toString());
+          final stimeB = CalendarHelper.parseHm((b['stime'] ?? '').toString());
+          final etimeB = CalendarHelper.parseHm((b['etime'] ?? '').toString());
 
           if (stimeA.isNotEmpty && etimeA.isNotEmpty && stimeB.isNotEmpty && etimeB.isNotEmpty) {
             if (stimeA.compareTo(etimeB) < 0 && stimeB.compareTo(etimeA) < 0) {
-              conflictSet.add(a['eid01']?.toString() ?? '');
-              conflictSet.add(b['eid01']?.toString() ?? '');
+              if (a['eid01'] != null) conflictSet.add(a['eid01'].toString());
+              if (b['eid01'] != null) conflictSet.add(b['eid01'].toString());
             }
           }
         }
