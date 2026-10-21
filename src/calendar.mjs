@@ -121,3 +121,55 @@ export function buildCalendar(rows) {
   }
   return [...byId.values()].sort((a, b) => a.startAt - b.startAt);
 }
+
+export function formatIcsDate(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+}
+
+function escapeIcsText(text) {
+  return String(text || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r?\n/g, '\\n');
+}
+
+/** 依 RFC 5545 產生標準 iCalendar (.ics) 字串，供日曆訂閱與檔案匯出。 */
+export function generateIcs(events = [], { calName = '亞洲大學通識講座' } = {}) {
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Asia University//Lecture Grabber//ZH-TW',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    `X-WR-CALNAME:${escapeIcsText(calName)}`,
+    'X-WR-TIMEZONE:Asia/Taipei'
+  ];
+
+  const nowStamp = formatIcsDate(new Date());
+
+  for (const ev of events) {
+    const start = ev.startAt ? new Date(ev.startAt) : new Date();
+    const end = ev.endAt ? new Date(ev.endAt) : new Date(start.getTime() + 7_200_000);
+    const lits = (ev.literacies || []).join('、') || '一般';
+    const summary = `${ev.title || '校園講座'} [${lits}]`;
+    const desc = `講者：${ev.speaker || '校方講師'}\n地點：${ev.place || '亞大校園'}\n基本素養：${lits}\n課程代號：${ev.eid01 || ''}`;
+
+    lines.push(
+      'BEGIN:VEVENT',
+      `UID:au-lecture-${ev.eid01 || Math.random().toString(36).slice(2)}@asia.edu.tw`,
+      `DTSTAMP:${nowStamp}`,
+      `DTSTART:${formatIcsDate(start)}`,
+      `DTEND:${formatIcsDate(end)}`,
+      `SUMMARY:${escapeIcsText(summary)}`,
+      `LOCATION:${escapeIcsText(ev.place || '亞洲大學')}`,
+      `DESCRIPTION:${escapeIcsText(desc)}`,
+      'STATUS:CONFIRMED',
+      'END:VEVENT'
+    );
+  }
+
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n') + '\r\n';
+}

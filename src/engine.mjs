@@ -17,8 +17,9 @@ const TERMINAL = new Set(['registered', 'closed', 'manual', 'error']);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, Math.max(0, ms)));
 
 export class Engine extends EventEmitter {
-  constructor({ settings = {}, targets = [] } = {}) {
+  constructor({ settings = {}, targets = [], api: apiAdapter = api } = {}) {
     super();
+    this.api = apiAdapter;
     this.settings = normalizeSettings(settings);
     this.targets = (Array.isArray(targets) ? targets : []).map(normalizeTarget);
 
@@ -105,7 +106,7 @@ export class Engine extends EventEmitter {
     if (!/^\d{4}$/.test(String(session.idLast4 || ''))) {
       throw new Error('請先填寫身分證字號末四碼（報名時需要驗證）');
     }
-    const info = await api.verifyIdentity(session.token, {
+    const info = await this.api.verifyIdentity(session.token, {
       p_no: session.emp_id,
       p_id: session.idLast4,
       p_type: session.emp_rl === 'Student' ? 'S' : 'T'
@@ -125,13 +126,14 @@ export class Engine extends EventEmitter {
       this.timer = null;
       this.tick().catch((err) => this.handleError(err));
     }, Math.max(0, delay));
+    if (this.timer?.unref) this.timer.unref();
   }
 
   async tick() {
     if (!this.running || this._ticking) return;
     this._ticking = true;
     try {
-      const rows = await this.paced(() => api.listLectures(this.session.token));
+      const rows = await this.paced(() => this.api.listLectures(this.session.token));
       this.stats.ticks += 1;
       this.stats.lastSyncAt = Date.now();
       this.applyRows(rows);
@@ -259,7 +261,7 @@ export class Engine extends EventEmitter {
     try {
       const stdWithBfree = { ...std, bfree: this.settings.bfree || 'N' };
       const res = await this.paced(() =>
-        api.registerLecture(this.session.token, { std_info: stdWithBfree, eid01: target.eid01, reseid: row.reseid })
+        this.api.registerLecture(this.session.token, { std_info: stdWithBfree, eid01: target.eid01, reseid: row.reseid })
       );
       if (res.ok) this.finish(target, 'registered', res.message);
       else {
@@ -283,14 +285,14 @@ export class Engine extends EventEmitter {
 
     let row = this.lectures.find((item) => item.eid01 === id || item.reseid === id);
     if (!row) {
-      this.lectures = await api.listLectures(this.session.token);
+      this.lectures = await this.api.listLectures(this.session.token);
       row = this.lectures.find((item) => item.eid01 === id || item.reseid === id);
     }
     if (!row) throw new Error('找不到該講座，請確認課程代號或重新整理清單');
 
     const std = await this.ensureIdentity();
     const stdWithBfree = { ...std, bfree: this.settings.bfree || 'N' };
-    const res = await api.registerLecture(this.session.token, { std_info: stdWithBfree, eid01: row.eid01, reseid: row.reseid });
+    const res = await this.api.registerLecture(this.session.token, { std_info: stdWithBfree, eid01: row.eid01, reseid: row.reseid });
     if (!res.ok) throw new Error(res.message);
 
     row.cnt_10 = 1;
@@ -298,12 +300,13 @@ export class Engine extends EventEmitter {
     if (target) {
       this.finish(target, 'registered', res.message);
     } else {
+      this.stats.registrations += 1;
       this.log('success', `[手動報名成功] ${row.rescnm || id}（${res.message}）`);
       this.onChange();
     }
 
     try {
-      const freshRows = await api.listLectures(this.session.token);
+      const freshRows = await this.api.listLectures(this.session.token);
       this.applyRows(freshRows);
     } catch {}
 
@@ -319,7 +322,7 @@ export class Engine extends EventEmitter {
     let registeredList = [];
     let listError = null;
     try {
-      registeredList = await api.listRegistered(this.session.token);
+      registeredList = await this.api.listRegistered(this.session.token);
     } catch (err) {
       listError = err;
       this.log('warn', `查詢已報名清單失敗：${err.message}`);
@@ -350,7 +353,7 @@ export class Engine extends EventEmitter {
     else if (isEncryptedId(options.reseid)) cancelEid = options.reseid.trim();
 
     if (cancelEid) {
-      await api.cancelLecture(this.session.token, cancelEid);
+      await this.api.cancelLecture(this.session.token, cancelEid);
     } else {
       const wasRegistered = Number(lec?.cnt_10 || 0) > 0 || target?.status === 'registered';
       if (wasRegistered) {
@@ -372,7 +375,7 @@ export class Engine extends EventEmitter {
     }
 
     try {
-      const freshRows = await api.listLectures(this.session.token);
+      const freshRows = await this.api.listLectures(this.session.token);
       this.applyRows(freshRows);
     } catch {}
 
@@ -417,7 +420,7 @@ export class Engine extends EventEmitter {
     if (Date.now() - this._lastRelogin < 30_000) return false;
     this._lastRelogin = Date.now();
     try {
-      const user = await api.login(this.session.username, this.session.password);
+      const user = await this.api.login(this.session.username, this.session.password);
       this.session.token = user.token;
       this.stdInfo = null;
       this.log('info', '登入憑證已自動更新');
