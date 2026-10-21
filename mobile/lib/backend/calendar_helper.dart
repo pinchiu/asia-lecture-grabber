@@ -146,4 +146,67 @@ class CalendarHelper {
     events.sort((a, b) => ((a['startAt'] as int?) ?? 0).compareTo((b['startAt'] as int?) ?? 0));
     return events;
   }
+
+  static String formatIcsDate(DateTime dt) {
+    final utc = dt.toUtc();
+    final y = utc.year.toString().padLeft(4, '0');
+    final m = utc.month.toString().padLeft(2, '0');
+    final d = utc.day.toString().padLeft(2, '0');
+    final h = utc.hour.toString().padLeft(2, '0');
+    final min = utc.minute.toString().padLeft(2, '0');
+    final s = utc.second.toString().padLeft(2, '0');
+    return '${y}${m}${d}T${h}${min}${s}Z';
+  }
+
+  static String escapeIcsText(String text) {
+    return text
+        .replaceAll(r'\', r'\\')
+        .replaceAll(';', r'\;')
+        .replaceAll(',', r'\,')
+        .replaceAll('\r\n', r'\n')
+        .replaceAll('\n', r'\n');
+  }
+
+  static String generateIcs(List<Map<String, dynamic>> rows, {String calName = '亞洲大學通識講座'}) {
+    final events = buildCalendar(rows);
+    final lines = <String>[
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Asia University//Lecture Grabber Mobile//ZH-TW',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'X-WR-CALNAME:${escapeIcsText(calName)}',
+      'X-WR-TIMEZONE:Asia/Taipei',
+    ];
+
+    final nowStamp = formatIcsDate(DateTime.now());
+
+    for (final ev in events) {
+      final startAtMs = ev['startAt'] as int?;
+      final endAtMs = ev['endAt'] as int?;
+      final start = startAtMs != null ? DateTime.fromMillisecondsSinceEpoch(startAtMs) : DateTime.now();
+      final end = endAtMs != null ? DateTime.fromMillisecondsSinceEpoch(endAtMs) : start.add(const Duration(hours: 2));
+
+      final litsList = ev['literacies'] as List?;
+      final lits = litsList != null && litsList.isNotEmpty ? litsList.join('、') : '一般';
+      final summary = '${ev['title'] ?? '校園講座'} [$lits]';
+      final desc = '地點：${ev['place'] ?? '亞大校園'}\n基本素養：$lits\n課程代號：${ev['eid01'] ?? ''}';
+
+      lines.addAll([
+        'BEGIN:VEVENT',
+        'UID:au-lecture-mobile-${ev['eid01'] ?? ev['eid'] ?? DateTime.now().millisecondsSinceEpoch}@asia.edu.tw',
+        'DTSTAMP:$nowStamp',
+        'DTSTART:${formatIcsDate(start)}',
+        'DTEND:${formatIcsDate(end)}',
+        'SUMMARY:${escapeIcsText(summary)}',
+        'LOCATION:${escapeIcsText((ev['place'] ?? '亞洲大學').toString())}',
+        'DESCRIPTION:${escapeIcsText(desc)}',
+        'STATUS:CONFIRMED',
+        'END:VEVENT',
+      ]);
+    }
+
+    lines.add('END:VCALENDAR');
+    return lines.join('\r\n') + '\r\n';
+  }
 }
