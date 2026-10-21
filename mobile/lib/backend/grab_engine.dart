@@ -232,6 +232,11 @@ class GrabEngine extends ChangeNotifier {
 
         final canapp = (row['canapp'] ?? '').toString();
         final count = int.tryParse((row['cnt_10'] ?? '0').toString()) ?? 0;
+        target['canapp'] = canapp;
+        target['appnum'] = (row['appnum'] ?? '').toString();
+        target['selnum'] = (row['selnum'] ?? '').toString();
+        target['webstd'] = (row['webstd'] ?? '').toString();
+        target['maxstd'] = (row['maxstd'] ?? '').toString();
 
         if (count > 0) {
           target['status'] = 'registered';
@@ -445,6 +450,10 @@ class GrabEngine extends ChangeNotifier {
         'message': '已加入目標佇列',
         'canapp': (row['canapp'] ?? '').toString(),
         'cnt_10': (row['cnt_10'] ?? '0').toString(),
+        'appnum': (row['appnum'] ?? '').toString(),
+        'selnum': (row['selnum'] ?? '').toString(),
+        'webstd': (row['webstd'] ?? '').toString(),
+        'maxstd': (row['maxstd'] ?? '').toString(),
         'rescsd': (row['rescsd'] ?? row['sdate'] ?? '').toString(),
         'stime': (row['stime'] ?? '').toString(),
         'etime': (row['etime'] ?? '').toString(),

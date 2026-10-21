@@ -10,7 +10,8 @@ import {
   formatIcsDate,
   generateIcs,
   checkConflict,
-  findConflicts
+  findConflicts,
+  formatCapacity
 } from '../src/calendar.mjs';
 
 describe('calendar.mjs 核心時間與行事曆轉換測試', () => {
@@ -174,6 +175,24 @@ describe('calendar.mjs 核心時間與行事曆轉換測試', () => {
       assert.ok(conflicts.has('A'));
       assert.ok(conflicts.has('B'));
       assert.ok(!conflicts.has('C'));
+    });
+  });
+
+  describe('formatCapacity 已選人數與名額格式化測試', () => {
+    it('應直接保留並清理 appnum 中的字串與 HTML 標籤', () => {
+      assert.equal(formatCapacity({ appnum: '35/50' }), '35/50');
+      assert.equal(formatCapacity({ appnum: '<font color=red>120/120</font>' }), '120/120');
+      assert.equal(formatCapacity({ appnum: '15<br/>15' }), '15 15');
+    });
+
+    it('appnum 為空時應利用 selnum 與 webstd 組合名額比例', () => {
+      assert.equal(formatCapacity({ selnum: 45, webstd: 60 }), '45/60');
+      assert.equal(formatCapacity({ cnt_10: 1, maxstd: 100 }), '1/100');
+    });
+
+    it('無任何名額資料時應回傳橫槓', () => {
+      assert.equal(formatCapacity({}), '-');
+      assert.equal(formatCapacity(null), '-');
     });
   });
 });

@@ -46,6 +46,33 @@ export function weekdayLabel(index) {
   return WEEKDAY[((index % 7) + 7) % 7];
 }
 
+/**
+ * 格式化已選人數與名額上限字串（如 35/50、120/120），過濾校方 HTML 標籤。
+ */
+export function formatCapacity(row) {
+  if (!row || typeof row !== 'object') return '-';
+  const rawAppnum = String(row.appnum || '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (rawAppnum && rawAppnum !== '-') {
+    return rawAppnum;
+  }
+
+  const selnum = String(row.selnum ?? row.cnt_10 ?? '').trim();
+  const total = String(row.webstd ?? row.maxstd ?? row.appmax ?? '').trim();
+  if (total && total !== '0') {
+    return `${selnum || '0'}/${total}`;
+  }
+
+  if (selnum && selnum !== '0') {
+    return `${selnum} 人`;
+  }
+
+  return '-';
+}
+
 const isChecked = (val) => val === 'Y' || val === 'y' || val === true || val === 1 || val === '1';
 
 export function extractLiteracies(row) {

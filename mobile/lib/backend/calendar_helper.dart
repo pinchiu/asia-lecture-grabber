@@ -1,5 +1,30 @@
 
 class CalendarHelper {
+  static String formatCapacity(dynamic row) {
+    if (row == null || row is! Map<String, dynamic>) return '-';
+    final rawAppnum = (row['appnum'] ?? '').toString();
+    final cleaned = rawAppnum
+        .replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), ' ')
+        .replaceAll(RegExp(r'<[^>]+>'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (cleaned.isNotEmpty && cleaned != '-') {
+      return cleaned;
+    }
+
+    final selnum = (row['selnum'] ?? row['cnt_10'] ?? '').toString().trim();
+    final total = (row['webstd'] ?? row['maxstd'] ?? row['appmax'] ?? '').toString().trim();
+    if (total.isNotEmpty && total != '0') {
+      return '${selnum.isNotEmpty ? selnum : "0"}/$total';
+    }
+
+    if (selnum.isNotEmpty && selnum != '0') {
+      return '$selnum 人';
+    }
+
+    return '-';
+  }
+
   static String extractTitle(dynamic row) {
     if (row == null) return '';
     if (row is String) return row.trim();
