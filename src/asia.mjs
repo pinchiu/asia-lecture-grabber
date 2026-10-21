@@ -49,7 +49,7 @@ const JSON_HEADERS = {
   'User-Agent': USER_AGENT
 };
 
-function isTransientStatus(status) {
+export function isTransientStatus(status) {
   return status === 0 || status === 408 || status === 425 || status === 429 || status >= 500;
 }
 
@@ -253,7 +253,8 @@ function isTlsChainError(err) {
   );
 }
 
-function toApiError(err) {
+export function toApiError(err) {
+  if (err instanceof ApiError) return err;
   const code = String(err?.code || '');
   if (code === 'ETIMEDOUT') return new ApiError('請求逾時（學校系統沒有回應）', { status: 0, transient: true });
   if (code === 'ENOTFOUND') return new ApiError('找不到主機（請確認網路或 DNS）', { status: 0, transient: true });
@@ -264,7 +265,7 @@ function toApiError(err) {
   return new ApiError(`網路連線失敗：${err?.message || err}`, { status: 0, transient: true });
 }
 
-async function request(method, relativePath, { body, token, timeoutMs = 25_000 } = {}) {
+export async function request(method, relativePath, { body, token, timeoutMs = 25_000, rawText = false } = {}) {
   const headers = { ...JSON_HEADERS };
   if (token) headers.Authorization = 'Bearer ' + token;
   const payload = body === undefined ? undefined : JSON.stringify(body);
@@ -302,6 +303,10 @@ async function request(method, relativePath, { body, token, timeoutMs = 25_000 }
       payload: json ?? text.slice(0, 800),
       transient: isTransientStatus(response.status)
     });
+  }
+
+  if (rawText) {
+    return { text, json, status: response.status };
   }
 
   if (!json && text.length > 0) {
@@ -383,27 +388,12 @@ export async function cancelLecture(token, regEid) {
   if (!token) throw new ApiError('請先登入', { status: 401 });
   if (!regEid) throw new ApiError('缺少退選代號', { status: 400 });
 
-  const headers = { ...JSON_HEADERS };
-  if (token) headers.Authorization = 'Bearer ' + token;
-  const payload = '{}';
-  headers['Content-Length'] = Buffer.byteLength(payload);
-
-  let response;
-  try {
-    response = await rawRequest('POST', `api/cfd10/DeleteData?reseid=${encodeURIComponent(regEid)}`, headers, payload, 20_000);
-  } catch (err) {
-    throw toApiError(err);
-  }
-
-  const text = String(response.body || '').replace(/^\uFEFF/, '').trim();
-
-  if (response.status < 200 || response.status >= 300) {
-    throw new ApiError(text || `退選失敗（HTTP ${response.status}）`, {
-      status: response.status,
-      payload: text,
-      transient: isTransientStatus(response.status)
-    });
-  }
+  const { text, json } = await request('POST', `api/cfd10/DeleteData?reseid=${encodeURIComponent(regEid)}`, {
+    token,
+    body: {},
+    timeoutMs: 20_000,
+    rawText: true
+  });
 
   // 校方 DeleteData 成功時回傳空字串 ""
   if (!text) {
@@ -412,11 +402,9 @@ export async function cancelLecture(token, regEid) {
 
   // 若回傳非空字串，為校方系統錯誤訊息（如 Base-64 錯誤、超過退選時間等）
   let message = text;
-  try {
-    const json = JSON.parse(text);
+  if (json) {
     message = json?.message || json?.Message || text;
-  } catch {}
-
+  }
   throw new ApiError(message || '退選失敗', { status: 400, payload: text });
 }
 

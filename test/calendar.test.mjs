@@ -6,7 +6,9 @@ import {
   weekdayLabel,
   extractLiteracies,
   eventFromRow,
-  buildCalendar
+  buildCalendar,
+  formatIcsDate,
+  generateIcs
 } from '../src/calendar.mjs';
 
 describe('calendar.mjs 核心時間與行事曆轉換測試', () => {
@@ -96,6 +98,41 @@ describe('calendar.mjs 核心時間與行事曆轉換測試', () => {
       assert.equal(events.length, 2);
       assert.equal(events[0].eid01, '1');
       assert.equal(events[1].eid01, '2');
+    });
+  });
+
+  describe('generateIcs 行事曆匯出與格式化', () => {
+    it('formatIcsDate 應產出 RFC 5545 標準 UTC 格式', () => {
+      const d = new Date(Date.UTC(2026, 9, 21, 14, 30, 0));
+      const str = formatIcsDate(d);
+      assert.equal(str, '20261021T143000Z');
+    });
+
+    it('generateIcs 應包含 VCALENDAR 標頭、時區與 VEVENT 事件', () => {
+      const mockEvents = [
+        {
+          id: '101',
+          eid01: '101',
+          title: '現代生物技術, 與生活',
+          speaker: '林教授; 專家',
+          place: 'A101教室',
+          startAt: new Date(2026, 10, 5, 13, 0).getTime(),
+          endAt: new Date(2026, 10, 5, 15, 0).getTime(),
+          literacies: ['創新力']
+        }
+      ];
+
+      const ics = generateIcs(mockEvents);
+      assert.ok(ics.includes('BEGIN:VCALENDAR'));
+      assert.ok(ics.includes('PRODID:-//Asia University//Lecture Grabber//ZH-TW'));
+      assert.ok(ics.includes('X-WR-CALNAME:亞洲大學通識講座'));
+      assert.ok(ics.includes('BEGIN:VEVENT'));
+      assert.ok(ics.includes('UID:au-lecture-101@asia.edu.tw'));
+      // 驗證特殊字元跳脫
+      assert.ok(ics.includes('現代生物技術\\, 與生活'));
+      assert.ok(ics.includes('林教授\\; 專家'));
+      assert.ok(ics.includes('END:VEVENT'));
+      assert.ok(ics.includes('END:VCALENDAR'));
     });
   });
 });
