@@ -19,6 +19,7 @@ class GrabEngine extends ChangeNotifier {
   bool running = false;
   Timer? _timer;
   bool _ticking = false;
+  int _errorStreak = 0;
 
   Map<String, dynamic> settings = {
     'intervalMs': 2500,
@@ -129,6 +130,7 @@ class GrabEngine extends ChangeNotifier {
     } else {
       log('info', '已登入：${session!['emp_nm'] ?? session!['emp_id']}');
     }
+    notifyListeners();
   }
 
   Future<Map<String, dynamic>> ensureIdentity() async {
@@ -166,9 +168,11 @@ class GrabEngine extends ChangeNotifier {
 
     await ensureIdentity();
     running = true;
+    _errorStreak = 0;
     stats['startedAt'] = DateTime.now().millisecondsSinceEpoch;
     stats['lastError'] = '';
     log('info', '開始監控 ${active.length} 場目標講座（一般間隔 ${settings['intervalMs']} ms）');
+    notifyListeners();
     _scheduleTick(0);
   }
 
@@ -181,6 +185,7 @@ class GrabEngine extends ChangeNotifier {
       log('info', '停止監控${reason.isNotEmpty ? "：$reason" : ""}');
       stats['startedAt'] = 0;
     }
+    notifyListeners();
   }
 
   void _scheduleTick(int delayMs) {
@@ -189,10 +194,20 @@ class GrabEngine extends ChangeNotifier {
     _timer = Timer(Duration(milliseconds: max(0, delayMs)), () {
       _timer = null;
       tick().catchError((err) {
-        log('error', '輪詢發生異常：$err');
-        _scheduleTick(5000);
+        _handleTickError(err);
       });
     });
+  }
+
+  void _handleTickError(dynamic err) {
+    if (!running) return;
+    _errorStreak++;
+    final msg = err.toString().replaceAll('Exception: ', '');
+    stats['lastError'] = msg;
+    log('error', '輪詢發生異常（第 $_errorStreak 次）：$msg');
+    final backoff = min(30000, (2500 * pow(1.5, _errorStreak)).toInt());
+    _scheduleTick(backoff);
+    notifyListeners();
   }
 
   Future<void> tick() async {
@@ -203,6 +218,8 @@ class GrabEngine extends ChangeNotifier {
       final rows = await api.listLectures(token);
       stats['ticks'] = ((stats['ticks'] as int?) ?? 0) + 1;
       stats['lastSyncAt'] = DateTime.now().millisecondsSinceEpoch;
+      stats['lastError'] = '';
+      _errorStreak = 0;
       lectures = rows;
 
       bool needBurst = false;
@@ -259,6 +276,7 @@ class GrabEngine extends ChangeNotifier {
       _scheduleTick(nextDelay);
     } finally {
       _ticking = false;
+      notifyListeners();
     }
   }
 
@@ -294,6 +312,11 @@ class GrabEngine extends ChangeNotifier {
         stats['registrations'] = ((stats['registrations'] as int?) ?? 0) + 1;
         target['status'] = 'registered';
         target['message'] = res['message']?.toString() ?? '報名成功';
+        for (final lec in lectures) {
+          if (lec['eid01']?.toString() == target['eid01']?.toString()) {
+            lec['cnt_10'] = 1;
+          }
+        }
         log('info', '恭喜！【${target['title']}】報名成功！');
       } else {
         target['message'] = res['message']?.toString() ?? '報名未成功';
@@ -431,6 +454,7 @@ class GrabEngine extends ChangeNotifier {
       added.add(entry);
       log('info', '新增搶課目標：【${entry['title']}】');
     }
+    notifyListeners();
     return added;
   }
 

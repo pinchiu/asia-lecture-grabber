@@ -8,7 +8,9 @@ import {
   eventFromRow,
   buildCalendar,
   formatIcsDate,
-  generateIcs
+  generateIcs,
+  checkConflict,
+  findConflicts
 } from '../src/calendar.mjs';
 
 describe('calendar.mjs 核心時間與行事曆轉換測試', () => {
@@ -133,6 +135,45 @@ describe('calendar.mjs 核心時間與行事曆轉換測試', () => {
       assert.ok(ics.includes('林教授\\; 專家'));
       assert.ok(ics.includes('END:VEVENT'));
       assert.ok(ics.includes('END:VCALENDAR'));
+    });
+  });
+
+  describe('checkConflict 與 findConflicts 衝堂判定測試', () => {
+    it('相鄰時段（如 10:00~12:00 與 12:00~14:00）不應判定為衝堂', () => {
+      const a = { eid01: '101', rescsd: '2026/11/04', stime: '10:00', etime: '12:00' };
+      const b = { eid01: '102', rescsd: '2026/11/04', stime: '12:00', etime: '14:00' };
+      assert.equal(checkConflict(a, b), false);
+    });
+
+    it('重疊時段（如 10:00~12:00 與 11:30~13:30）應判定為衝堂', () => {
+      const a = { eid01: '101', rescsd: '2026/11/04', stime: '10:00', etime: '12:00' };
+      const b = { eid01: '102', rescsd: '2026/11/04', stime: '11:30', etime: '13:30' };
+      assert.equal(checkConflict(a, b), true);
+    });
+
+    it('同課程代碼（同場次）不應視為衝堂', () => {
+      const a = { eid01: '101', rescsd: '2026/11/04', stime: '10:00', etime: '12:00' };
+      const b = { eid01: '101', rescsd: '2026/11/04', stime: '10:00', etime: '12:00' };
+      assert.equal(checkConflict(a, b), false);
+    });
+
+    it('不同日期之重疊時間不應判定為衝堂', () => {
+      const a = { eid01: '101', rescsd: '2026/11/04', stime: '10:00', etime: '12:00' };
+      const b = { eid01: '102', rescsd: '2026/11/05', stime: '10:00', etime: '12:00' };
+      assert.equal(checkConflict(a, b), false);
+    });
+
+    it('findConflicts 應回傳所有衝堂之代號集合', () => {
+      const list = [
+        { eid01: 'A', rescsd: '2026/11/04', stime: '10:00', etime: '12:00' },
+        { eid01: 'B', rescsd: '2026/11/04', stime: '11:00', etime: '13:00' },
+        { eid01: 'C', rescsd: '2026/11/04', stime: '14:00', etime: '16:00' }
+      ];
+      const conflicts = findConflicts(list);
+      assert.equal(conflicts.size, 2);
+      assert.ok(conflicts.has('A'));
+      assert.ok(conflicts.has('B'));
+      assert.ok(!conflicts.has('C'));
     });
   });
 });
