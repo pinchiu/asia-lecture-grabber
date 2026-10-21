@@ -122,6 +122,46 @@ export function buildCalendar(rows) {
   return [...byId.values()].sort((a, b) => a.startAt - b.startAt);
 }
 
+/**
+ * 判定兩筆講座事件是否存在時間衝突（半開區間 [start, end) 判定）。
+ * 同一課程代碼（同場次）不視為衝堂；相鄰時段（前堂結束時間等於後堂開始時間）不視為衝堂。
+ */
+export function checkConflict(a, b) {
+  if (!a || !b) return false;
+  const idA = String(a.eid01 || a.eid || '');
+  const idB = String(b.eid01 || b.eid || '');
+  if (idA && idB && idA === idB) return false;
+
+  const eventA = a.startAt !== undefined ? a : eventFromRow(a);
+  const eventB = b.startAt !== undefined ? b : eventFromRow(b);
+  if (!eventA || !eventB || !eventA.startAt || !eventB.startAt) return false;
+
+  const endA = eventA.endAt || (eventA.startAt + 7_200_000);
+  const endB = eventB.endAt || (eventB.startAt + 7_200_000);
+
+  return Math.max(eventA.startAt, eventB.startAt) < Math.min(endA, endB);
+}
+
+/**
+ * 找出列表中所有衝堂之課程代號（eid01）。
+ */
+export function findConflicts(events = []) {
+  const conflictSet = new Set();
+  const list = (events || [])
+    .map((item) => (item?.startAt !== undefined ? item : eventFromRow(item)))
+    .filter((item) => item && item.startAt);
+
+  for (let i = 0; i < list.length; i++) {
+    for (let j = i + 1; j < list.length; j++) {
+      if (checkConflict(list[i], list[j])) {
+        if (list[i].eid01) conflictSet.add(String(list[i].eid01));
+        if (list[j].eid01) conflictSet.add(String(list[j].eid01));
+      }
+    }
+  }
+  return conflictSet;
+}
+
 export function formatIcsDate(date) {
   const d = date instanceof Date ? date : new Date(date);
   return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';

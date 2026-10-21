@@ -215,6 +215,20 @@ function exportCalendarICS() {
     return toast('目前尚無已報名講座，報名後即可匯出行事曆', 'err');
   }
 
+  // 優先觸發伺服器標準 RFC 5545 iCal 端點下載
+  try {
+    const a = document.createElement('a');
+    a.href = '/api/calendar.ics';
+    a.download = `亞洲大學通識講座行程_${dateKey(new Date())}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast('已匯出行事曆檔（.ics），可直接開啟同步至 Apple 日曆或 Google 日曆！', 'ok');
+    return;
+  } catch {
+    /* 若背景下載失敗則降級為本地產生 */
+  }
+
   const formatIcsDate = (date) => {
     return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   };
@@ -234,7 +248,7 @@ function exportCalendarICS() {
     const end = ev.endAt ? new Date(ev.endAt) : new Date(start.getTime() + 7200000);
     const lits = (ev.literacies || []).join('、') || '一般';
     const summary = `${ev.title} [${lits}]`;
-    const desc = `講者：${ev.speaker || '校方講師'}\\n地點：${ev.place || '亞大校園'}\\n基本素養：${lits}\\n課程代號：${ev.eid01 || ''}`;
+    const desc = `講者：${ev.speaker || '校方講師'}\n地點：${ev.place || '亞大校園'}\n基本素養：${lits}\n課程代號：${ev.eid01 || ''}`;
 
     lines.push(
       'BEGIN:VEVENT',
@@ -244,7 +258,7 @@ function exportCalendarICS() {
       `DTEND:${formatIcsDate(end)}`,
       `SUMMARY:${summary}`,
       `LOCATION:${ev.place || '亞洲大學'}`,
-      `DESCRIPTION:${desc}`,
+      `DESCRIPTION:${desc.replace(/\n/g, '\\n')}`,
       'STATUS:CONFIRMED',
       'END:VEVENT'
     );
@@ -262,6 +276,26 @@ function exportCalendarICS() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
   toast('已匯出行事曆檔（.ics），可直接開啟同步至 Apple 日曆或 Google 日曆！', 'ok');
+}
+
+/* 複製行事曆訂閱網址 (可加入 Google Calendar 或 Apple 日曆實現自動同步) */
+async function copyCalendarIcsUrl() {
+  const url = `${window.location.origin}/api/calendar.ics`;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      const input = document.createElement('input');
+      input.value = url;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+    }
+    toast('已複製行事曆訂閱網址！可貼入 Apple 日曆或 Google 日曆「訂閱行事曆」保持即時同步', 'ok');
+  } catch {
+    toast(`日曆訂閱網址：${url}`, 'info');
+  }
 }
 
 /* 複製純文字行程表 */
@@ -1501,6 +1535,11 @@ document.addEventListener('click', (event) => {
 
   if (action === 'export-ics') {
     exportCalendarICS();
+    return;
+  }
+
+  if (action === 'copy-ics-url') {
+    copyCalendarIcsUrl();
     return;
   }
 

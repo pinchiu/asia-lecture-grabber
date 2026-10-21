@@ -61,8 +61,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 檢查時間衝突
-    final conflicts = _findScheduleConflicts(_registeredList);
+    // 透過 CalendarHelper 核心模組檢驗衝堂
+    final conflicts = CalendarHelper.findConflicts(_registeredList);
 
     return CupertinoPageScaffold(
       backgroundColor: AppColors.background,
@@ -101,41 +101,80 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppColors.surfaceBorder, width: 0.8),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('已成功報名講座', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${_registeredList.length} 場次',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('已成功報名講座', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${_registeredList.length} 場次',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
                         ),
+                        if (conflicts.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.accentRed.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppColors.accentRed.withValues(alpha: 0.4), width: 0.5),
+                            ),
+                            child: Text(
+                              '偵測到 ${conflicts.length} 場衝堂',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.accentRed,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
-                    if (conflicts.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.accentRed.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.accentRed.withValues(alpha: 0.4), width: 0.5),
-                        ),
-                        child: Text(
-                          '偵測到 ${conflicts.length} 場衝堂',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.accentRed,
+                    if (_registeredList.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Container(height: 0.5, color: AppColors.hairline),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          CupertinoButton(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            color: AppColors.surfaceElevated,
+                            borderRadius: BorderRadius.circular(8),
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              final text = CalendarHelper.formatScheduleText(_registeredList);
+                              Clipboard.setData(ClipboardData(text: text));
+                              _showMsg('已複製通識講座課表至剪貼簿！');
+                            },
+                            child: const Text('複製課表', style: TextStyle(fontSize: 12, color: AppColors.textPrimary)),
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          CupertinoButton(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            color: AppColors.surfaceElevated,
+                            borderRadius: BorderRadius.circular(8),
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              final ics = CalendarHelper.generateIcs(_registeredList);
+                              Clipboard.setData(ClipboardData(text: ics));
+                              _showMsg('已複製標準 iCal (.ics) 日曆資料至剪貼簿！可貼入行事曆軟體匯入');
+                            },
+                            child: const Text('匯出 iCal (.ics)', style: TextStyle(fontSize: 12, color: AppColors.textPrimary)),
+                          ),
+                        ],
                       ),
+                    ],
                   ],
                 ),
               ),
@@ -337,37 +376,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ],
       ),
     );
-  }
-
-  Set<String> _findScheduleConflicts(List<Map<String, dynamic>> list) {
-    final conflictSet = <String>{};
-    for (int i = 0; i < list.length; i++) {
-      for (int j = i + 1; j < list.length; j++) {
-        final a = list[i];
-        final b = list[j];
-        final rawDateA = a['rescsd'] ?? a['sdate'];
-        final rawDateB = b['rescsd'] ?? b['sdate'];
-        if (rawDateA == null || rawDateB == null) continue;
-
-        final dateA = CalendarHelper.parseYmd(rawDateA.toString()) ?? rawDateA.toString().trim();
-        final dateB = CalendarHelper.parseYmd(rawDateB.toString()) ?? rawDateB.toString().trim();
-
-        if (dateA.isNotEmpty && dateA == dateB) {
-          final stimeA = CalendarHelper.parseHm((a['stime'] ?? '').toString());
-          final etimeA = CalendarHelper.parseHm((a['etime'] ?? '').toString());
-          final stimeB = CalendarHelper.parseHm((b['stime'] ?? '').toString());
-          final etimeB = CalendarHelper.parseHm((b['etime'] ?? '').toString());
-
-          if (stimeA.isNotEmpty && etimeA.isNotEmpty && stimeB.isNotEmpty && etimeB.isNotEmpty) {
-            if (stimeA.compareTo(etimeB) < 0 && stimeB.compareTo(etimeA) < 0) {
-              if (a['eid01'] != null) conflictSet.add(a['eid01'].toString());
-              if (b['eid01'] != null) conflictSet.add(b['eid01'].toString());
-            }
-          }
-        }
-      }
-    }
-    return conflictSet;
   }
 
   void _showMsg(String msg) {

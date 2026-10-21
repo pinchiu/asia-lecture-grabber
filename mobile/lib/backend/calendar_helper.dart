@@ -147,6 +147,67 @@ class CalendarHelper {
     return events;
   }
 
+  static bool hasConflict(Map<String, dynamic> a, Map<String, dynamic> b) {
+    final eidA = (a['eid01'] ?? a['eid'] ?? '').toString();
+    final eidB = (b['eid01'] ?? b['eid'] ?? '').toString();
+    if (eidA.isNotEmpty && eidB.isNotEmpty && eidA == eidB) return false;
+
+    final rawDateA = a['rescsd'] ?? a['sdate'] ?? a['date'];
+    final rawDateB = b['rescsd'] ?? b['sdate'] ?? b['date'];
+    if (rawDateA == null || rawDateB == null) return false;
+
+    final dateA = parseYmd(rawDateA.toString()) ?? rawDateA.toString().trim();
+    final dateB = parseYmd(rawDateB.toString()) ?? rawDateB.toString().trim();
+    if (dateA.isEmpty || dateB.isEmpty || dateA != dateB) return false;
+
+    final stimeA = parseHm((a['stime'] ?? a['start'] ?? '').toString());
+    final etimeA = parseHm((a['etime'] ?? a['end'] ?? '').toString());
+    final stimeB = parseHm((b['stime'] ?? b['start'] ?? '').toString());
+    final etimeB = parseHm((b['etime'] ?? b['end'] ?? '').toString());
+
+    if (stimeA.isEmpty || etimeA.isEmpty || stimeB.isEmpty || etimeB.isEmpty) return false;
+
+    return stimeA.compareTo(etimeB) < 0 && stimeB.compareTo(etimeA) < 0;
+  }
+
+  static Set<String> findConflicts(List<Map<String, dynamic>> list) {
+    final conflictSet = <String>{};
+    for (int i = 0; i < list.length; i++) {
+      for (int j = i + 1; j < list.length; j++) {
+        if (hasConflict(list[i], list[j])) {
+          final idA = (list[i]['eid01'] ?? list[i]['eid'] ?? '').toString();
+          final idB = (list[j]['eid01'] ?? list[j]['eid'] ?? '').toString();
+          if (idA.isNotEmpty) conflictSet.add(idA);
+          if (idB.isNotEmpty) conflictSet.add(idB);
+        }
+      }
+    }
+    return conflictSet;
+  }
+
+  static String formatScheduleText(List<Map<String, dynamic>> rows) {
+    final events = buildCalendar(rows);
+    if (events.isEmpty) return '目前尚無已報名講座行程。';
+
+    final buffer = StringBuffer();
+    buffer.writeln('亞洲大學 通識講座個人課表');
+    buffer.writeln('總場次：${events.length} 場');
+    buffer.writeln('----------------------------------------');
+
+    for (int i = 0; i < events.length; i++) {
+      final ev = events[i];
+      final litsList = ev['literacies'] as List?;
+      final lits = litsList != null && litsList.isNotEmpty ? litsList.join('、') : '一般';
+      buffer.writeln('${i + 1}. 【${ev['title']}】');
+      buffer.writeln('   時間：${ev['date']} ${ev['start']} ~ ${ev['end']}');
+      buffer.writeln('   地點：${ev['place'] ?? "亞洲大學"}');
+      buffer.writeln('   素養：$lits');
+      buffer.writeln('   代碼：${ev['eid01']}');
+      if (i < events.length - 1) buffer.writeln();
+    }
+    return buffer.toString();
+  }
+
   static String formatIcsDate(DateTime dt) {
     final utc = dt.toUtc();
     final y = utc.year.toString().padLeft(4, '0');
