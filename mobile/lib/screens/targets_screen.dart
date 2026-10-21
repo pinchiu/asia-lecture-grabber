@@ -230,6 +230,7 @@ class _TargetsScreenState extends State<TargetsScreen> {
     final message = (target['message'] ?? '').toString();
     final rescsd = (target['rescsd'] ?? '').toString();
     final stime = (target['stime'] ?? '').toString();
+    final capacity = CalendarHelper.formatCapacity(target);
 
     Color badgeColor;
     String badgeText;
@@ -272,6 +273,21 @@ class _TargetsScreenState extends State<TargetsScreen> {
                   style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: badgeColor),
                 ),
               ),
+              if (capacity != '-') ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.hairline, width: 0.5),
+                  ),
+                  child: Text(
+                    '名額 $capacity',
+                    style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                  ),
+                ),
+              ],
               const Spacer(),
               CupertinoButton(
                 padding: EdgeInsets.zero,

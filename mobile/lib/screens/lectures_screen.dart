@@ -312,6 +312,7 @@ class _LecturesScreenState extends State<LecturesScreen> {
     final etime = (row['etime'] ?? '').toString();
     final place = (row['locale'] ?? row['place'] ?? '').toString();
     final lits = CalendarHelper.detectLiteracies(row);
+    final capacity = CalendarHelper.formatCapacity(row);
 
     Color statusColor;
     String statusText;
@@ -345,11 +346,11 @@ class _LecturesScreenState extends State<LecturesScreen> {
       child: CupertinoButton(
         padding: const EdgeInsets.all(14),
         borderRadius: BorderRadius.circular(14),
-        onPressed: () => _showLectureDetail(row, title, dateStr, stime, etime, place, lits, statusText, statusColor),
+        onPressed: () => _showLectureDetail(row, title, dateStr, stime, etime, place, lits, statusText, statusColor, capacity),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 頂部狀態列與素養標籤
+            // 頂部狀態列、已選名額與素養標籤
             Row(
               children: [
                 Container(
@@ -364,6 +365,21 @@ class _LecturesScreenState extends State<LecturesScreen> {
                     style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
                   ),
                 ),
+                if (capacity != '-') ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppColors.hairline, width: 0.5),
+                    ),
+                    child: Text(
+                      '名額 $capacity',
+                      style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                    ),
+                  ),
+                ],
                 const SizedBox(width: 6),
                 ...lits.map((lit) => Container(
                       margin: const EdgeInsets.only(right: 4),
@@ -512,6 +528,7 @@ class _LecturesScreenState extends State<LecturesScreen> {
     List<String> lits,
     String statusText,
     Color statusColor,
+    String capacity,
   ) {
     showCupertinoModalPopup(
       context: context,
@@ -524,6 +541,10 @@ class _LecturesScreenState extends State<LecturesScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('狀態：$statusText', style: TextStyle(color: statusColor, fontWeight: FontWeight.bold)),
+                if (capacity != '-') ...[
+                  const SizedBox(height: 4),
+                  Text('已選名額：$capacity'),
+                ],
                 const SizedBox(height: 4),
                 Text('時間：$dateStr $stime ~ $etime'),
                 const SizedBox(height: 4),
