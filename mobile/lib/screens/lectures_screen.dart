@@ -29,6 +29,14 @@ class _LecturesScreenState extends State<LecturesScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.engine.lectures.isEmpty) {
+      widget.engine.refreshLectures().catchError((_) {});
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       backgroundColor: AppColors.background,
@@ -222,12 +230,15 @@ class _LecturesScreenState extends State<LecturesScreen> {
   }
 
   Widget _buildGraduationHeaderCard(Map<String, dynamic> progress) {
-    final total = progress['total'] as Map<String, dynamic>;
-    final health = progress['health'] as Map<String, dynamic>;
-    final care = progress['care'] as Map<String, dynamic>;
-    final innov = progress['innovation'] as Map<String, dynamic>;
-    final excell = progress['excellence'] as Map<String, dynamic>;
-    final isQualified = progress['isQualified'] as bool;
+    final total = (progress['total'] as Map<String, dynamic>?) ?? {'current': 0, 'target': 8};
+    final health = (progress['health'] as Map<String, dynamic>?) ?? {'current': 0, 'target': 2};
+    final care = (progress['care'] as Map<String, dynamic>?) ?? {'current': 0, 'target': 2};
+    final innov = (progress['innovation'] as Map<String, dynamic>?) ?? {'current': 0, 'target': 2};
+    final excell = (progress['excellence'] as Map<String, dynamic>?) ?? {'current': 0, 'target': 2};
+    final isQualified = progress['isQualified'] == true || progress['qualified'] == true;
+
+    final currTotal = total['current'] ?? 0;
+    final targTotal = total['target'] ?? 8;
 
     return Container(
       decoration: BoxDecoration(
@@ -261,7 +272,7 @@ class _LecturesScreenState extends State<LecturesScreen> {
                   ),
                 ),
                 child: Text(
-                  isQualified ? I18n.t('grad_completed') : '${total['current']}/${total['target']}',
+                  isQualified ? I18n.t('grad_completed') : '$currTotal/$targTotal',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -288,7 +299,9 @@ class _LecturesScreenState extends State<LecturesScreen> {
     );
   }
 
-  Widget _buildMetricChip(String label, int current, int target, Color color) {
+  Widget _buildMetricChip(String label, dynamic currentVal, dynamic targetVal, Color color) {
+    final current = int.tryParse(currentVal?.toString() ?? '0') ?? 0;
+    final target = int.tryParse(targetVal?.toString() ?? '2') ?? 2;
     final done = current >= target;
     return Expanded(
       child: Container(

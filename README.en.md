@@ -241,5 +241,5 @@ asia-lecture-grabber/
 ## Developer & Version Information
 
 - Repository: [https://github.com/pinchiu/asia-lecture-grabber.git](https://github.com/pinchiu/asia-lecture-grabber.git)
-- Version: 1.4.0
+- Version: 1.4.1
 - License: For personal course and academic assistance use
