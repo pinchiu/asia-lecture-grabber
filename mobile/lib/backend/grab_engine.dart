@@ -675,13 +675,16 @@ class GrabEngine extends ChangeNotifier {
     final totalExcellence = histExcellence + currExcellence;
     final totalLectures = histTotal + currTotal;
 
+    final isQualified = totalHealth >= 2 && totalCare >= 2 && totalInnovation >= 2 && totalExcellence >= 2 && totalLectures >= 8;
+
     return {
       'health': {'current': totalHealth, 'target': 2, 'done': totalHealth >= 2},
       'care': {'current': totalCare, 'target': 2, 'done': totalCare >= 2},
       'innovation': {'current': totalInnovation, 'target': 2, 'done': totalInnovation >= 2},
       'excellence': {'current': totalExcellence, 'target': 2, 'done': totalExcellence >= 2},
       'total': {'current': totalLectures, 'target': 8, 'done': totalLectures >= 8},
-      'qualified': totalHealth >= 2 && totalCare >= 2 && totalInnovation >= 2 && totalExcellence >= 2 && totalLectures >= 8,
+      'qualified': isQualified,
+      'isQualified': isQualified,
     };
   }
 }

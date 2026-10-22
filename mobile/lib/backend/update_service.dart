@@ -44,7 +44,7 @@ class UpdateService {
   UpdateService._();
 
   /// 當前 App 運行的版本識別字串。
-  static const String currentVersion = '1.4.0';
+  static const String currentVersion = '1.4.1';
 
   /// GitHub Releases 最新版本之 REST API 查詢端點。
   static const String repoApiUrl = 'https://api.github.com/repos/pinchiu/asia-lecture-grabber/releases/latest';

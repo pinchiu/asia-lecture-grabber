@@ -253,5 +253,5 @@ asia-lecture-grabber/
 ## 開發者與版本資訊
 
 - 原始碼倉庫：[https://github.com/pinchiu/asia-lecture-grabber.git](https://github.com/pinchiu/asia-lecture-grabber.git)
-- 版本號：1.4.0
+- 版本號：1.4.1
 - 授權類型：個人修課輔助使用
