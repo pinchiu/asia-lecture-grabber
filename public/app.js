@@ -337,7 +337,7 @@ const S = {
   calYear: null,
   calMonth: null,
   deferredInstallPrompt: null,
-  lang: localStorage.getItem('au_lang') || 'zh'
+  lang: localStorage.getItem('au_lang') || (typeof navigator !== 'undefined' && navigator.language && navigator.language.toLowerCase().startsWith('en') ? 'en' : 'zh')
 };
 
 function applyLanguage(lang) {

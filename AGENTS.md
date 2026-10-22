@@ -47,7 +47,7 @@
 - **Flutter 行動端（路線 B：終極 Native 化，純 Cupertino 100% 原生架構）**：
   - **核心哲學**：徹底淘汰 WebView 包裝與中介代理，全介面直接以 Apple 官方標準設計語言 `flutter/cupertino.dart` 建構，具備 iOS 物理彈簧阻尼（BouncingScrollPhysics）、CupertinoSliverRefreshControl 下拉齒輪回彈、CupertinoTabBar 底部貼合（精準適配 safe-area）、零縮放、零左右晃動，達到 120Hz/60Hz GPU 直接繪製之原生質感。
   - `mobile/lib/main.dart`：App 根元件 `CupertinoApp`、曜石黑深色主題（`CupertinoThemeData.dark`）、`CupertinoTabScaffold` 根導覽控制器，以及主畫面底部在線更新提示與 App 內 APK 自動安裝管線。
-  - `mobile/lib/config/i18n.dart`：雙語國際化狀態機（`I18n`），提供繁體中文與 English 完整辭典與動態響應。
+  - `mobile/lib/config/i18n.dart`：雙語國際化狀態機（`I18n`），支援預設依手機作業系統語言（System Language）自動適配是否為英文，並支援使用者在系統設定中手動切換（跟隨系統 / 繁體中文 / English 三段控制器）與即時持久化。
   - `mobile/lib/screens/lectures_screen.dart`：講座情報 Screen（雙語大標題導覽列、四大素養畢業門檻即時儀表板、CupertinoSearchTextField 搜尋、素養過濾晶片、卡片化講座清冊、一鍵秒報與加入排程）。
   - `mobile/lib/screens/targets_screen.dart`：搶課排程 Screen（狀態機監控儀表板、800ms 突發輪詢指示燈、輪詢/搶課計數器、目標清單佇列與清理）。
   - `mobile/lib/screens/calendar_screen.dart`：個人行程 Screen（已報名講座清冊、衝堂交叉比對預警、二段式確認彈窗、校方加密代碼退選）。

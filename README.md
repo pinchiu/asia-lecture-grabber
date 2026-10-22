@@ -30,7 +30,7 @@
 - **自動身份驗證**：登入時以身分證字號末四碼換取校方報名所需憑證，全程自動化。
 
 ### 3. 多端支援與雙語國際化：Flutter 原生 App、PWA 行動版與電腦網頁版
-- **中英文介面即時切換（i18n）**：網頁版與 Flutter 行動端全面支援繁體中文（預設）與英文（English）雙語切換，持久化儲存設定，提供全語系通識指標、清單與搶課狀態。
+- **中英文介面即時切換（i18n）**：網頁版與 Flutter 行動端全面支援繁體中文與英文（English）雙語切換。行動端支援依作業系統語言（System Language）自動設定是否為英文，同時提供手動三段切換（跟隨系統 / 繁體中文 / English）並持久化儲存設定。
 - **Flutter 原生 App (`mobile/`)**：採用 Google Flutter 純 Cupertino 原生框架開發，具備 iOS 原生物理彈簧阻尼、毛玻璃導覽列、在線更新檢查與 App 內 APK 一鍵下載安裝升級。
 - **手機 App 版本 (PWA)**：完整支援 Progressive Web App，可直接透過瀏覽器「加入主畫面」或「安裝應用程式」，具備獨立視窗、離線快取（Service Worker）與觸控優化卡片視圖。
 - **電腦網頁版**：支援快速啟動（`start.bat` / `start.sh`），自動以獨立 App 視窗或預設瀏覽器開啟儀表板。
@@ -251,5 +251,5 @@ asia-lecture-grabber/
 ## 開發者與版本資訊
 
 - 原始碼倉庫：[https://github.com/pinchiu/asia-lecture-grabber.git](https://github.com/pinchiu/asia-lecture-grabber.git)
-- 版本號：1.0.0
+- 版本號：1.4.0
 - 授權類型：個人修課輔助使用
