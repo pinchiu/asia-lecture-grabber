@@ -2,15 +2,32 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
 
+/// 儲存 GitHub 最新版本發布之詳細資訊。
 class ReleaseInfo {
+  /// 版本標籤名稱（如 `'v1.3.3'`）。
   final String tagName;
+
+  /// 發布標題文字。
   final String name;
+
+  /// 發布更新日誌與說明內文。
   final String body;
+
+  /// APK 安裝包下載位址。
   final String apkUrl;
+
+  /// 安裝包檔案位元組大小。
   final int apkSize;
+
+  /// GitHub 發布頁面網址。
   final String htmlUrl;
+
+  /// 是否存在比本機更新的版本。
   final bool hasUpdate;
 
+  /// 建立版本發布資訊物件。
+  ///
+  /// 包含 [tagName]、[name]、[body]、[apkUrl]、[apkSize]、[htmlUrl] 與 [hasUpdate]。
   ReleaseInfo({
     required this.tagName,
     required this.name,
@@ -22,12 +39,20 @@ class ReleaseInfo {
   });
 }
 
+/// 提供 GitHub 遠端版本檢查、APK 下載進度回報與原生安裝引導之服務。
 class UpdateService {
-  static const String currentVersion = '1.3.2';
+  UpdateService._();
+
+  /// 當前 App 運行的版本識別字串。
+  static const String currentVersion = '1.4.0';
+
+  /// GitHub Releases 最新版本之 REST API 查詢端點。
   static const String repoApiUrl = 'https://api.github.com/repos/pinchiu/asia-lecture-grabber/releases/latest';
   static const MethodChannel _channel = MethodChannel('com.asia.lecturegrabber/installer');
 
-  /// 檢查 GitHub 是否有新版本
+  /// 檢查 GitHub 是否有新版本釋出。
+  ///
+  /// 查詢 GitHub Releases API，若連線成功且解析順利則回傳 [ReleaseInfo]；發生錯誤或無回應時回傳 `null`。
   static Future<ReleaseInfo?> checkUpdate() async {
     final client = HttpClient();
     client.connectionTimeout = const Duration(seconds: 12);
@@ -63,7 +88,7 @@ class UpdateService {
         }
       }
 
-      final hasUpdate = _isNewer(tagName, currentVersion);
+      final hasUpdate = isNewer(tagName, currentVersion);
 
       return ReleaseInfo(
         tagName: tagName,
@@ -81,7 +106,10 @@ class UpdateService {
     }
   }
 
-  /// 下載 APK 檔案並即時回報進度 (0.0 ~ 1.0)
+  /// 下載 APK 檔案並即時回報進度。
+  ///
+  /// 向 [downloadUrl] 發送 GET 請求，並透過回呼函式 [onProgress] 回報進度比率（0.0 ~ 1.0）、已接收位元組數與總位元組數。
+  /// 下載完成後回傳暫存檔案之本機路徑。若 HTTP 狀態碼非 200 則拋出 [Exception]。
   static Future<String> downloadApk(
     String downloadUrl, {
     required void Function(double progress, int received, int total) onProgress,
@@ -131,7 +159,10 @@ class UpdateService {
     }
   }
 
-  /// 呼叫 Android 系統套件安裝程式
+  /// 呼叫 Android 系統套件安裝程式。
+  ///
+  /// 傳入欲安裝之本機檔案路徑 [filePath]，透過原生通道叫起系統安裝畫面。
+  /// 成功啟動時回傳 `true`；若調用失敗則拋出 [Exception]。
   static Future<bool> installApk(String filePath) async {
     try {
       final res = await _channel.invokeMethod<bool>('installApk', {'filePath': filePath});
@@ -141,7 +172,9 @@ class UpdateService {
     }
   }
 
-  /// 呼叫外部瀏覽器開啟 URL（備用下載）
+  /// 呼叫外部瀏覽器開啟指定之網址。
+  ///
+  /// 傳入欲開啟之 [url]；成功啟動外部應用時回傳 `true`，調用失敗則拋出 [Exception]。
   static Future<bool> openUrl(String url) async {
     try {
       final res = await _channel.invokeMethod<bool>('openUrl', {'url': url});
@@ -151,10 +184,13 @@ class UpdateService {
     }
   }
 
-  /// 版本比對：判斷 remote 是否比 local 新
-  static bool _isNewer(String remoteTag, String localVer) {
-    final r = _parseVersion(remoteTag);
-    final l = _parseVersion(localVer);
+  /// 比較版本號碼以判定遠端版本是否新於本地版本。
+  ///
+  /// 解析 [remoteTag] 與 [localVer]，依序比對主版號、次版號與修訂版號。
+  /// 若遠端版本較新則回傳 `true`；若版本相同或遠端較舊則回傳 `false`。
+  static bool isNewer(String remoteTag, String localVer) {
+    final r = parseVersion(remoteTag);
+    final l = parseVersion(localVer);
 
     for (int i = 0; i < 3; i++) {
       if (r[i] > l[i]) return true;
@@ -163,7 +199,10 @@ class UpdateService {
     return false;
   }
 
-  static List<int> _parseVersion(String ver) {
+  /// 解析版本號碼字串為整數三元組。
+  ///
+  /// 過濾 [ver] 中非數字與句點之字元，回傳長度為 3 之整數陣列（`[major, minor, patch]`）。
+  static List<int> parseVersion(String ver) {
     final clean = ver.replaceAll(RegExp(r'[^0-9.]'), '');
     final parts = clean.split('.');
     final result = [0, 0, 0];

@@ -2,23 +2,41 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+/// 表示與亞洲大學伺服器通訊時所發生的 API 例外狀況。
 class ApiError implements Exception {
+  /// 錯誤描述訊息。
   final String message;
+
+  /// HTTP 狀態碼或內部錯誤代碼。
   final int status;
+
+  /// 校方伺服器回傳之原始錯誤資料內容。
   final dynamic payload;
+
+  /// 是否為暫時性連線異常或網路逾時。
   final bool transient;
 
+  /// 建立 [ApiError] 例外物件。
+  ///
+  /// 指定錯誤訊息 [message]，並可選填狀態碼 [status]、原始資料 [payload] 以及是否暫時性 [transient]。
   ApiError(this.message, {this.status = 0, this.payload, this.transient = false});
 
   @override
   String toString() => message;
 }
 
+/// 提供與亞洲大學校園通識講座系統後端 REST API 進行通訊之客戶端。
 class AsiaApi {
+  /// 預設之亞大通識講座系統基底網址。
   static const String defaultBaseUrl = 'https://webap.asia.edu.tw/cfd2020/';
+
+  /// 當前連線之伺服器基底網址。
   final String baseUrl;
   final HttpClient _client;
 
+  /// 建立亞大 API 客戶端實例。
+  ///
+  /// 可傳入自訂之伺服器位址 [baseUrl]；若未提供則使用 [defaultBaseUrl]。
   AsiaApi({this.baseUrl = defaultBaseUrl})
       : _client = HttpClient()
           ..badCertificateCallback = ((X509Certificate cert, String host, int port) => true)
@@ -98,7 +116,10 @@ class AsiaApi {
     return jsonData;
   }
 
-  /// 登入校方帳號
+  /// 登入校方帳號並取得授權憑證。
+  ///
+  /// 傳入學生學號 [username] 與密碼 [password]，成功時回傳包含 JWT token 與使用者資料的 [Map]。
+  /// 若帳密錯誤或通訊失敗則拋出 [ApiError]。
   Future<Map<String, dynamic>> login(String username, String password) async {
     final res = await _rawRequest('POST', 'api/Login/Auth', body: {
       'username': username.trim(),
@@ -111,7 +132,9 @@ class AsiaApi {
     throw ApiError(res is Map ? (res['message']?.toString() ?? '登入失敗') : '登入失敗（未取得憑證）', status: 401);
   }
 
-  /// 取得公開/學生講座清冊
+  /// 取得全校通識講座清冊。
+  ///
+  /// 傳入登入憑證 [token]（若為訪客瀏覽可為 `null`），回傳全校公開或已登入可視之講座列表。
   Future<List<Map<String, dynamic>>> listLectures(String? token) async {
     final res = await _rawRequest(
       'POST',
@@ -126,7 +149,9 @@ class AsiaApi {
     return [];
   }
 
-  /// 取得特定講座明細
+  /// 取得指定代碼之講座詳細資料。
+  ///
+  /// 依據講座代碼 [eid01] 與憑證 [token] 查詢，若查無該場次則回傳 `null`。
   Future<Map<String, dynamic>?> getLecture(String? token, String eid01) async {
     final res = await _rawRequest(
       'GET',
@@ -140,7 +165,10 @@ class AsiaApi {
     return null;
   }
 
-  /// 以身分證末四碼進行學生身分驗證，獲取報名所需 std_info
+  /// 以學生身分證末四碼進行身分驗證。
+  ///
+  /// 傳入授權憑證 [token]、學號 [pNo]、身分證末四碼 [pId]，以及身分類型 [pType]（預設為 `'S'`）。
+  /// 成功時回傳學生詳細基本資料字典，供報名時填寫 `std_info` 使用；若驗證失敗則拋出 [ApiError]。
   Future<Map<String, dynamic>> verifyIdentity(
     String token, {
     required String pNo,
@@ -164,7 +192,10 @@ class AsiaApi {
     throw ApiError('身分驗證無有效回應', status: 400);
   }
 
-  /// 送出講座報名
+  /// 送出講座報名請求。
+  ///
+  /// 傳入授權憑證 [token]、學生驗證資訊 [stdInfo]、講座代碼 [eid01] 與校方場次代碼 [reseid]。
+  /// 回傳包含執行結果旗標 `ok`、校方訊息 `message` 與原始回應資料 `raw` 的 [Map]。
   Future<Map<String, dynamic>> registerLecture(
     String token, {
     required Map<String, dynamic> stdInfo,
@@ -191,7 +222,10 @@ class AsiaApi {
     return {'ok': isOk, 'message': msg.isNotEmpty ? msg : '（系統未回傳訊息）', 'raw': res};
   }
 
-  /// 退選已報名之講座（reseid 為校方加密流水號 ID...）
+  /// 退選已報名之指定講座。
+  ///
+  /// 傳入授權憑證 [token] 與校方加密退選流水代碼 [regEid]（格式通常為 `ID...`）。
+  /// 退選成功時回傳成功字典；若狀態碼非 200 或退選失敗則拋出 [ApiError]。
   Future<Map<String, dynamic>> cancelLecture(String token, String regEid) async {
     final uri = _resolve('api/cfd10/DeleteData?reseid=${Uri.encodeComponent(regEid)}');
     final request = await _client.openUrl('POST', uri).timeout(const Duration(seconds: 20));
@@ -225,7 +259,9 @@ class AsiaApi {
     }
   }
 
-  /// 取得已報名清冊（含加密退選代碼）
+  /// 取得已報名之講座清冊。
+  ///
+  /// 傳入登入憑證 [token]，回傳包含加密退選流水號（`reseid` / `eid`）之已報名清冊。
   Future<List<Map<String, dynamic>>> listRegistered(String token) async {
     final res = await _rawRequest(
       'POST',

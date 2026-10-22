@@ -18,6 +18,7 @@
 ### Flutter 原生行動端 (`mobile/`)
 - 安裝相依：`cd mobile && flutter pub get`
 - 執行行動端 App：`npm run mobile:flutter:run`（或進入 `mobile/` 執行 `flutter run`）。
+- 執行行動端單元測試：`npm run mobile:flutter:test`（或進入 `mobile/` 執行 `flutter test`）。
 - 打包 Android 原生 APK：`npm run mobile:flutter:build:apk`（產出於 `mobile/build/app/outputs/flutter-apk/app-release.apk`）。
 - 打包 Android App Bundle：`npm run mobile:flutter:build:bundle`。
 - 檢查 Flutter 環境：`npm run mobile:flutter:doctor`。
@@ -36,6 +37,7 @@
 - **前端介面（新版本視覺與互動架構）**：
   - `public/index.html` / `app.js` / `style.css`：原生 JavaScript（Vanilla JS），採**極簡包浩斯黑白灰（Bauhaus Less-is-more Monochrome）與蘋果液態磨砂毛玻璃（Apple Frosted Glass）美學**，具備圓角化分層導覽、液態滑動指示器與 iOS 原生級觸控拖曳手勢。
   - 內建進階特色：
+    - **中英文雙語介面（i18n）**：支援繁體中文與英文即時切換，包含網頁版頂部按鈕切換與設定頁面語言偏好，持久化存於 localStorage。
     - **最速畢業選課路線推薦**：分析四大素養缺額與彼此衝堂關係，演算法自動推薦最少場次達標路線。
     - **iCal 行事曆匯出**：一鍵產生標準 `.ics` 檔，支援 Apple Calendar 與 Google 日曆即時同步。
     - **衝堂時間衝突預警**：自動交叉比對講座上課時段，標示衝突警告。
@@ -44,11 +46,12 @@
   - `app.js` 每 1.2 秒向 `/api/state` 輪詢後重繪畫面，包含四大基本素養（健康力、關懷力、創新力、卓越力）門檻進度條與歷年累計補登計算。
 - **Flutter 行動端（路線 B：終極 Native 化，純 Cupertino 100% 原生架構）**：
   - **核心哲學**：徹底淘汰 WebView 包裝與中介代理，全介面直接以 Apple 官方標準設計語言 `flutter/cupertino.dart` 建構，具備 iOS 物理彈簧阻尼（BouncingScrollPhysics）、CupertinoSliverRefreshControl 下拉齒輪回彈、CupertinoTabBar 底部貼合（精準適配 safe-area）、零縮放、零左右晃動，達到 120Hz/60Hz GPU 直接繪製之原生質感。
-  - `mobile/lib/main.dart`：App 根元件 `CupertinoApp`、曜石黑深色主題（`CupertinoThemeData.dark`）與 `CupertinoTabScaffold` 根導覽控制器。
-  - `mobile/lib/screens/lectures_screen.dart`：講座情報 Screen（大標題導覽列、四大素養畢業門檻即時儀表板、CupertinoSearchTextField 搜尋、素養過濾晶片、卡片化講座清冊、一鍵秒報與加入排程）。
+  - `mobile/lib/main.dart`：App 根元件 `CupertinoApp`、曜石黑深色主題（`CupertinoThemeData.dark`）、`CupertinoTabScaffold` 根導覽控制器，以及主畫面底部在線更新提示與 App 內 APK 自動安裝管線。
+  - `mobile/lib/config/i18n.dart`：雙語國際化狀態機（`I18n`），提供繁體中文與 English 完整辭典與動態響應。
+  - `mobile/lib/screens/lectures_screen.dart`：講座情報 Screen（雙語大標題導覽列、四大素養畢業門檻即時儀表板、CupertinoSearchTextField 搜尋、素養過濾晶片、卡片化講座清冊、一鍵秒報與加入排程）。
   - `mobile/lib/screens/targets_screen.dart`：搶課排程 Screen（狀態機監控儀表板、800ms 突發輪詢指示燈、輪詢/搶課計數器、目標清單佇列與清理）。
   - `mobile/lib/screens/calendar_screen.dart`：個人行程 Screen（已報名講座清冊、衝堂交叉比對預警、二段式確認彈窗、校方加密代碼退選）。
-  - `mobile/lib/screens/settings_screen.dart`：系統設定 Screen（校園入口帳密、身分證末四碼驗證、記住帳密自動登入開關、歷年四力補登手動輸入、引擎即時執行日誌 Console）。
+  - `mobile/lib/screens/settings_screen.dart`：系統設定 Screen（中英文語言切換器、校園入口帳密、身分證末四碼驗證、記住帳密自動登入開關、歷年四力補登手動輸入、在線版本檢查與 App 內直接安裝更新、引擎即時執行日誌 Console）。
   - `mobile/lib/backend/`：純 Dart 實現之亞大 API 逆向客戶端（`asia_api.dart`）、搶課狀態機引擎（`grab_engine.dart`）、民國年與素養輔助器（`calendar_helper.dart`），手機端原生獨立自足，完全不依賴電腦伺服器。
   - `mobile/android/` 與 `mobile/ios/`：原生工程配置，已設定 `INTERNET` 權限。
 

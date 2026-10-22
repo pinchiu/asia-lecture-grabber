@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../backend/grab_engine.dart';
 import '../backend/update_service.dart';
 import '../config/constants.dart';
+import '../config/i18n.dart';
 
 class SettingsScreen extends StatefulWidget {
   final GrabEngine engine;
@@ -26,6 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _rememberPassword = true;
   bool _isLoading = false;
   bool _isCheckingUpdate = false;
+  ReleaseInfo? _latestRelease;
 
   @override
   void initState() {
@@ -60,11 +62,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final idLast4 = _idLast4Ctrl.text.trim();
 
     if (username.isEmpty || password.isEmpty) {
-      _showDialog('提示', '請輸入帳號與密碼');
+      _showDialog(I18n.t('error'), I18n.t('label_username') + ' / ' + I18n.t('label_password'));
       return;
     }
     if (idLast4.isNotEmpty && !RegExp(r'^\d{4}$').hasMatch(idLast4)) {
-      _showDialog('提示', '身分證末四碼格式不正確（應為 4 位數字）');
+      _showDialog(I18n.t('error'), I18n.t('hint_idlast4'));
       return;
     }
 
@@ -92,9 +94,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       await widget.engine.persistConfig();
       await widget.engine.refreshLectures();
-      _showDialog('登入成功', '歡迎 ${res['emp_nm'] ?? username}！已完成身分驗證');
+      _showDialog(
+        I18n.t('login_success_title'),
+        I18n.t('login_success_msg', params: {'name': res['emp_nm'] ?? username}),
+      );
     } catch (e) {
-      _showDialog('登入失敗', e.toString().replaceAll('Exception: ', ''));
+      _showDialog(I18n.t('error'), e.toString().replaceAll('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -115,7 +120,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     };
     await widget.engine.persistConfig();
     HapticFeedback.lightImpact();
-    _showDialog('儲存成功', '已更新歷年素養累積資料');
+    _showDialog(I18n.t('btn_ok'), I18n.t('saved_credits_msg'));
   }
 
   @override
@@ -132,16 +137,80 @@ class _SettingsScreenState extends State<SettingsScreen> {
           return CustomScrollView(
             physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             slivers: [
-              const CupertinoSliverNavigationBar(
+              CupertinoSliverNavigationBar(
                 backgroundColor: AppColors.glassBar,
-                border: Border(bottom: BorderSide(color: AppColors.hairline, width: 0.5)),
-                largeTitle: Text('系統設定', style: TextStyle(color: AppColors.textPrimary)),
+                border: const Border(bottom: BorderSide(color: AppColors.hairline, width: 0.5)),
+                largeTitle: Text(I18n.t('settings_header'), style: const TextStyle(color: AppColors.textPrimary)),
+              ),
+
+              // 介面語言切換卡片 (Language Selection)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.surfaceBorder, width: 0.8),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          I18n.t('section_language'),
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: CupertinoSlidingSegmentedControl<String>(
+                            groupValue: I18n.lang,
+                            backgroundColor: AppColors.surfaceElevated,
+                            thumbColor: CupertinoColors.white,
+                            children: {
+                              'zh': Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                child: Text(
+                                  I18n.t('lang_zh'),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: I18n.lang == 'zh' ? CupertinoColors.black : AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                              'en': Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                child: Text(
+                                  I18n.t('lang_en'),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: I18n.lang == 'en' ? CupertinoColors.black : AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            },
+                            onValueChanged: (v) {
+                              if (v != null) {
+                                HapticFeedback.selectionClick();
+                                I18n.setLanguage(v);
+                                setState(() {});
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
 
               // 帳號認證設定卡片
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                   child: Container(
                     decoration: BoxDecoration(
                       color: AppColors.surface,
@@ -155,9 +224,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              '校園入口帳號認證',
-                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                            Text(
+                              I18n.t('section_auth'),
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -166,7 +235,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                isLoggedIn ? '已登入 (${session!['emp_nm'] ?? session['username']})' : '未登入',
+                                isLoggedIn ? '${I18n.t('btn_registered')} (${session!['emp_nm'] ?? session['username']})' : I18n.t('not_logged_in_cal').split('，').first,
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
@@ -179,11 +248,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 14),
 
                         // 學號輸入框
-                        const Text('學號 / 帳號', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        Text(I18n.t('label_username'), style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                         const SizedBox(height: 6),
                         CupertinoTextField(
                           controller: _userCtrl,
-                          placeholder: '請輸入學號',
+                          placeholder: I18n.t('hint_username'),
                           placeholderStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                           style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -196,11 +265,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 12),
 
                         // 密碼輸入框
-                        const Text('密碼', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        Text(I18n.t('label_password'), style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                         const SizedBox(height: 6),
                         CupertinoTextField(
                           controller: _passCtrl,
-                          placeholder: '請輸入校園入口密碼',
+                          placeholder: I18n.t('hint_password'),
                           placeholderStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                           obscureText: true,
                           style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
@@ -214,11 +283,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 12),
 
                         // 身分證末四碼輸入框
-                        const Text('身分證字號末四碼（身分驗證必備）', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        Text(I18n.t('label_idlast4'), style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                         const SizedBox(height: 6),
                         CupertinoTextField(
                           controller: _idLast4Ctrl,
-                          placeholder: '4 位數字',
+                          placeholder: I18n.t('hint_idlast4'),
                           placeholderStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                           maxLength: 4,
                           keyboardType: TextInputType.number,
@@ -236,17 +305,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('記住帳密並在開機時自動登入', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                            Expanded(
+                              child: Text(
+                                I18n.t('label_remember_pwd'),
+                                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                              ),
+                            ),
                             CupertinoSwitch(
                               value: _rememberPassword,
-                              activeTrackColor: AppColors.accentGreen,
+                              activeColor: AppColors.accentBlue,
                               onChanged: (val) {
+                                HapticFeedback.selectionClick();
                                 setState(() => _rememberPassword = val);
                               },
                             ),
                           ],
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 16),
 
                         // 登入按鈕
                         SizedBox(
@@ -256,14 +331,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             color: CupertinoColors.white,
                             borderRadius: BorderRadius.circular(10),
                             onPressed: _isLoading ? null : _handleLogin,
-                            child: Text(
-                              _isLoading ? '連線中...' : (isLoggedIn ? '更新並重新驗證' : '登入校方系統'),
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: CupertinoColors.black,
-                              ),
-                            ),
+                            child: _isLoading
+                                ? const CupertinoActivityIndicator(color: CupertinoColors.black)
+                                : Text(
+                                    I18n.t('btn_login_verify'),
+                                    style: const TextStyle(
+                                      color: CupertinoColors.black,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
                           ),
                         ),
                       ],
@@ -272,7 +349,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
 
-              // 歷年素養手動補登卡片
+              // 歷年素養補登卡片
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -286,26 +363,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          '歷年已累積素養場次補登',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        Text(
+                          I18n.t('section_past_credits'),
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                         ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          '若您前幾學期已取得部分講座素養次數，可在此補登，系統將與本期即時加總計算門檻。',
-                          style: TextStyle(fontSize: 12, color: AppColors.textMuted, height: 1.4),
+                        const SizedBox(height: 8),
+                        Text(
+                          I18n.t('desc_past_credits'),
+                          style: const TextStyle(fontSize: 12, color: AppColors.textMuted, height: 1.4),
                         ),
                         const SizedBox(height: 14),
 
                         Row(
                           children: [
-                            _buildLitInput('健康力', _healthCtrl),
+                            _buildLitInput(I18n.t('filter_health'), _healthCtrl),
                             const SizedBox(width: 8),
-                            _buildLitInput('關懷力', _careCtrl),
+                            _buildLitInput(I18n.t('filter_care'), _careCtrl),
                             const SizedBox(width: 8),
-                            _buildLitInput('創新力', _innovCtrl),
+                            _buildLitInput(I18n.t('filter_innovation'), _innovCtrl),
                             const SizedBox(width: 8),
-                            _buildLitInput('卓越力', _excellCtrl),
+                            _buildLitInput(I18n.t('filter_excellence'), _excellCtrl),
                           ],
                         ),
                         const SizedBox(height: 14),
@@ -317,9 +394,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             color: AppColors.surfaceElevated,
                             borderRadius: BorderRadius.circular(10),
                             onPressed: _saveGraduationHistory,
-                            child: const Text(
-                              '儲存補登設定',
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                            child: Text(
+                              I18n.t('btn_save_past_credits'),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                             ),
                           ),
                         ),
@@ -329,10 +406,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
 
-              // 系統紀錄卡片
+              // 軟體版本與線上更新卡片 (App Updates & In-App Installer)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                   child: Container(
                     decoration: BoxDecoration(
                       color: AppColors.surface,
@@ -346,13 +423,124 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              '即時執行紀錄',
-                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                            Text(
+                              I18n.t('section_app_updates'),
+                              style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceElevated,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppColors.hairline, width: 0.5),
+                              ),
+                              child: Text(
+                                I18n.t('current_version_label', params: {'version': UpdateService.currentVersion}),
+                                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          I18n.t('app_update_desc'),
+                          style: const TextStyle(fontSize: 12, color: AppColors.textMuted, height: 1.4),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // 若已發現更新，提供高對比立即更新按鈕
+                        if (_latestRelease != null && _latestRelease!.hasUpdate) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceElevated,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppColors.accentBlue.withValues(alpha: 0.6), width: 0.8),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  I18n.t('update_found_title', params: {'version': _latestRelease!.tagName}),
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _latestRelease!.name,
+                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                ),
+                                const SizedBox(height: 10),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: CupertinoButton(
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    color: AppColors.accentBlue,
+                                    borderRadius: BorderRadius.circular(8),
+                                    onPressed: () => _startInAppDownload(_latestRelease!),
+                                    child: Text(
+                                      I18n.t('btn_update_now'),
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: CupertinoColors.white),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: CupertinoButton(
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                color: CupertinoColors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                onPressed: _isCheckingUpdate ? null : _handleCheckUpdate,
+                                child: _isCheckingUpdate
+                                    ? const CupertinoActivityIndicator(color: CupertinoColors.black)
+                                    : Text(
+                                        I18n.t('btn_check_update'),
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: CupertinoColors.black,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // 系統紀錄卡片
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.surfaceBorder, width: 0.8),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              I18n.t('section_logs'),
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                             ),
                             CupertinoButton(
                               padding: EdgeInsets.zero,
-                              child: const Text('清空', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                              child: Text(I18n.t('clear_finished').split('已').first, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
                               onPressed: () {
                                 widget.engine.logs.clear();
                                 setState(() {});
@@ -362,15 +550,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 10),
                         Container(
-                          height: 160,
+                          height: 150,
                           decoration: BoxDecoration(
                             color: AppColors.surfaceElevated,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: AppColors.hairline, width: 0.5),
                           ),
                           child: logs.isEmpty
-                              ? const Center(
-                                  child: Text('尚無執行紀錄', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                              ? Center(
+                                  child: Text(I18n.t('empty_logs'), style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
                                 )
                               : ListView.builder(
                                   padding: const EdgeInsets.all(8),
@@ -400,75 +588,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
-
-              // 軟體版本與線上更新卡片
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.surfaceBorder, width: 0.8),
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              '關於軟體與更新',
-                              style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.bold),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: AppColors.surfaceElevated,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: AppColors.hairline, width: 0.5),
-                              ),
-                              child: const Text(
-                                '目前版本 v${UpdateService.currentVersion}',
-                                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          '亞洲大學通識講座自動報名助手與四大基本素養追蹤系統行動端。支援 GitHub 線上檢查更新，可直接在 App 內下載最新 APK 升級或透過瀏覽器下載。',
-                          style: TextStyle(fontSize: 12, color: AppColors.textMuted, height: 1.4),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: CupertinoButton(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                color: CupertinoColors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                onPressed: _isCheckingUpdate ? null : _handleCheckUpdate,
-                                child: _isCheckingUpdate
-                                    ? const CupertinoActivityIndicator(color: CupertinoColors.black)
-                                    : const Text(
-                                        '檢查新版本',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                          color: CupertinoColors.black,
-                                        ),
-                                      ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
             ],
           );
         },
@@ -485,17 +604,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!mounted) return;
 
       if (info == null) {
-        _showDialog('檢查更新失敗', '無法連接至 GitHub Releases 服務，請確認手機網路連線。');
+        _showDialog(I18n.t('error'), 'GitHub API error / Network offline');
         return;
       }
+
+      setState(() => _latestRelease = info);
 
       if (info.hasUpdate) {
         _showUpdatePrompt(info);
       } else {
-        _showDialog('已是最新版本', '目前安裝版本 v${UpdateService.currentVersion} 已是最新正式發布版本。');
+        _showDialog(
+          I18n.t('already_latest_title'),
+          I18n.t('already_latest_msg', params: {'version': UpdateService.currentVersion}),
+        );
       }
     } catch (e) {
-      if (mounted) _showDialog('錯誤', '檢查更新時發生例外：$e');
+      if (mounted) _showDialog(I18n.t('error'), e.toString());
     } finally {
       if (mounted) setState(() => _isCheckingUpdate = false);
     }
@@ -503,37 +627,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showUpdatePrompt(ReleaseInfo info) {
     final sizeMb = (info.apkSize / (1024 * 1024)).toStringAsFixed(1);
-    final sizeText = info.apkSize > 0 ? '（約 $sizeMb MB）' : '';
+    final sizeText = info.apkSize > 0 ? '$sizeMb MB' : '—';
 
     showCupertinoDialog(
       context: context,
       builder: (ctx) => CupertinoAlertDialog(
-        title: Text('發現新版本 ${info.tagName}'),
+        title: Text(I18n.t('update_found_title', params: {'version': info.tagName})),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 8),
-            Text('更新標題：${info.name}\n檔案大小：$sizeText\n\n是否立即下載並安裝更新？',
-                style: const TextStyle(fontSize: 13, color: AppColors.textPrimary)),
+            Text(
+              I18n.t('update_found_desc', params: {
+                'title': info.name,
+                'size': sizeText,
+              }),
+              style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+            ),
           ],
         ),
         actions: [
           CupertinoDialogAction(
-            child: const Text('稍後再說'),
+            child: Text(I18n.t('btn_later')),
             onPressed: () => Navigator.pop(ctx),
           ),
           if (info.apkUrl.isNotEmpty)
             CupertinoDialogAction(
               isDefaultAction: true,
-              child: const Text('App 內下載安裝'),
+              child: Text(I18n.t('btn_update_now')),
               onPressed: () {
                 Navigator.pop(ctx);
                 _startInAppDownload(info);
               },
             ),
           CupertinoDialogAction(
-            child: const Text('瀏覽器下載'),
+            child: Text(I18n.t('btn_browser_download')),
             onPressed: () {
               Navigator.pop(ctx);
               UpdateService.openUrl(info.apkUrl.isNotEmpty ? info.apkUrl : info.htmlUrl);
@@ -546,7 +675,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _startInAppDownload(ReleaseInfo info) {
     double progressValue = 0.0;
-    String statusText = '準備下載...';
+    String statusText = I18n.t('downloading_status');
     StateSetter? dialogSetState;
 
     showCupertinoDialog(
@@ -558,7 +687,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           final percent = (progressValue * 100).clamp(0, 100).toStringAsFixed(0);
 
           return CupertinoAlertDialog(
-            title: const Text('正在下載最新版本'),
+            title: Text(I18n.t('downloading_title')),
             content: Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Column(
@@ -610,12 +739,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       try {
         await UpdateService.installApk(filePath);
       } catch (e) {
-        if (mounted) _showDialog('安裝提示', '下載完成，但啟動安裝失敗：$e\n您可選擇使用瀏覽器下載安裝。');
+        if (mounted) {
+          _showDialog(
+            I18n.t('install_hint_title'),
+            I18n.t('install_hint_msg', params: {'error': e.toString()}),
+          );
+        }
       }
     }).catchError((err) {
       if (mounted) {
         Navigator.of(context, rootNavigator: true).pop();
-        _showDialog('下載失敗', err.toString().replaceAll('Exception: ', ''));
+        _showDialog(I18n.t('download_failed_title'), err.toString().replaceAll('Exception: ', ''));
       }
     });
   }
@@ -651,7 +785,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: Text(msg),
         actions: [
           CupertinoDialogAction(
-            child: const Text('確定'),
+            child: Text(I18n.t('btn_ok')),
             onPressed: () => Navigator.pop(context),
           ),
         ],
