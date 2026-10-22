@@ -165,29 +165,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: CupertinoSlidingSegmentedControl<String>(
-                            groupValue: I18n.lang,
+                            groupValue: I18n.currentMode,
                             backgroundColor: AppColors.surfaceElevated,
                             thumbColor: CupertinoColors.white,
                             children: {
+                              'system': Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                child: Text(
+                                  I18n.t('lang_system'),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: I18n.currentMode == 'system' ? CupertinoColors.black : AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
                               'zh': Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                 child: Text(
                                   I18n.t('lang_zh'),
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: I18n.lang == 'zh' ? CupertinoColors.black : AppColors.textSecondary,
+                                    color: I18n.currentMode == 'zh' ? CupertinoColors.black : AppColors.textSecondary,
                                   ),
                                 ),
                               ),
                               'en': Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                 child: Text(
                                   I18n.t('lang_en'),
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: I18n.lang == 'en' ? CupertinoColors.black : AppColors.textSecondary,
+                                    color: I18n.currentMode == 'en' ? CupertinoColors.black : AppColors.textSecondary,
                                   ),
                                 ),
                               ),
@@ -195,12 +206,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             onValueChanged: (v) {
                               if (v != null) {
                                 HapticFeedback.selectionClick();
-                                I18n.setLanguage(v);
+                                I18n.setLanguageMode(v);
                                 setState(() {});
                               }
                             },
                           ),
                         ),
+                        if (I18n.isSystemMode) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            I18n.t('lang_system_desc', params: {'lang': I18n.detectedSystemLanguageName}),
+                            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
+                          ),
+                        ],
                       ],
                     ),
                   ),

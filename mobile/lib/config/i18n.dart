@@ -1,43 +1,109 @@
+import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// 提供行動端完整繁體中文與英文雙語國際化切換支援之服務類別。
+/// 支援「跟隨系統語言（System）」自動適配，並允許使用者在設定中手動覆寫。
 class I18n {
   I18n._();
 
-  /// 儲存語言設定之本地偏好鍵名。
-  static const String prefKey = 'app_language';
+  /// 儲存語言模式設定之本地偏好鍵名。
+  static const String prefKey = 'app_language_mode';
 
-  /// 當前系統語言監聽器（'zh' 為繁體中文，'en' 為英文）。
+  /// 舊版單一語言鍵名（用於平滑遷移相容）。
+  static const String legacyPrefKey = 'app_language';
+
+  /// 當前語言模式監聽器（'system' 為跟隨系統，'zh' 為手動中文，'en' 為手動英文）。
+  static final ValueNotifier<String> mode = ValueNotifier<String>('system');
+
+  /// 當前實際生效之語言代碼監聽器（'zh' 為繁體中文，'en' 為英文）。
   static final ValueNotifier<String> currentLang = ValueNotifier<String>('zh');
 
-  /// 當前語言代碼。
+  /// 當前生效語言代碼。
   static String get lang => currentLang.value;
+
+  /// 當前語言模式（'system' / 'zh' / 'en'）。
+  static String get currentMode => mode.value;
+
+  /// 是否處於跟隨系統模式。
+  static bool get isSystemMode => mode.value == 'system';
 
   /// 是否為英文語系。
   static bool get isEn => currentLang.value == 'en';
 
-  /// 初始化語言設定，自本地儲存還原偏好。
+  /// 偵測作業系統目前主要語言代碼，回傳 'en' 或 'zh'。
+  static String detectSystemLanguage() {
+    try {
+      final code = PlatformDispatcher.instance.locale.languageCode.toLowerCase();
+      return code.startsWith('en') ? 'en' : 'zh';
+    } catch (_) {
+      return 'zh';
+    }
+  }
+
+  /// 取得系統語言的人類可讀名稱。
+  static String get detectedSystemLanguageName {
+    final sys = detectSystemLanguage();
+    if (isEn) {
+      return sys == 'en' ? 'English' : 'Traditional Chinese';
+    } else {
+      return sys == 'en' ? '英文' : '繁體中文';
+    }
+  }
+
+  /// 依據當前模式更新生效語言。
+  static void updateEffectiveLanguage() {
+    if (mode.value == 'en') {
+      currentLang.value = 'en';
+    } else if (mode.value == 'zh') {
+      currentLang.value = 'zh';
+    } else {
+      currentLang.value = detectSystemLanguage();
+    }
+  }
+
+  /// 初始化語言設定，自本地儲存還原偏好，並註冊系統語言變更回呼。
   static Future<void> init() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getString(prefKey);
-      if (saved == 'en' || saved == 'zh') {
-        currentLang.value = saved!;
+      final savedMode = prefs.getString(prefKey) ?? prefs.getString(legacyPrefKey);
+
+      if (savedMode == 'en' || savedMode == 'zh' || savedMode == 'system') {
+        mode.value = savedMode!;
+      } else {
+        mode.value = 'system';
       }
+    } catch (_) {
+      mode.value = 'system';
+    }
+
+    updateEffectiveLanguage();
+
+    // 註冊作業系統語言變動監聽器
+    try {
+      PlatformDispatcher.instance.onLocaleChanged = () {
+        if (mode.value == 'system') {
+          updateEffectiveLanguage();
+        }
+      };
     } catch (_) {}
   }
 
-  /// 切換系統語言並持久化至本地。
-  static Future<void> setLanguage(String newLang) async {
-    if (newLang != 'en' && newLang != 'zh') return;
-    if (currentLang.value == newLang) return;
-    currentLang.value = newLang;
+  /// 設定語言模式（'system' / 'zh' / 'en'）並持久化至本地。
+  static Future<void> setLanguageMode(String newMode) async {
+    if (newMode != 'system' && newMode != 'en' && newMode != 'zh') return;
+    mode.value = newMode;
+    updateEffectiveLanguage();
+
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(prefKey, newLang);
+      await prefs.setString(prefKey, newMode);
+      await prefs.remove(legacyPrefKey);
     } catch (_) {}
   }
+
+  /// 相容舊版呼叫：切換至指定語系或模式。
+  static Future<void> setLanguage(String newLang) => setLanguageMode(newLang);
 
   /// 取得指定鍵名之語系翻譯字串，並支援變數替換。
   static String t(String key, {Map<String, dynamic>? params}) {
@@ -135,8 +201,11 @@ class I18n {
     // 系統設定頁
     'settings_header': '系統設定',
     'section_language': '介面語言 / Language',
+    'lang_system': '跟隨系統',
     'lang_zh': '繁體中文',
     'lang_en': 'English',
+    'lang_system_desc': '依裝置系統語言自動適配是否為英文（目前系統：{lang}）',
+    'lang_system_hint': '目前系統語言：{lang}',
     'section_auth': '校園入口帳號驗證',
     'label_username': '學生學號',
     'hint_username': '例如 11234567',
@@ -261,8 +330,11 @@ class I18n {
     // 系統設定頁
     'settings_header': 'Settings',
     'section_language': 'Interface Language / 介面語言',
+    'lang_system': 'System',
     'lang_zh': '繁體中文',
     'lang_en': 'English',
+    'lang_system_desc': 'Automatically match device system language (Current: {lang})',
+    'lang_system_hint': 'Current system language: {lang}',
     'section_auth': 'Campus Portal Authentication',
     'label_username': 'Student ID',
     'hint_username': 'e.g. 11234567',
