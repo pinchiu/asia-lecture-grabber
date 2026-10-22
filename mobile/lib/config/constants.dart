@@ -34,6 +34,9 @@ class AppColors {
   /// 次要文字與補充說明色彩。
   static const Color textSecondary = Color(0xFFA1A1A6);
 
+  /// 第三級輔助文字色彩。
+  static const Color textTertiary = Color(0xFF8E8E93);
+
   /// 弱化提示文字與圖示色彩。
   static const Color textMuted = Color(0xFF71717A);
 

@@ -35,6 +35,11 @@ jobs:
           cd mobile
           flutter pub get
 
+      - name: Analyze Dart codebase
+        run: |
+          cd mobile
+          flutter analyze
+
       - name: Build Android Release APK
         run: |
           cd mobile
