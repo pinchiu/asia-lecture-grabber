@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'backend/grab_engine.dart';
 import 'backend/update_service.dart';
 import 'config/constants.dart';
+import 'config/i18n.dart';
 import 'screens/lectures_screen.dart';
 import 'screens/targets_screen.dart';
 import 'screens/calendar_screen.dart';
@@ -22,6 +23,9 @@ Future<void> main() async {
     ),
   );
 
+  // 初始化多語言系統
+  await I18n.init();
+
   // 初始化純 Dart 搶課引擎
   final engine = GrabEngine();
   await engine.initFromStorage();
@@ -39,24 +43,29 @@ class AsiaLectureGrabberApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoApp(
-      title: AppConstants.appTitle,
-      debugShowCheckedModeBanner: false,
-      theme: const CupertinoThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: AppColors.background,
-        barBackgroundColor: AppColors.glassBar,
-        primaryColor: CupertinoColors.white,
-        primaryContrastingColor: CupertinoColors.black,
-        textTheme: CupertinoTextThemeData(
-          primaryColor: CupertinoColors.white,
-          textStyle: TextStyle(
-            color: AppColors.textPrimary,
-            fontFamily: '.SF Pro Text',
+    return ValueListenableBuilder<String>(
+      valueListenable: I18n.currentLang,
+      builder: (context, currentLang, _) {
+        return CupertinoApp(
+          title: I18n.t('app_title'),
+          debugShowCheckedModeBanner: false,
+          theme: const CupertinoThemeData(
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: AppColors.background,
+            barBackgroundColor: AppColors.glassBar,
+            primaryColor: CupertinoColors.white,
+            primaryContrastingColor: CupertinoColors.black,
+            textTheme: CupertinoTextThemeData(
+              primaryColor: CupertinoColors.white,
+              textStyle: TextStyle(
+                color: AppColors.textPrimary,
+                fontFamily: '.SF Pro Text',
+              ),
+            ),
           ),
-        ),
-      ),
-      home: HomeScreen(engine: engine),
+          home: HomeScreen(engine: engine),
+        );
+      },
     );
   }
 }
@@ -73,6 +82,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late final PageController _pageController;
   int _currentIndex = 0;
+  ReleaseInfo? _availableUpdate;
 
   @override
   void initState() {
@@ -84,6 +94,9 @@ class _HomeScreenState extends State<HomeScreen> {
       try {
         final info = await UpdateService.checkUpdate();
         if (mounted && info != null && info.hasUpdate) {
+          setState(() {
+            _availableUpdate = info;
+          });
           _showBackgroundUpdatePrompt(info);
         }
       } catch (_) {}
@@ -121,27 +134,135 @@ class _HomeScreenState extends State<HomeScreen> {
     showCupertinoDialog(
       context: context,
       builder: (ctx) => CupertinoAlertDialog(
-        title: Text('發現新版本 ${info.tagName}'),
+        title: Text(I18n.t('update_found_title', params: {'version': info.tagName})),
         content: Padding(
           padding: const EdgeInsets.only(top: 8),
-          child: Text('新版本已發布：${info.name}\n是否前往「系統設定」下載安裝更新？'),
+          child: Text(
+            '${info.name}\n\n${I18n.t('update_found_desc', params: {
+                  'title': info.name,
+                  'size': info.apkSize > 0 ? '${(info.apkSize / (1024 * 1024)).toStringAsFixed(1)} MB' : '—',
+                })}',
+          ),
         ),
         actions: [
           CupertinoDialogAction(
-            child: const Text('稍後'),
+            child: Text(I18n.t('btn_later')),
             onPressed: () => Navigator.pop(ctx),
           ),
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            child: const Text('立即前往'),
-            onPressed: () {
-              Navigator.pop(ctx);
-              _onTabTapped(3); // 切換至系統設定
-            },
-          ),
+          if (info.apkUrl.isNotEmpty)
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              child: Text(I18n.t('btn_update_now')),
+              onPressed: () {
+                Navigator.pop(ctx);
+                _startInAppDownload(context, info);
+              },
+            ),
         ],
       ),
     );
+  }
+
+  void _startInAppDownload(BuildContext context, ReleaseInfo info) {
+    double progressValue = 0.0;
+    String statusText = I18n.t('downloading_status');
+    StateSetter? dialogSetState;
+
+    showCupertinoDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          dialogSetState = setDialogState;
+          final percent = (progressValue * 100).clamp(0, 100).toStringAsFixed(0);
+
+          return CupertinoAlertDialog(
+            title: Text(I18n.t('downloading_title')),
+            content: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    height: 6,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: progressValue.clamp(0.01, 1.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.white,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text('$statusText ($percent%)', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    UpdateService.downloadApk(
+      info.apkUrl,
+      onProgress: (p, received, total) {
+        if (dialogSetState != null) {
+          dialogSetState!(() {
+            progressValue = p;
+            final recMb = (received / (1024 * 1024)).toStringAsFixed(1);
+            final totMb = (total / (1024 * 1024)).toStringAsFixed(1);
+            statusText = '$recMb MB / $totMb MB';
+          });
+        }
+      },
+    ).then((filePath) async {
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+      HapticFeedback.mediumImpact();
+      try {
+        await UpdateService.installApk(filePath);
+      } catch (e) {
+        if (mounted) {
+          showCupertinoDialog(
+            context: context,
+            builder: (ctx) => CupertinoAlertDialog(
+              title: Text(I18n.t('install_hint_title')),
+              content: Text(I18n.t('install_hint_msg', params: {'error': e.toString()})),
+              actions: [
+                CupertinoDialogAction(
+                  child: Text(I18n.t('btn_ok')),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    }).catchError((err) {
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        showCupertinoDialog(
+          context: context,
+          builder: (ctx) => CupertinoAlertDialog(
+            title: Text(I18n.t('download_failed_title')),
+            content: Text(err.toString().replaceAll('Exception: ', '')),
+            actions: [
+              CupertinoDialogAction(
+                child: Text(I18n.t('btn_ok')),
+                onPressed: () => Navigator.pop(ctx),
+              ),
+            ],
+          ),
+        );
+      }
+    });
   }
 
   @override
@@ -169,6 +290,50 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
+
+              // 底部新版本在線更新提示列 (Bottom in-app update banner)
+              if (_availableUpdate != null && _availableUpdate!.hasUpdate)
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 66,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xE61D2027),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.accentBlue.withValues(alpha: 0.6), width: 0.8),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x33000000),
+                          blurRadius: 10,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            I18n.t('update_found_title', params: {'version': _availableUpdate!.tagName}),
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                          ),
+                        ),
+                        CupertinoButton(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          color: AppColors.accentBlue,
+                          borderRadius: BorderRadius.circular(8),
+                          minSize: 28,
+                          onPressed: () => _startInAppDownload(context, _availableUpdate!),
+                          child: Text(
+                            I18n.t('btn_update_now'),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: CupertinoColors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
               // 底部懸浮貼底之 iOS 原生液態磨砂毛玻璃導覽列（支援左右滑動與直接手指拖拉滑塊特效）
               Positioned(
@@ -211,15 +376,17 @@ class _IosTransparentGlassNavBarState extends State<_IosTransparentGlassNavBar> 
   bool _isDragging = false;
   double _dragPage = 0.0;
 
-  final List<_TabItemData> _tabs = const [
-    _TabItemData(icon: CupertinoIcons.book, activeIcon: CupertinoIcons.book_fill, label: '講座情報'),
-    _TabItemData(icon: CupertinoIcons.alarm, activeIcon: CupertinoIcons.alarm_fill, label: '搶課排程'),
-    _TabItemData(icon: CupertinoIcons.calendar, activeIcon: CupertinoIcons.calendar_today, label: '個人行程'),
-    _TabItemData(icon: CupertinoIcons.gear_alt, activeIcon: CupertinoIcons.gear_alt_fill, label: '系統設定'),
+  List<_TabItemData> _getTabs() => [
+    _TabItemData(icon: CupertinoIcons.book, activeIcon: CupertinoIcons.book_fill, label: I18n.t('tab_lectures')),
+    _TabItemData(icon: CupertinoIcons.alarm, activeIcon: CupertinoIcons.alarm_fill, label: I18n.t('tab_targets')),
+    _TabItemData(icon: CupertinoIcons.calendar, activeIcon: CupertinoIcons.calendar_today, label: I18n.t('tab_calendar')),
+    _TabItemData(icon: CupertinoIcons.gear_alt, activeIcon: CupertinoIcons.gear_alt_fill, label: I18n.t('tab_settings')),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final tabs = _getTabs();
+
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
@@ -233,7 +400,7 @@ class _IosTransparentGlassNavBarState extends State<_IosTransparentGlassNavBar> 
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final totalWidth = constraints.maxWidth;
-                final tabWidth = totalWidth / _tabs.length;
+                final tabWidth = totalWidth / tabs.length;
                 final gliderWidth = tabWidth - 10;
 
                 return GestureDetector(
@@ -241,14 +408,14 @@ class _IosTransparentGlassNavBarState extends State<_IosTransparentGlassNavBar> 
                   onHorizontalDragStart: (details) {
                     _isDragging = true;
                     HapticFeedback.selectionClick();
-                    _updateDrag(details.localPosition.dx, totalWidth, tabWidth);
+                    _updateDrag(details.localPosition.dx, totalWidth, tabWidth, tabs.length);
                   },
                   onHorizontalDragUpdate: (details) {
-                    _updateDrag(details.localPosition.dx, totalWidth, tabWidth);
+                    _updateDrag(details.localPosition.dx, totalWidth, tabWidth, tabs.length);
                   },
                   onHorizontalDragEnd: (details) {
                     _isDragging = false;
-                    final targetIndex = _dragPage.round().clamp(0, _tabs.length - 1);
+                    final targetIndex = _dragPage.round().clamp(0, tabs.length - 1);
                     HapticFeedback.lightImpact();
                     widget.onTabSelected(targetIndex);
                   },
@@ -296,8 +463,8 @@ class _IosTransparentGlassNavBarState extends State<_IosTransparentGlassNavBar> 
 
                             // Tab 按鈕列表
                             Row(
-                              children: List.generate(_tabs.length, (idx) {
-                                final tab = _tabs[idx];
+                              children: List.generate(tabs.length, (idx) {
+                                final tab = tabs[idx];
                                 final isSelected = widget.currentIndex == idx;
                                 final isTarget = idx == 1 && widget.targetCount > 0;
 
@@ -308,9 +475,10 @@ class _IosTransparentGlassNavBarState extends State<_IosTransparentGlassNavBar> 
                                       HapticFeedback.selectionClick();
                                       widget.onTabSelected(idx);
                                     },
-                                    child: Center(
+                                    child: Container(
+                                      color: CupertinoColors.transparent,
                                       child: Column(
-                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           Stack(
                                             clipBehavior: Clip.none,
@@ -318,39 +486,39 @@ class _IosTransparentGlassNavBarState extends State<_IosTransparentGlassNavBar> 
                                               Icon(
                                                 isSelected ? tab.activeIcon : tab.icon,
                                                 size: 21,
-                                                color: isSelected ? CupertinoColors.white : AppColors.textMuted,
+                                                color: isSelected ? CupertinoColors.white : const Color(0x8AFFFFFF),
                                               ),
                                               if (isTarget)
                                                 Positioned(
-                                                  top: -2,
                                                   right: -7,
+                                                  top: -3,
                                                   child: Container(
                                                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                                                     decoration: BoxDecoration(
-                                                      color: AppColors.accentRed,
+                                                      color: AppColors.accentBlue,
                                                       borderRadius: BorderRadius.circular(8),
                                                     ),
                                                     constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
                                                     child: Text(
-                                                      widget.targetCount > 99 ? '99+' : widget.targetCount.toString(),
+                                                      '${widget.targetCount}',
+                                                      textAlign: TextAlign.center,
                                                       style: const TextStyle(
                                                         color: CupertinoColors.white,
                                                         fontSize: 9,
                                                         fontWeight: FontWeight.bold,
                                                       ),
-                                                      textAlign: TextAlign.center,
                                                     ),
                                                   ),
                                                 ),
                                             ],
                                           ),
-                                          const SizedBox(height: 3),
+                                          const SizedBox(height: 2),
                                           Text(
                                             tab.label,
                                             style: TextStyle(
                                               fontSize: 10,
-                                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                              color: isSelected ? CupertinoColors.white : AppColors.textMuted,
+                                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                              color: isSelected ? CupertinoColors.white : const Color(0x8AFFFFFF),
                                             ),
                                           ),
                                         ],
@@ -374,9 +542,10 @@ class _IosTransparentGlassNavBarState extends State<_IosTransparentGlassNavBar> 
     );
   }
 
-  void _updateDrag(double localX, double totalWidth, double tabWidth) {
-    final page = (localX - tabWidth / 2) / tabWidth;
-    final clamped = page.clamp(0.0, (_tabs.length - 1).toDouble());
+  void _updateDrag(double dx, double totalWidth, double tabWidth, int tabCount) {
+    final raw = (dx / tabWidth) - 0.5;
+    final clamped = raw.clamp(0.0, (tabCount - 1).toDouble());
+
     if ((clamped - _dragPage).abs() > 0.01) {
       final oldInt = _dragPage.round();
       final newInt = clamped.round();

@@ -4,14 +4,24 @@ import 'package:flutter/services.dart';
 import 'calendar_helper.dart';
 import 'grab_engine.dart';
 
+/// 提供手機端原生內嵌 HTTP 伺服器，支援網頁前端資源與本地 REST API 端點。
 class InAppServer {
+  /// 伺服器所綁定之搶課狀態機引擎實例。
   final GrabEngine engine;
   HttpServer? _server;
+
+  /// 本地 HTTP 服務目前監聽之連接埠號。
   int get port => _server?.port ?? 0;
+
+  /// 本地 HTTP 服務之完整位址。
   String get localUrl => 'http://127.0.0.1:$port';
 
+  /// 建立手機端內嵌 HTTP 伺服器實例。
+  ///
+  /// 可傳入特定之 [engineInstance]；若未指定則預設建立 [GrabEngine.new]。
   InAppServer({GrabEngine? engineInstance}) : engine = engineInstance ?? GrabEngine();
 
+  /// 靜態檔案副檔名對應之 MIME 類型表。
   static const Map<String, String> mimeTypes = {
     '.html': 'text/html; charset=utf-8',
     '.css': 'text/css; charset=utf-8',
@@ -23,6 +33,9 @@ class InAppServer {
     '.webmanifest': 'application/manifest+json; charset=utf-8',
   };
 
+  /// 啟動手機端內建獨立 HTTP 伺服器。
+  ///
+  /// 初始化引擎儲存狀態並隨機綁定可用之本地連接埠。
   Future<void> start() async {
     await engine.initFromStorage();
     _server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
@@ -30,6 +43,9 @@ class InAppServer {
     engine.log('info', '手機端獨立伺服器已啟動於 127.0.0.1:$port');
   }
 
+  /// 停止內建伺服器並釋放網路資源。
+  ///
+  /// 停止搶課引擎並強制關閉 HTTP 監聽通道。
   Future<void> stop() async {
     engine.stop('伺服器關閉');
     await _server?.close(force: true);

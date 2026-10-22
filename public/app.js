@@ -12,6 +12,303 @@ const STATUS_LABEL = {
   D: '其他方式'
 };
 
+const I18N = {
+  zh: {
+    brand_title: '亞洲大學講座助手',
+    brand_sub_badge: '四力門檻',
+    server_connecting: '本機服務 · 連線中…',
+    server_connected: '本機服務 · ',
+    tab_lectures: '講座情報',
+    tab_targets: '搶課排程',
+    tab_calendar: '個人行程',
+    tab_settings: '系統設定',
+    pill_not_logged_in: '未登入',
+    pill_logged_in: '已登入：',
+    pill_standby: '待機中',
+    pill_running: '搶課中',
+    pill_error: '待機（錯誤）',
+    pill_no_schedule: '無排程',
+    pill_sched_running: '排程執行中',
+    pill_sched_disabled: '排程已關閉',
+    btn_pwa: '安裝 App',
+    btn_start: '開始搶課',
+    btn_stop: '停止',
+    lang_btn: 'EN',
+
+    grad_tag: '畢業指標',
+    grad_title: '通識講座畢業門檻進度',
+    grad_desc: '在學期間必須累積至少 <b>8 場次</b>，且四大基本素養各至少符合 2 次：健康力 ≥ 2、關懷力 ≥ 2、創新力 ≥ 2、卓越力 ≥ 2。',
+    btn_recommend: '智慧推薦補齊缺額 ›',
+    btn_past_records: '歷年累計補登',
+    btn_view_calendar: '查看個人行程 ›',
+    grad_fulfilled: '通識講座畢業門檻：已達成',
+    grad_total_title: '總累積場次',
+    grad_threshold_sub: '畢業門檻底限 8 場',
+    grad_met: '已達標',
+    grad_met_total: '已達標 (≥8)',
+    grad_need_times: '尚缺 {n} 次',
+    grad_need_lectures: '尚缺 {n} 場',
+    filter_lit_btn: '只看{lit}講座 ›',
+
+    hall_title: '講座情報大廳',
+    search_placeholder: '搜尋課程 / 講者 / 地點',
+    lit_filter_all: '全部基本素養',
+    lit_filter_none: '一般（無素養標示）',
+    status_filter_all: '全部報名狀態',
+    status_filter_y: '可報名（目前能選的課程）',
+    status_filter_n1: '未開放',
+    status_filter_n2: '已截止',
+    status_filter_f: '已額滿',
+    status_filter_other: '現場 / 其他方式',
+    show_full: '顯示已額滿',
+    missing_only: '只看我缺少的素養',
+    btn_refresh: '重新整理',
+    manual_tag: '快捷操作',
+    manual_code_placeholder: '直接輸入課程代號（例如 1151074）',
+    btn_manual_register: '手動報名',
+    btn_manual_cancel: '取消報名',
+    manual_hint: '純本機直呼校方 API，自動帶入身份驗證，後端不查圖形驗證碼，全程不需 AI。',
+
+    th_status: '狀態',
+    th_title: '課程名稱 / 主辦單位',
+    th_lit: '基本素養 (四力)',
+    th_speaker: '演講者 / 主持人',
+    th_time: '活動時間',
+    th_place: '活動地點',
+    th_capacity: '報名人數',
+    th_reg_period: '報名期間',
+    th_action: '操作',
+
+    btn_add_target: '＋加入目標',
+    btn_waitlist_target: '＋候補搶票',
+    btn_in_queue: '已在監控',
+    btn_registered: '已報名',
+    btn_cancel: '取消報名',
+    conflict_warn: '時段衝突',
+    conflict_title: '與已報名【{title}】時間重疊',
+
+    telem_engine_state: '引擎運作狀態',
+    telem_state_standby: '待命',
+    telem_state_polling: '輪詢中',
+    telem_state_burst: '爆速中',
+    telem_state_grabbing: '搶課中',
+    telem_interval: '輪詢間隔',
+    telem_targets: '監控目標數',
+    telem_countdown: '最近開放報名倒數',
+    telem_no_open_target: '無待開放目標',
+    targets_title: '我的搶課目標',
+    btn_go_hall: '＋ 前往大廳挑選',
+    btn_clear_finished: '清除已完成',
+    btn_remove: '移除',
+
+    sched_title: '排程定時自動啟動',
+    sched_enable: '啟用排程功能',
+    sched_trigger_type: '觸發方式',
+    sched_mode_open: '開放瞬間（依報名開放時間）',
+    sched_mode_at: '指定日期時間（單次）',
+    sched_mode_window: '每週固定時段',
+    sched_add: '＋ 新增排程',
+
+    cal_title: '我的行事曆與已報名行程',
+    btn_export_ics: '匯出行事曆 (.ics)',
+    btn_copy_ics_url: '訂閱網址',
+    btn_copy_schedule: '複製課表',
+    btn_today: '今天',
+    upcoming_title: '近期已報名場次',
+    upcoming_hint: '可直接在此點擊取消報名（退選）',
+
+    settings_lang_title: '系統語言偏好',
+    settings_lang_label: '選擇顯示語言 (Interface Language)',
+    sec_account_title: '學生登入與身份驗證',
+    label_username: '學號',
+    label_password: '密碼',
+    label_idlast4: '身分證字號末四碼',
+    label_remember: '記住帳密（以純文字存於本機 data/config.json）',
+    btn_login: '登入校方系統並驗證身份',
+    sec_settings_title: '搶課設定與無障礙需求',
+    label_interval: '監控頻率（秒／次）',
+    label_bfree: '無障礙空間需求（報名預設值）',
+    bfree_n: '無需求／否（通常選此項）',
+    bfree_y: '有需求／是',
+    label_sound: '搶到時播放提示音',
+    label_notify: '搶到時發送桌面通知',
+    label_stop_done: '目標全部完成後自動停止',
+    btn_save_settings: '儲存設定',
+    sec_ai_title: '語言模型連線設定',
+    btn_save_ai: '儲存 AI 設定',
+    sec_logs_title: '系統執行紀錄',
+    btn_clear_log: '清空紀錄',
+    footnote: '僅供個人學術與自主報名使用。系統以約 2.5 秒禮貌間隔輪詢，避免對校方系統產生負擔。請遵守學校規範。',
+
+    lit_health: '健康力',
+    lit_care: '關懷力',
+    lit_innovation: '創新力',
+    lit_excellence: '卓越力',
+    lit_none: '一般',
+
+    st_Y: '可報名',
+    st_F: '已額滿',
+    st_N1: '未開放',
+    st_N2: '已截止',
+    st_C: '現場報名',
+    st_D: '其他方式',
+
+    day_0: '日', day_1: '一', day_2: '二', day_3: '三', day_4: '四', day_5: '五', day_6: '六'
+  },
+  en: {
+    brand_title: 'AU Lecture Grabber',
+    brand_sub_badge: '4 Literacies',
+    server_connecting: 'Local Service · Connecting…',
+    server_connected: 'Local Service · ',
+    tab_lectures: 'Lectures',
+    tab_targets: 'Targets',
+    tab_calendar: 'Schedule',
+    tab_settings: 'Settings',
+    pill_not_logged_in: 'Not Logged In',
+    pill_logged_in: 'Logged in: ',
+    pill_standby: 'Standby',
+    pill_running: 'Grabbing',
+    pill_error: 'Standby (Error)',
+    pill_no_schedule: 'No Schedule',
+    pill_sched_running: 'Schedule Running',
+    pill_sched_disabled: 'Schedule Disabled',
+    btn_pwa: 'Install App',
+    btn_start: 'Start Engine',
+    btn_stop: 'Stop',
+    lang_btn: '中文',
+
+    grad_tag: 'Graduation Metric',
+    grad_title: 'General Lecture Graduation Progress',
+    grad_desc: 'Requires at least <b>8 lectures</b> total and >= 2 in each of the 4 literacies: Health >= 2, Care >= 2, Innovation >= 2, Excellence >= 2.',
+    btn_recommend: 'Smart Recommendation ›',
+    btn_past_records: 'Past Credits',
+    btn_view_calendar: 'View My Schedule ›',
+    grad_fulfilled: 'Graduation Requirement: Fulfilled',
+    grad_total_title: 'Total Lectures',
+    grad_threshold_sub: 'Minimum 8 lectures required',
+    grad_met: 'Met',
+    grad_met_total: 'Met (≥8)',
+    grad_need_times: 'Need {n}',
+    grad_need_lectures: 'Need {n}',
+    filter_lit_btn: 'Only {lit} ›',
+
+    hall_title: 'Lecture Hall',
+    search_placeholder: 'Search course, speaker, or venue',
+    lit_filter_all: 'All Literacies',
+    lit_filter_none: 'General (No Literacy Tag)',
+    status_filter_all: 'All Statuses',
+    status_filter_y: 'Open (Currently Available)',
+    status_filter_n1: 'Upcoming',
+    status_filter_n2: 'Closed',
+    status_filter_f: 'Full',
+    status_filter_other: 'On-site / Other',
+    show_full: 'Show Full',
+    missing_only: 'Only Missing Literacies',
+    btn_refresh: 'Refresh',
+    manual_tag: 'Quick Action',
+    manual_code_placeholder: 'Enter course code directly (e.g. 1151074)',
+    btn_manual_register: 'Register',
+    btn_manual_cancel: 'Drop',
+    manual_hint: 'Direct API call with student auth. Zero CAPTCHA latency, completely AI-independent.',
+
+    th_status: 'Status',
+    th_title: 'Course Name / Organizer',
+    th_lit: 'Literacies (4 Skills)',
+    th_speaker: 'Speaker / Host',
+    th_time: 'Event Time',
+    th_place: 'Venue',
+    th_capacity: 'Capacity',
+    th_reg_period: 'Registration Period',
+    th_action: 'Action',
+
+    btn_add_target: '＋ Add Target',
+    btn_waitlist_target: '＋ Waitlist',
+    btn_in_queue: 'In Queue',
+    btn_registered: 'Registered',
+    btn_cancel: 'Drop',
+    conflict_warn: 'Time Conflict',
+    conflict_title: 'Overlaps with registered lecture [{title}]',
+
+    telem_engine_state: 'Engine State',
+    telem_state_standby: 'Standby',
+    telem_state_polling: 'Polling',
+    telem_state_burst: 'Burst',
+    telem_state_grabbing: 'Grabbing',
+    telem_interval: 'Polling Interval',
+    telem_targets: 'Monitored Targets',
+    telem_countdown: 'Next Opening In',
+    telem_no_open_target: 'No upcoming target',
+    targets_title: 'My Grab Targets',
+    btn_go_hall: '＋ Browse Lectures',
+    btn_clear_finished: 'Clear Finished',
+    btn_remove: 'Remove',
+
+    sched_title: 'Scheduled Auto-Trigger',
+    sched_enable: 'Enable Scheduler',
+    sched_trigger_type: 'Trigger Mode',
+    sched_mode_open: 'At Opening (Based on start time)',
+    sched_mode_at: 'Specific Date & Time (One-time)',
+    sched_mode_window: 'Weekly Time Window',
+    sched_add: '＋ Add Schedule',
+
+    cal_title: 'My Schedule & Registered Events',
+    btn_export_ics: 'Export iCal (.ics)',
+    btn_copy_ics_url: 'Subscribe URL',
+    btn_copy_schedule: 'Copy Schedule',
+    btn_today: 'Today',
+    upcoming_title: 'Upcoming Registered Lectures',
+    upcoming_hint: 'Click cancel to drop registration directly',
+
+    settings_lang_title: 'Interface Language',
+    settings_lang_label: 'Select Display Language',
+    sec_account_title: 'Student Login & Verification',
+    label_username: 'Student ID',
+    label_password: 'Password',
+    label_idlast4: 'ID Last 4 Digits',
+    label_remember: 'Remember Credentials (Plaintext in local data/config.json)',
+    btn_login: 'Login & Verify Identity',
+    sec_settings_title: 'Grab Settings & Accessibility',
+    label_interval: 'Poll Interval (sec/cycle)',
+    label_bfree: 'Barrier-free Space Requirement',
+    bfree_n: 'No Need / False (Default)',
+    bfree_y: 'Need / True',
+    label_sound: 'Play sound when grabbed',
+    label_notify: 'Send desktop notification when grabbed',
+    label_stop_done: 'Auto-stop when all targets finished',
+    btn_save_settings: 'Save Settings',
+    sec_ai_title: 'LLM Connection Settings',
+    btn_save_ai: 'Save AI Config',
+    sec_logs_title: 'System Execution Logs',
+    btn_clear_log: 'Clear Logs',
+    footnote: 'For personal academic and registration use only. Operates on ~2.5s polite polling to prevent server overload. Please follow school rules.',
+
+    lit_health: 'Health',
+    lit_care: 'Care',
+    lit_innovation: 'Innovation',
+    lit_excellence: 'Excellence',
+    lit_none: 'General',
+
+    st_Y: 'Open',
+    st_F: 'Full',
+    st_N1: 'Upcoming',
+    st_N2: 'Closed',
+    st_C: 'On-site',
+    st_D: 'Other',
+
+    day_0: 'Sun', day_1: 'Mon', day_2: 'Tue', day_3: 'Wed', day_4: 'Thu', day_5: 'Fri', day_6: 'Sat'
+  }
+};
+
+function t(key, fallback = '') {
+  const lang = S.lang || 'zh';
+  const langMap = I18N[lang] || I18N.zh;
+  return langMap[key] ?? I18N.zh[key] ?? fallback;
+}
+
+function getStatusLabel(code) {
+  return t('st_' + code, STATUS_LABEL[code] || code);
+}
+
 const LITERACIES = [
   { id: 'health', key: 'chk4', label: '健康力', en: 'Health', min: 2 },
   { id: 'care', key: 'chk5', label: '關懷力', en: 'Care', min: 2 },
@@ -39,8 +336,53 @@ const S = {
   calEvents: null,
   calYear: null,
   calMonth: null,
-  deferredInstallPrompt: null
+  deferredInstallPrompt: null,
+  lang: localStorage.getItem('au_lang') || 'zh'
 };
+
+function applyLanguage(lang) {
+  S.lang = lang === 'en' ? 'en' : 'zh';
+  localStorage.setItem('au_lang', S.lang);
+  document.documentElement.lang = S.lang === 'en' ? 'en' : 'zh-Hant';
+
+  const btnLang = $('#btnLang');
+  if (btnLang) {
+    btnLang.textContent = S.lang === 'en' ? '中文' : 'EN';
+  }
+  const langSelect = $('#langSelect');
+  if (langSelect) {
+    langSelect.value = S.lang;
+  }
+
+  $$('[data-i18n]').forEach((el) => {
+    const key = el.dataset.i18n;
+    const txt = t(key);
+    if (txt) {
+      if (txt.includes('<') && txt.includes('>')) {
+        el.innerHTML = txt;
+      } else {
+        el.textContent = txt;
+      }
+    }
+  });
+
+  $$('[data-i18n-placeholder]').forEach((el) => {
+    const key = el.dataset.i18nPlaceholder;
+    const txt = t(key);
+    if (txt) el.setAttribute('placeholder', txt);
+  });
+
+  $$('[data-i18n-title]').forEach((el) => {
+    const key = el.dataset.i18nTitle;
+    const txt = t(key);
+    if (txt) el.setAttribute('title', txt);
+  });
+
+  lectureSig = '';
+  if (S.snap) {
+    render();
+  }
+}
 
 /* ------------------------------ 工具函式 ------------------------------ */
 
@@ -116,16 +458,17 @@ function getLectureLiteracies(row) {
 function renderLiteracyBadges(literacies) {
   const list = Array.isArray(literacies) ? literacies : [];
   if (!list.length) {
-    return `<span class="lit-tag l-none">一般</span>`;
+    return `<span class="lit-tag l-none">${t('lit_none', '一般')}</span>`;
   }
   return `<div class="lit-tags-wrap">${list
     .map((lit) => {
       let cls = 'l-none';
-      if (lit === '健康力') cls = 'l-health';
-      else if (lit === '關懷力') cls = 'l-care';
-      else if (lit === '創新力') cls = 'l-innovation';
-      else if (lit === '卓越力') cls = 'l-excellence';
-      return `<span class="lit-tag ${cls}">${esc(lit)}</span>`;
+      let name = lit;
+      if (lit === '健康力') { cls = 'l-health'; name = t('lit_health', '健康力'); }
+      else if (lit === '關懷力') { cls = 'l-care'; name = t('lit_care', '關懷力'); }
+      else if (lit === '創新力') { cls = 'l-innovation'; name = t('lit_innovation', '創新力'); }
+      else if (lit === '卓越力') { cls = 'l-excellence'; name = t('lit_excellence', '卓越力'); }
+      return `<span class="lit-tag ${cls}">${esc(name)}</span>`;
     })
     .join('')}</div>`;
 }
@@ -566,18 +909,18 @@ function renderHeader(snap) {
   const engine = snap.engine || {};
 
   const pillSession = $('#pillSession');
-  pillSession.textContent = session.loggedIn ? `已登入：${session.emp_nm || session.emp_id || ''}` : '未登入';
+  pillSession.textContent = session.loggedIn ? `${t('pill_logged_in', '已登入：')}${session.emp_nm || session.emp_id || ''}` : t('pill_not_logged_in', '未登入');
   pillSession.className = 'pill' + (session.loggedIn ? ' on' : '');
 
   const pillEngine = $('#pillEngine');
   if (engine.running) {
-    pillEngine.textContent = '搶課中';
+    pillEngine.textContent = t('pill_running', '搶課中');
     pillEngine.className = 'pill run';
   } else if (engine.stats?.lastError) {
-    pillEngine.textContent = '待機（錯誤）';
+    pillEngine.textContent = t('pill_error', '待機（錯誤）');
     pillEngine.className = 'pill err';
   } else {
-    pillEngine.textContent = '待機中';
+    pillEngine.textContent = t('pill_standby', '待機中');
     pillEngine.className = 'pill';
   }
 
@@ -586,21 +929,21 @@ function renderHeader(snap) {
   $('#btnStart').disabled = !canStart;
   $('#btnStop').disabled = !engine.running;
 
-  $('#serverInfo').textContent = `本機服務 · ${snap.baseUrl || ''}`;
+  $('#serverInfo').textContent = `${t('server_connected', '本機服務 · ')}${snap.baseUrl || ''}`;
 
   const schedule = snap.schedule || {};
   const pillSchedule = $('#pillSchedule');
   if (schedule.nextStartAt && schedule.nextStartLabel) {
-    pillSchedule.textContent = '排程：' + String(schedule.nextStartLabel).split('・')[0];
+    pillSchedule.textContent = (S.lang === 'en' ? 'Sched: ' : '排程：') + String(schedule.nextStartLabel).split('・')[0];
     pillSchedule.className = 'pill sched';
   } else if (schedule.driverId) {
-    pillSchedule.textContent = '排程執行中';
+    pillSchedule.textContent = t('pill_sched_running', '排程執行中');
     pillSchedule.className = 'pill sched';
   } else if (schedule.enabled === false) {
-    pillSchedule.textContent = '排程已關閉';
+    pillSchedule.textContent = t('pill_sched_disabled', '排程已關閉');
     pillSchedule.className = 'pill';
   } else {
-    pillSchedule.textContent = '無排程';
+    pillSchedule.textContent = t('pill_no_schedule', '無排程');
     pillSchedule.className = 'pill';
   }
 }
@@ -675,10 +1018,10 @@ function renderGraduation(snap) {
   $('#gradTotalProgress').style.width = `${totalPercent}%`;
   const totalBadge = $('#gradTotalBadge');
   if (stats.totalCompleted >= 8) {
-    totalBadge.textContent = '已達標 (≥8)';
+    totalBadge.textContent = t('grad_met_total', '已達標 (≥8)');
     totalBadge.className = 'metric-state ok';
   } else {
-    totalBadge.textContent = `尚缺 ${8 - stats.totalCompleted} 場`;
+    totalBadge.textContent = t('grad_need_lectures', '尚缺 {n} 場').replace('{n}', 8 - stats.totalCompleted);
     totalBadge.className = 'metric-state';
   }
 
@@ -689,10 +1032,10 @@ function renderGraduation(snap) {
     $(`#grad${prefix}Progress`).style.width = `${pct}%`;
     const badge = $(`#grad${prefix}Badge`);
     if (val >= min) {
-      badge.textContent = '已達標';
+      badge.textContent = t('grad_met', '已達標');
       badge.className = 'metric-state ok';
     } else {
-      badge.textContent = `尚缺 ${min - val} 次`;
+      badge.textContent = t('grad_need_times', '尚缺 {n} 次').replace('{n}', min - val);
       badge.className = 'metric-state';
     }
   };
@@ -705,11 +1048,11 @@ function renderGraduation(snap) {
   // 整體門檻狀態徽章
   const overallBadge = $('#gradOverallStatus');
   if (stats.isAllMet) {
-    overallBadge.textContent = '通識講座畢業門檻：已達成';
+    overallBadge.textContent = t('grad_fulfilled', '通識講座畢業門檻：已達成');
     overallBadge.className = 'grad-status-badge ok';
   } else {
-    const missingItems = stats.deficiencies.map((d) => `${d.name}缺${d.need}`).join('、');
-    const msg = stats.isTotalMet ? `總數達標，但${missingItems}` : `未達標（${missingItems || '總場次不足'}）`;
+    const missingItems = stats.deficiencies.map((d) => `${t('lit_' + d.id, d.name)}${S.lang === 'en' ? ' missing ' : '缺'}${d.need}`).join('、');
+    const msg = stats.isTotalMet ? (S.lang === 'en' ? `Total met, but: ${missingItems}` : `總數達標，但${missingItems}`) : (S.lang === 'en' ? `Incomplete (${missingItems || 'insufficient total'})` : `未達標（${missingItems || '總場次不足'}）`);
     overallBadge.textContent = msg;
     overallBadge.className = 'grad-status-badge pending';
   }
@@ -954,7 +1297,7 @@ function renderTargets(snap) {
       const badge = `<span class="badge-status k-${esc(target.kind)}">${esc(target.statusText)}</span>`;
       const openHint =
         target.openAt && target.openAt > Date.now() && target.kind === 'muted'
-          ? `<div class="cell-sub">${esc(countdown(target.openAt))}後開放報名</div>`
+          ? `<div class="cell-sub">${esc(countdown(target.openAt))}${S.lang === 'en' ? ' until registration opens' : '後開放報名'}</div>`
           : '';
       const note = target.note ? `<div class="cell-sub">${esc(target.note)}</div>` : '';
 
@@ -963,11 +1306,11 @@ function renderTargets(snap) {
 
       const actions = [];
       if (target.status !== 'registered') {
-        actions.push(`<button class="btn sm primary" data-action="register-target" data-eid="${esc(target.eid01)}" title="立即嘗試送出報名">手動報名</button>`);
+        actions.push(`<button class="btn sm primary" data-action="register-target" data-eid="${esc(target.eid01)}" title="${t('btn_manual_register', '手動報名')}">${t('btn_manual_register', '手動報名')}</button>`);
       } else {
-        actions.push(`<button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(target.reseid || '')}" data-eid01="${esc(target.eid01 || '')}" data-eid="${esc(target.eid || '')}" title="取消報名（退選）">取消報名</button>`);
+        actions.push(`<button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(target.reseid || '')}" data-eid01="${esc(target.eid01 || '')}" data-eid="${esc(target.eid || '')}" title="${t('btn_cancel', '取消報名')}">${t('btn_cancel', '取消報名')}</button>`);
       }
-      actions.push(`<button class="btn sm ghost" data-action="remove-target" data-eid="${esc(target.eid01)}">移除</button>`);
+      actions.push(`<button class="btn sm ghost" data-action="remove-target" data-eid="${esc(target.eid01)}">${t('btn_remove', '移除')}</button>`);
 
       return `
         <tr>
@@ -1075,24 +1418,24 @@ function renderLectures(snap) {
       const canapp = String(row.canapp || '');
       const kind =
         canapp === 'Y' ? 'ok' : canapp === 'F' ? 'warn' : canapp === 'N1' ? 'muted' : canapp === 'N2' ? 'dead' : canapp === 'C' || canapp === 'D' ? 'manual' : 'unknown';
-      const label = STATUS_LABEL[canapp] || canapp || '—';
+      const label = getStatusLabel(canapp);
       const actions = [];
       const isWatched = watched.has(row.eid01);
       const isRegistered = Number(row.cnt_10 || 0) > 0;
       const conflict = !isRegistered && checkScheduleConflict(row, S.calEvents || S.snap?.calendar || []);
       const conflictHtml = conflict
-        ? `<span class="badge-status k-conflict" title="與已報名【${esc(conflict.withTitle)}】時間重疊">時段衝突</span>`
+        ? `<span class="badge-status k-conflict" title="${t('conflict_title', '與已報名【{title}】時間重疊').replace('{title}', conflict.withTitle)}">${t('conflict_warn', '時段衝突')}</span>`
         : '';
 
       if (isRegistered) {
-        actions.push(`<span class="tag live">已報名</span>`);
-        actions.push(`<button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(row.reseid || '')}" data-eid01="${esc(row.eid01 || '')}" data-eid="${esc(row.eid || '')}" title="取消報名（退選）">取消報名</button>`);
+        actions.push(`<span class="tag live">${t('btn_registered', '已報名')}</span>`);
+        actions.push(`<button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(row.reseid || '')}" data-eid01="${esc(row.eid01 || '')}" data-eid="${esc(row.eid || '')}" title="${t('btn_cancel', '取消報名')}">${t('btn_cancel', '取消報名')}</button>`);
       } else {
-        actions.push(`<button class="btn sm primary" data-action="quick-register" data-eid="${esc(row.eid01)}" title="立即嘗試送出報名">手動報名</button>`);
+        actions.push(`<button class="btn sm primary" data-action="quick-register" data-eid="${esc(row.eid01)}" title="${t('btn_manual_register', '手動報名')}">${t('btn_manual_register', '手動報名')}</button>`);
         if (isWatched) {
-          actions.push(`<span class="cell-sub">已在監控</span>`);
+          actions.push(`<span class="cell-sub">${t('btn_in_queue', '已在監控')}</span>`);
         } else {
-          const addLabel = canapp === 'F' ? '＋候補搶票' : '＋加入目標';
+          const addLabel = canapp === 'F' ? t('btn_waitlist_target', '＋候補搶票') : t('btn_add_target', '＋加入目標');
           actions.push(`<button class="btn sm ghost" data-action="add-target" data-eid="${esc(row.eid01)}">${addLabel}</button>`);
         }
       }
@@ -1471,6 +1814,12 @@ document.addEventListener('click', (event) => {
       try { navigator.vibrate(10); } catch {}
     }
     switchView(view);
+    return;
+  }
+
+  if (action === 'toggle-lang') {
+    applyLanguage(S.lang === 'zh' ? 'en' : 'zh');
+    toast(S.lang === 'en' ? 'Switched to English' : '已切換為繁體中文', 'ok');
     return;
   }
 
@@ -2006,6 +2355,13 @@ async function boot() {
   window.addEventListener('resize', () => {
     updateGlider(document.body.dataset.view, false);
   });
+
+  $('#langSelect')?.addEventListener('change', (e) => {
+    applyLanguage(e.target.value);
+    toast(S.lang === 'en' ? 'Switched to English' : '已切換為繁體中文', 'ok');
+  });
+
+  applyLanguage(S.lang);
 
   const hash = window.location.hash.replace('#', '');
   const saved = localStorage.getItem('au_lecture_view');

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../backend/grab_engine.dart';
 import '../backend/calendar_helper.dart';
 import '../config/constants.dart';
+import '../config/i18n.dart';
 
 class LecturesScreen extends StatefulWidget {
   final GrabEngine engine;
@@ -15,10 +16,17 @@ class LecturesScreen extends StatefulWidget {
 
 class _LecturesScreenState extends State<LecturesScreen> {
   String _searchQuery = '';
-  String _selectedLitFilter = '全部';
+  String _selectedLitFilter = 'all';
   bool _isActionInProgress = false;
 
-  final List<String> _literacyFilters = ['全部', '健康力', '關懷力', '創新力', '卓越力', '僅看可報名'];
+  final List<String> _filterKeys = [
+    'all',
+    'health',
+    'care',
+    'innovation',
+    'excellence',
+    'open_only',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -52,10 +60,16 @@ class _LecturesScreenState extends State<LecturesScreen> {
               if (!match) return false;
             }
 
-            if (_selectedLitFilter == '僅看可報名') {
+            if (_selectedLitFilter == 'open_only') {
               return canapp == 'Y' && !isRegistered;
-            } else if (_selectedLitFilter != '全部') {
-              return lits.contains(_selectedLitFilter);
+            } else if (_selectedLitFilter == 'health') {
+              return lits.contains('健康力');
+            } else if (_selectedLitFilter == 'care') {
+              return lits.contains('關懷力');
+            } else if (_selectedLitFilter == 'innovation') {
+              return lits.contains('創新力');
+            } else if (_selectedLitFilter == 'excellence') {
+              return lits.contains('卓越力');
             }
             return true;
           }).toList();
@@ -67,7 +81,7 @@ class _LecturesScreenState extends State<LecturesScreen> {
               CupertinoSliverNavigationBar(
                 backgroundColor: AppColors.glassBar,
                 border: const Border(bottom: BorderSide(color: AppColors.hairline, width: 0.5)),
-                largeTitle: const Text('講座情報', style: TextStyle(color: AppColors.textPrimary)),
+                largeTitle: Text(I18n.t('lectures_title'), style: const TextStyle(color: AppColors.textPrimary)),
                 trailing: CupertinoButton(
                   padding: EdgeInsets.zero,
                   child: const Icon(CupertinoIcons.arrow_clockwise, size: 20),
@@ -76,7 +90,7 @@ class _LecturesScreenState extends State<LecturesScreen> {
                     try {
                       await widget.engine.refreshLectures();
                     } catch (e) {
-                      _showToast('更新失敗：$e');
+                      _showToast(e.toString());
                     }
                   },
                 ),
@@ -89,7 +103,7 @@ class _LecturesScreenState extends State<LecturesScreen> {
                   try {
                     await widget.engine.refreshLectures();
                   } catch (e) {
-                    _showToast('載入異常：$e');
+                    _showToast(e.toString());
                   }
                 },
               ),
@@ -108,7 +122,7 @@ class _LecturesScreenState extends State<LecturesScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   child: CupertinoSearchTextField(
                     style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-                    placeholder: '搜尋講座名稱、地點、講者或素養',
+                    placeholder: I18n.t('search_hint'),
                     placeholderStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
                     onChanged: (val) {
                       setState(() {
@@ -119,38 +133,42 @@ class _LecturesScreenState extends State<LecturesScreen> {
                 ),
               ),
 
-              // 分類過濾晶片橫列（帶 iOS 平滑過渡動效與觸覺震動）
+              // 橫向素養滾動過濾晶片列 (Filter Chips)
               SliverToBoxAdapter(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: _literacyFilters.map((filter) {
-                      final isSelected = _selectedLitFilter == filter;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: GestureDetector(
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            setState(() {
-                              _selectedLitFilter = filter;
-                            });
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.easeInOutCubic,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                            decoration: BoxDecoration(
-                              color: isSelected ? CupertinoColors.white : AppColors.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isSelected ? CupertinoColors.white : AppColors.surfaceBorder,
-                                width: 0.8,
-                              ),
+                child: SizedBox(
+                  height: 44,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: _filterKeys.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, idx) {
+                      final key = _filterKeys[idx];
+                      final isSelected = _selectedLitFilter == key;
+                      final label = I18n.t('filter_$key');
+
+                      return GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            _selectedLitFilter = key;
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isSelected ? CupertinoColors.white : AppColors.surfaceElevated,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected ? CupertinoColors.white : AppColors.hairline,
+                              width: 0.6,
                             ),
+                          ),
+                          child: Center(
                             child: Text(
-                              filter,
+                              label,
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
@@ -160,12 +178,12 @@ class _LecturesScreenState extends State<LecturesScreen> {
                           ),
                         ),
                       );
-                    }).toList(),
+                    },
                   ),
                 ),
               ),
 
-              // 講座列表展示
+              // 講座卡片列表
               if (filteredLectures.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
@@ -173,14 +191,13 @@ class _LecturesScreenState extends State<LecturesScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(32),
                       child: Column(
-                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(CupertinoIcons.doc_text_search, size: 48, color: AppColors.textMuted),
+                          const Icon(CupertinoIcons.search, size: 44, color: AppColors.textMuted),
                           const SizedBox(height: 12),
                           Text(
-                            allLectures.isEmpty ? '尚無講座資料，請下拉重新整理或先登入' : '查無符合條件的講座',
-                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
-                            textAlign: TextAlign.center,
+                            I18n.t('empty_lectures'),
+                            style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
                           ),
                         ],
                       ),
@@ -189,13 +206,10 @@ class _LecturesScreenState extends State<LecturesScreen> {
                 )
               else
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final item = filteredLectures[index];
-                        return _buildLectureCard(item);
-                      },
+                      (context, idx) => _buildLectureCard(filteredLectures[idx]),
                       childCount: filteredLectures.length,
                     ),
                   ),
@@ -207,13 +221,13 @@ class _LecturesScreenState extends State<LecturesScreen> {
     );
   }
 
-  Widget _buildGraduationHeaderCard(Map<String, dynamic> p) {
-    final isQualified = p['qualified'] == true;
-    final total = p['total'] as Map<String, dynamic>;
-    final health = p['health'] as Map<String, dynamic>;
-    final care = p['care'] as Map<String, dynamic>;
-    final innov = p['innovation'] as Map<String, dynamic>;
-    final excell = p['excellence'] as Map<String, dynamic>;
+  Widget _buildGraduationHeaderCard(Map<String, dynamic> progress) {
+    final total = progress['total'] as Map<String, dynamic>;
+    final health = progress['health'] as Map<String, dynamic>;
+    final care = progress['care'] as Map<String, dynamic>;
+    final innov = progress['innovation'] as Map<String, dynamic>;
+    final excell = progress['excellence'] as Map<String, dynamic>;
+    final isQualified = progress['isQualified'] as bool;
 
     return Container(
       decoration: BoxDecoration(
@@ -221,21 +235,25 @@ class _LecturesScreenState extends State<LecturesScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.surfaceBorder, width: 0.8),
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                '四大素養畢業門檻',
-                style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.bold),
+              Text(
+                I18n.t('grad_progress_title'),
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: isQualified ? AppColors.accentGreen.withValues(alpha: 0.18) : AppColors.surfaceElevated,
+                  color: isQualified ? AppColors.accentGreen.withValues(alpha: 0.15) : AppColors.surfaceElevated,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isQualified ? AppColors.accentGreen : AppColors.hairline,
@@ -243,7 +261,7 @@ class _LecturesScreenState extends State<LecturesScreen> {
                   ),
                 ),
                 child: Text(
-                  isQualified ? '已達標' : '總計 ${total['current']}/${total['target']} 場',
+                  isQualified ? I18n.t('grad_completed') : '${total['current']}/${total['target']}',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -256,13 +274,13 @@ class _LecturesScreenState extends State<LecturesScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              _buildMetricChip('健康力', health['current'], health['target'], AppColors.accentGreen),
+              _buildMetricChip(I18n.t('filter_health'), health['current'], health['target'], AppColors.accentGreen),
               const SizedBox(width: 8),
-              _buildMetricChip('關懷力', care['current'], care['target'], AppColors.accentBlue),
+              _buildMetricChip(I18n.t('filter_care'), care['current'], care['target'], AppColors.accentBlue),
               const SizedBox(width: 8),
-              _buildMetricChip('創新力', innov['current'], innov['target'], AppColors.accentTeal),
+              _buildMetricChip(I18n.t('filter_innovation'), innov['current'], innov['target'], AppColors.accentTeal),
               const SizedBox(width: 8),
-              _buildMetricChip('卓越力', excell['current'], excell['target'], AppColors.accentPurple),
+              _buildMetricChip(I18n.t('filter_excellence'), excell['current'], excell['target'], AppColors.accentPurple),
             ],
           ),
         ],
@@ -318,19 +336,19 @@ class _LecturesScreenState extends State<LecturesScreen> {
     String statusText;
     if (isRegistered) {
       statusColor = AppColors.accentGreen;
-      statusText = '已完成報名';
+      statusText = I18n.t('btn_registered');
     } else if (canapp == 'Y') {
       statusColor = AppColors.accentBlue;
-      statusText = '開放報名中';
+      statusText = I18n.t('st_open');
     } else if (canapp == 'F') {
       statusColor = AppColors.accentOrange;
-      statusText = '已額滿';
+      statusText = I18n.t('st_waitlist');
     } else if (canapp == 'N1') {
       statusColor = AppColors.textMuted;
-      statusText = '尚未開放';
+      statusText = I18n.t('st_upcoming');
     } else {
       statusColor = AppColors.accentRed;
-      statusText = '已截止';
+      statusText = I18n.t('st_closed');
     }
 
     return Container(
@@ -375,7 +393,7 @@ class _LecturesScreenState extends State<LecturesScreen> {
                       border: Border.all(color: AppColors.hairline, width: 0.5),
                     ),
                     child: Text(
-                      '名額 $capacity',
+                      '${I18n.t('capacity')} $capacity',
                       style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
                     ),
                   ),
@@ -402,7 +420,7 @@ class _LecturesScreenState extends State<LecturesScreen> {
                       color: AppColors.accentOrange.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Text('排程監控中', style: TextStyle(fontSize: 10, color: AppColors.accentOrange)),
+                    child: Text(I18n.t('btn_in_queue'), style: const TextStyle(fontSize: 10, color: AppColors.accentOrange)),
                   ),
               ],
             ),
@@ -461,20 +479,20 @@ class _LecturesScreenState extends State<LecturesScreen> {
                   // 加入排程按鈕
                   CupertinoButton(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    color: isTarget ? AppColors.surfaceElevated : AppColors.surfaceElevated,
+                    color: AppColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(8),
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       if (isTarget) {
                         widget.engine.removeTarget(eid01);
-                        _showToast('已從排程移除');
+                        _showToast(I18n.t('btn_remove'));
                       } else {
                         widget.engine.addTargets([row]);
-                        _showToast('已加入搶課排程');
+                        _showToast(I18n.t('target_added_title'));
                       }
                     },
                     child: Text(
-                      isTarget ? '移除排程' : '加入排程',
+                      isTarget ? I18n.t('btn_remove') : I18n.t('btn_add_target'),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -484,7 +502,7 @@ class _LecturesScreenState extends State<LecturesScreen> {
                   ),
                   const SizedBox(width: 8),
 
-                  // 一鍵秒報按鈕
+                  // 手動快報按鈕
                   CupertinoButton(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     color: CupertinoColors.white,
@@ -499,14 +517,14 @@ class _LecturesScreenState extends State<LecturesScreen> {
                               _showToast(msg);
                               await widget.engine.refreshLectures();
                             } catch (e) {
-                              _showToast('報名失敗：$e');
+                              _showToast(e.toString());
                             } finally {
                               if (mounted) setState(() => _isActionInProgress = false);
                             }
                           },
-                    child: const Text(
-                      '一鍵秒報',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: CupertinoColors.black),
+                    child: Text(
+                      I18n.t('btn_quick_register'),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: CupertinoColors.black),
                     ),
                   ),
                 ],
@@ -540,36 +558,36 @@ class _LecturesScreenState extends State<LecturesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('狀態：$statusText', style: TextStyle(color: statusColor, fontWeight: FontWeight.bold)),
+                Text(statusText, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold)),
                 if (capacity != '-') ...[
                   const SizedBox(height: 4),
-                  Text('已選名額：$capacity'),
+                  Text('${I18n.t('capacity')}: $capacity'),
                 ],
                 const SizedBox(height: 4),
-                Text('時間：$dateStr $stime ~ $etime'),
+                Text('$dateStr $stime ~ $etime'),
                 const SizedBox(height: 4),
-                Text('地點：${place.isNotEmpty ? place : "校方未載明"}'),
+                Text('${I18n.t('venue')}: ${place.isNotEmpty ? place : "-"}'),
                 if (lits.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  Text('素養：${lits.join("、")}'),
+                  Text(lits.join("、")),
                 ],
                 const SizedBox(height: 4),
-                Text('代碼：${row['eid01'] ?? ""}'),
+                Text('${I18n.t('code')}: ${row['eid01'] ?? ""}'),
               ],
             ),
           ),
           actions: [
             CupertinoActionSheetAction(
-              child: const Text('加入 / 移除搶課排程'),
+              child: Text(I18n.t('btn_add_target')),
               onPressed: () {
                 final eid01 = row['eid01']?.toString() ?? '';
                 final isTarget = widget.engine.targets.any((t) => t['eid01']?.toString() == eid01);
                 if (isTarget) {
                   widget.engine.removeTarget(eid01);
-                  _showToast('已從排程移除');
+                  _showToast(I18n.t('btn_remove'));
                 } else {
                   widget.engine.addTargets([row]);
-                  _showToast('已加入搶課排程');
+                  _showToast(I18n.t('target_added_title'));
                 }
                 Navigator.pop(context);
               },
@@ -577,7 +595,7 @@ class _LecturesScreenState extends State<LecturesScreen> {
           ],
           cancelButton: CupertinoActionSheetAction(
             isDefaultAction: true,
-            child: const Text('關閉'),
+            child: Text(I18n.t('btn_cancel')),
             onPressed: () => Navigator.pop(context),
           ),
         );
@@ -592,7 +610,7 @@ class _LecturesScreenState extends State<LecturesScreen> {
         content: Text(msg),
         actions: [
           CupertinoDialogAction(
-            child: const Text('確定'),
+            child: Text(I18n.t('btn_ok')),
             onPressed: () => Navigator.pop(context),
           ),
         ],

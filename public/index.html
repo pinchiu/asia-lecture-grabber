@@ -30,8 +30,8 @@
         <span class="logo-mark" aria-hidden="true">AU</span>
         <div class="brand-text">
           <div class="brand-title-wrap">
-            <h1>亞洲大學講座助手</h1>
-            <span class="badge-core">四力門檻</span>
+            <h1 data-i18n="brand_title">亞洲大學講座助手</h1>
+            <span class="badge-core" data-i18n="brand_sub_badge">四力門檻</span>
           </div>
           <p class="sub" id="serverInfo">本機服務 · 連線中…</p>
         </div>
@@ -41,21 +41,21 @@
       <nav class="nav-segments" id="navSegments" role="tablist" aria-label="系統功能切換">
         <div class="nav-segment-glider" id="navGlider" aria-hidden="true"></div>
         <button class="nav-segment-btn active" role="tab" aria-selected="true" data-action="switch-view" data-view="lectures" title="按鍵盤 1 快速切換">
-          <span class="seg-title">講座情報</span>
+          <span class="seg-title" data-i18n="tab_lectures">講座情報</span>
           <span class="kbd-sub">1</span>
         </button>
         <button class="nav-segment-btn" role="tab" aria-selected="false" data-action="switch-view" data-view="targets" title="按鍵盤 2 快速切換">
-          <span class="seg-title">搶課排程</span>
+          <span class="seg-title" data-i18n="tab_targets">搶課排程</span>
           <span class="seg-badge" id="navTargetBadge" hidden>0</span>
           <span class="kbd-sub">2</span>
         </button>
         <button class="nav-segment-btn" role="tab" aria-selected="false" data-action="switch-view" data-view="calendar" title="按鍵盤 3 快速切換">
-          <span class="seg-title">個人行程</span>
+          <span class="seg-title" data-i18n="tab_calendar">個人行程</span>
           <span class="seg-badge" id="navCalBadge" hidden>0</span>
           <span class="kbd-sub">3</span>
         </button>
         <button class="nav-segment-btn" role="tab" aria-selected="false" data-action="switch-view" data-view="settings" title="按鍵盤 4 快速切換">
-          <span class="seg-title">系統設定</span>
+          <span class="seg-title" data-i18n="tab_settings">系統設定</span>
           <span class="kbd-sub">4</span>
         </button>
       </nav>
@@ -67,9 +67,10 @@
           <span class="pill" id="pillSchedule">無排程</span>
         </div>
         <div class="head-actions">
-          <button class="btn ghost sm btn-pwa" id="pwaInstallBtn" data-action="install-pwa" hidden>安裝 App</button>
-          <button class="btn primary" id="btnStart" data-action="start" disabled>開始搶課</button>
-          <button class="btn ghost" id="btnStop" data-action="stop" disabled>停止</button>
+          <button class="btn ghost sm btn-lang" id="btnLang" data-action="toggle-lang" title="切換介面語言 / Switch Language">EN</button>
+          <button class="btn ghost sm btn-pwa" id="pwaInstallBtn" data-action="install-pwa" data-i18n="btn_pwa" hidden>安裝 App</button>
+          <button class="btn primary" id="btnStart" data-action="start" data-i18n="btn_start" disabled>開始搶課</button>
+          <button class="btn ghost" id="btnStop" data-action="stop" data-i18n="btn_stop" disabled>停止</button>
         </div>
       </div>
     </div>
@@ -86,18 +87,18 @@
         <div class="card-head grad-head">
           <div class="grad-head-text">
             <div class="grad-title-row">
-              <span class="tag-label">畢業指標</span>
-              <h2>通識講座畢業門檻進度</h2>
+              <span class="tag-label" data-i18n="grad_tag">畢業指標</span>
+              <h2 data-i18n="grad_title">通識講座畢業門檻進度</h2>
             </div>
-            <p class="grad-desc">
+            <p class="grad-desc" data-i18n="grad_desc">
               在學期間必須累積至少 <b>8 場次</b>，且四大基本素養各至少符合 2 次：健康力 ≥ 2、關懷力 ≥ 2、創新力 ≥ 2、卓越力 ≥ 2。
             </p>
           </div>
           <div class="grad-head-actions">
             <span class="grad-status-badge" id="gradOverallStatus">計算中…</span>
-            <button class="btn primary sm" data-action="auto-fill-deficiency">智慧推薦補齊缺額 ›</button>
-            <button class="btn ghost sm" data-action="toggle-grad-history">歷年累計補登</button>
-            <button class="btn ghost sm" data-action="switch-view" data-view="calendar">查看個人行程 ›</button>
+            <button class="btn primary sm" data-action="auto-fill-deficiency" data-i18n="btn_recommend">智慧推薦補齊缺額 ›</button>
+            <button class="btn ghost sm" data-action="toggle-grad-history" data-i18n="btn_past_records">歷年累計補登</button>
+            <button class="btn ghost sm" data-action="switch-view" data-view="calendar" data-i18n="btn_view_calendar">查看個人行程 ›</button>
           </div>
         </div>
 
@@ -270,59 +271,59 @@
       <section class="card" id="cardLectures">
         <div class="card-head">
           <div class="head-title-wrap">
-            <h2>講座情報大廳 <span class="count" id="lectureCount">0</span></h2>
+            <h2><span data-i18n="hall_title">講座情報大廳</span> <span class="count" id="lectureCount">0</span></h2>
           </div>
           <div class="tools">
             <div class="search-wrap">
-              <input id="searchBox" type="search" placeholder="搜尋課程 / 講者 / 地點" autocomplete="off">
+              <input id="searchBox" type="search" placeholder="搜尋課程 / 講者 / 地點" data-i18n-placeholder="search_placeholder" autocomplete="off">
               <kbd class="kbd-hint">/</kbd>
             </div>
             <select id="literacyFilter" aria-label="依基本素養篩選">
-              <option value="all">全部基本素養</option>
-              <option value="健康力">健康力 (Health)</option>
-              <option value="關懷力">關懷力 (Care)</option>
-              <option value="創新力">創新力 (Innovation)</option>
-              <option value="卓越力">卓越力 (Excellence)</option>
-              <option value="none">一般（無素養標示）</option>
+              <option value="all" data-i18n="lit_filter_all">全部基本素養</option>
+              <option value="健康力" data-i18n="lit_health">健康力 (Health)</option>
+              <option value="關懷力" data-i18n="lit_care">關懷力 (Care)</option>
+              <option value="創新力" data-i18n="lit_innovation">創新力 (Innovation)</option>
+              <option value="卓越力" data-i18n="lit_excellence">卓越力 (Excellence)</option>
+              <option value="none" data-i18n="lit_filter_none">一般（無素養標示）</option>
             </select>
             <select id="statusFilter" aria-label="依狀態篩選">
-              <option value="all">全部報名狀態</option>
-              <option value="Y">可報名（目前能選的課程）</option>
-              <option value="N1">未開放</option>
-              <option value="N2">已截止</option>
-              <option value="F">已額滿</option>
-              <option value="other">現場 / 其他方式</option>
+              <option value="all" data-i18n="status_filter_all">全部報名狀態</option>
+              <option value="Y" data-i18n="status_filter_y">可報名（目前能選的課程）</option>
+              <option value="N1" data-i18n="status_filter_n1">未開放</option>
+              <option value="N2" data-i18n="status_filter_n2">已截止</option>
+              <option value="F" data-i18n="status_filter_f">已額滿</option>
+              <option value="other" data-i18n="status_filter_other">現場 / 其他方式</option>
             </select>
-            <label class="check inline"><input type="checkbox" id="showFullToggle"> 顯示已額滿</label>
-            <label class="check inline"><input type="checkbox" id="missingOnlyToggle"> 只看我缺少的素養</label>
-            <button class="btn ghost sm" data-action="refresh" title="重新整理清單 (快捷鍵 R)">重新整理</button>
+            <label class="check inline"><input type="checkbox" id="showFullToggle"> <span data-i18n="show_full">顯示已額滿</span></label>
+            <label class="check inline"><input type="checkbox" id="missingOnlyToggle"> <span data-i18n="missing_only">只看我缺少的素養</span></label>
+            <button class="btn ghost sm" data-action="refresh" data-i18n="btn_refresh" title="重新整理清單 (快捷鍵 R)">重新整理</button>
           </div>
         </div>
 
         <!-- 手動快報與手動取消報名工具列 -->
         <div class="manual-bar">
           <div class="manual-input-wrap">
-            <span class="manual-tag">快捷操作</span>
-            <input type="text" id="manualCourseCode" placeholder="直接輸入課程代號（例如 1151074）" autocomplete="off">
-            <button class="btn primary sm" data-action="manual-code-register">手動報名</button>
-            <button class="btn ghost sm danger-hover" data-action="manual-code-cancel">取消報名</button>
+            <span class="manual-tag" data-i18n="manual_tag">快捷操作</span>
+            <input type="text" id="manualCourseCode" placeholder="直接輸入課程代號（例如 1151074）" data-i18n-placeholder="manual_code_placeholder" autocomplete="off">
+            <button class="btn primary sm" data-action="manual-code-register" data-i18n="btn_manual_register">手動報名</button>
+            <button class="btn ghost sm danger-hover" data-action="manual-code-cancel" data-i18n="btn_manual_cancel">取消報名</button>
           </div>
-          <span class="manual-hint">純本機直呼校方 API，自動帶入身份驗證，後端不查圖形驗證碼，全程不需 AI。</span>
+          <span class="manual-hint" data-i18n="manual_hint">純本機直呼校方 API，自動帶入身份驗證，後端不查圖形驗證碼，全程不需 AI。</span>
         </div>
 
         <div class="table-wrap scroll">
           <table class="grid" id="lectureTable">
             <thead>
               <tr>
-                <th style="width: 85px;">狀態</th>
-                <th style="min-width: 220px;">課程名稱 / 主辦單位</th>
-                <th style="width: 140px;">基本素養 (四力)</th>
-                <th style="width: 110px;">演講者 / 主持人</th>
-                <th style="width: 140px;">活動時間</th>
-                <th style="width: 100px;">活動地點</th>
-                <th style="width: 100px;">報名人數</th>
-                <th style="width: 130px;">報名期間</th>
-                <th class="right" style="width: 160px;">操作</th>
+                <th style="width: 85px;" data-i18n="th_status">狀態</th>
+                <th style="min-width: 220px;" data-i18n="th_title">課程名稱 / 主辦單位</th>
+                <th style="width: 140px;" data-i18n="th_lit">基本素養 (四力)</th>
+                <th style="width: 110px;" data-i18n="th_speaker">演講者 / 主持人</th>
+                <th style="width: 140px;" data-i18n="th_time">活動時間</th>
+                <th style="width: 100px;" data-i18n="th_place">活動地點</th>
+                <th style="width: 100px;" data-i18n="th_capacity">報名人數</th>
+                <th style="width: 130px;" data-i18n="th_reg_period">報名期間</th>
+                <th class="right" style="width: 160px;" data-i18n="th_action">操作</th>
               </tr>
             </thead>
             <tbody id="lectureBody"></tbody>
@@ -403,23 +404,23 @@
       <!-- 我的搶課目標 -->
       <section class="card" id="cardTargets">
         <div class="card-head">
-          <h2>我的搶課目標 <span class="count" id="targetCount">0</span></h2>
+          <h2><span data-i18n="targets_title">我的搶課目標</span> <span class="count" id="targetCount">0</span></h2>
           <div class="tools">
-            <button class="btn ghost sm" data-action="switch-view" data-view="lectures">＋ 前往大廳挑選</button>
-            <button class="btn ghost sm" data-action="clear-finished">清除已完成</button>
+            <button class="btn ghost sm" data-action="switch-view" data-view="lectures" data-i18n="btn_go_hall">＋ 前往大廳挑選</button>
+            <button class="btn ghost sm" data-action="clear-finished" data-i18n="btn_clear_finished">清除已完成</button>
           </div>
         </div>
         <div class="table-wrap">
           <table class="grid" id="targetTable">
             <thead>
               <tr>
-                <th style="min-width: 220px;">課程名稱</th>
-                <th style="width: 140px;">基本素養</th>
-                <th style="width: 150px;">活動時間</th>
-                <th style="width: 110px;">活動地點</th>
-                <th style="width: 130px;">即時監控狀態</th>
-                <th style="width: 100px;">名額</th>
-                <th class="right" style="width: 180px;">操作</th>
+                <th style="min-width: 220px;" data-i18n="th_title">課程名稱</th>
+                <th style="width: 140px;" data-i18n="th_lit">基本素養</th>
+                <th style="width: 150px;" data-i18n="th_time">活動時間</th>
+                <th style="width: 110px;" data-i18n="th_place">活動地點</th>
+                <th style="width: 130px;" data-i18n="th_status">即時監控狀態</th>
+                <th style="width: 100px;" data-i18n="th_capacity">名額</th>
+                <th class="right" style="width: 180px;" data-i18n="th_action">操作</th>
               </tr>
             </thead>
             <tbody id="targetBody"></tbody>
@@ -431,11 +432,11 @@
       <!-- 排程自動搶課 -->
       <section class="card" id="cardSchedule">
         <div class="card-head">
-          <h2>排程定時自動啟動</h2>
+          <h2 data-i18n="sched_title">排程定時自動啟動</h2>
           <span class="tag" id="scheduleNext">—</span>
         </div>
         <div class="form">
-          <label class="check"><input type="checkbox" id="scheduleEnabled"> 啟用排程功能</label>
+          <label class="check"><input type="checkbox" id="scheduleEnabled"> <span data-i18n="sched_enable">啟用排程功能</span></label>
           <div class="sched-list" id="scheduleList"></div>
           <p class="hint" id="scheduleHint">尚無排程；新增後時間到會自動喚起監控。</p>
           <hr class="divider">
@@ -497,16 +498,16 @@
       <!-- 我的行事曆 -->
       <section class="card" id="cardCalendar">
         <div class="card-head">
-          <h2>我的行事曆與已報名行程 <span class="count" id="calendarCount">0</span></h2>
+          <h2><span data-i18n="cal_title">我的行事曆與已報名行程</span> <span class="count" id="calendarCount">0</span></h2>
           <div class="tools">
-            <button class="btn ghost sm" data-action="export-ics" title="匯出 .ics 行事曆檔案，可直接同步至 Apple 日曆或 Google 日曆">匯出行事曆 (.ics)</button>
-            <button class="btn ghost sm" data-action="copy-ics-url" title="複製日曆訂閱網址，可直接加入 Apple Calendar 或 Google 日曆自動即時同步">訂閱網址</button>
-            <button class="btn ghost sm" data-action="copy-schedule" title="複製課表文字，方便貼到備忘錄或通訊軟體">複製課表</button>
+            <button class="btn ghost sm" data-action="export-ics" data-i18n="btn_export_ics" title="匯出 .ics 行事曆檔案，可直接同步至 Apple 日曆或 Google 日曆">匯出行事曆 (.ics)</button>
+            <button class="btn ghost sm" data-action="copy-ics-url" data-i18n="btn_copy_ics_url" title="複製日曆訂閱網址，可直接加入 Apple Calendar 或 Google 日曆自動即時同步">訂閱網址</button>
+            <button class="btn ghost sm" data-action="copy-schedule" data-i18n="btn_copy_schedule" title="複製課表文字，方便貼到備忘錄或通訊軟體">複製課表</button>
             <button class="btn ghost sm icon" data-action="cal-prev" aria-label="上一個月">‹</button>
             <span class="cal-month" id="calMonth">—</span>
             <button class="btn ghost sm icon" data-action="cal-next" aria-label="下一個月">›</button>
-            <button class="btn ghost sm" data-action="cal-today">今天</button>
-            <button class="btn ghost sm" data-action="cal-refresh">重新整理</button>
+            <button class="btn ghost sm" data-action="cal-today" data-i18n="btn_today">今天</button>
+            <button class="btn ghost sm" data-action="cal-refresh" data-i18n="btn_refresh">重新整理</button>
           </div>
         </div>
         <div class="cal-wrap">
@@ -516,8 +517,8 @@
         
         <div class="upcoming-wrap">
           <div class="upcoming-head">
-            <h3>近期已報名場次</h3>
-            <span class="hint">可直接在此點擊取消報名（退選）</span>
+            <h3 data-i18n="upcoming_title">近期已報名場次</h3>
+            <span class="hint" data-i18n="upcoming_hint">可直接在此點擊取消報名（退選）</span>
           </div>
           <ul class="cal-upcoming" id="calUpcoming"></ul>
         </div>
@@ -529,6 +530,21 @@
     <div class="view-panel" data-view="settings" hidden>
       
       <div class="settings-grid">
+        <!-- 00 介面語言 -->
+        <section class="card" id="cardLang">
+          <div class="card-head">
+            <h2><span class="idx">00</span> <span data-i18n="settings_lang_title">系統語言偏好</span></h2>
+          </div>
+          <div class="form">
+            <label><span data-i18n="settings_lang_label">選擇顯示語言 (Interface Language)</span>
+              <select id="langSelect" data-action="change-lang">
+                <option value="zh">繁體中文 (Traditional Chinese)</option>
+                <option value="en">English (US)</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
         <!-- 01 帳號與身份 -->
         <section class="card" id="cardAccount">
           <div class="card-head">
@@ -625,7 +641,7 @@
           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
         </svg>
       </span>
-      <span class="mob-label">講座情報</span>
+      <span class="mob-label" data-i18n="tab_lectures">講座情報</span>
     </button>
     <button class="mob-tab" data-action="switch-view" data-view="targets" aria-label="搶課排程">
       <span class="mob-icon-wrap">
@@ -635,7 +651,7 @@
         </svg>
         <span class="mob-badge-dot" id="mobTargetBadge" hidden>0</span>
       </span>
-      <span class="mob-label">搶課排程</span>
+      <span class="mob-label" data-i18n="tab_targets">搶課排程</span>
     </button>
     <button class="mob-tab" data-action="switch-view" data-view="calendar" aria-label="個人行程">
       <span class="mob-icon-wrap">
@@ -647,7 +663,7 @@
         </svg>
         <span class="mob-badge-dot" id="mobCalBadge" hidden>0</span>
       </span>
-      <span class="mob-label">個人行程</span>
+      <span class="mob-label" data-i18n="tab_calendar">個人行程</span>
     </button>
     <button class="mob-tab" data-action="switch-view" data-view="settings" aria-label="系統設定">
       <span class="mob-icon-wrap">
@@ -656,7 +672,7 @@
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
         </svg>
       </span>
-      <span class="mob-label">系統設定</span>
+      <span class="mob-label" data-i18n="tab_settings">系統設定</span>
     </button>
   </nav>
 

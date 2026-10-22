@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../backend/grab_engine.dart';
 import '../backend/calendar_helper.dart';
 import '../config/constants.dart';
+import '../config/i18n.dart';
 
 class CalendarScreen extends StatefulWidget {
   final GrabEngine engine;
@@ -30,7 +31,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       if (mounted) {
         setState(() {
           _registeredList = [];
-          _errorMsg = '尚未登入，無法取得校方已報名清冊';
+          _errorMsg = I18n.t('not_logged_in_cal');
         });
       }
       return;
@@ -52,7 +53,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMsg = '取得已報名清單失敗：$e';
+          _errorMsg = '${I18n.t('error')}: $e';
           _isLoading = false;
         });
       }
@@ -72,7 +73,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           CupertinoSliverNavigationBar(
             backgroundColor: AppColors.glassBar,
             border: const Border(bottom: BorderSide(color: AppColors.hairline, width: 0.5)),
-            largeTitle: const Text('個人行程', style: TextStyle(color: AppColors.textPrimary)),
+            largeTitle: Text(I18n.t('calendar_title'), style: const TextStyle(color: AppColors.textPrimary)),
             trailing: CupertinoButton(
               padding: EdgeInsets.zero,
               child: const Icon(CupertinoIcons.arrow_clockwise, size: 20),
@@ -109,12 +110,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('已成功報名講座', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                            Text(I18n.t('btn_registered'), style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                             const SizedBox(height: 4),
                             Text(
-                              '${_registeredList.length} 場次',
+                              I18n.t('registered_count_desc', params: {'n': _registeredList.length}),
                               style: const TextStyle(
-                                fontSize: 18,
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.textPrimary,
                               ),
@@ -130,7 +131,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               border: Border.all(color: AppColors.accentRed.withValues(alpha: 0.4), width: 0.5),
                             ),
                             child: Text(
-                              '偵測到 ${conflicts.length} 場衝堂',
+                              '${I18n.t('conflict_warning')} (${conflicts.length})',
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
@@ -155,9 +156,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               HapticFeedback.lightImpact();
                               final text = CalendarHelper.formatScheduleText(_registeredList);
                               Clipboard.setData(ClipboardData(text: text));
-                              _showMsg('已複製通識講座課表至剪貼簿！');
+                              _showMsg(I18n.t('copy_schedule_text'));
                             },
-                            child: const Text('複製課表', style: TextStyle(fontSize: 12, color: AppColors.textPrimary)),
+                            child: Text(I18n.t('copy_schedule_text'), style: const TextStyle(fontSize: 12, color: AppColors.textPrimary)),
                           ),
                           const SizedBox(width: 8),
                           CupertinoButton(
@@ -168,9 +169,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               HapticFeedback.lightImpact();
                               final ics = CalendarHelper.generateIcs(_registeredList);
                               Clipboard.setData(ClipboardData(text: ics));
-                              _showMsg('已複製標準 iCal (.ics) 日曆資料至剪貼簿！可貼入行事曆軟體匯入');
+                              _showMsg(I18n.t('export_ical'));
                             },
-                            child: const Text('匯出 iCal (.ics)', style: TextStyle(fontSize: 12, color: AppColors.textPrimary)),
+                            child: Text(I18n.t('export_ical'), style: const TextStyle(fontSize: 12, color: AppColors.textPrimary)),
                           ),
                         ],
                       ),
@@ -204,11 +205,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(CupertinoIcons.calendar, size: 48, color: AppColors.textMuted),
+                      const Icon(CupertinoIcons.calendar, size: 48, color: AppColors.textMuted),
                       const SizedBox(height: 12),
-                      const Text(
-                        '目前尚無已報名講座記錄',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                      Text(
+                        I18n.t('empty_registered'),
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
                       ),
                     ],
                   ),
@@ -268,9 +269,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   color: AppColors.accentGreen.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text(
-                  '已報名',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.accentGreen),
+                child: Text(
+                  I18n.t('btn_registered'),
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.accentGreen),
                 ),
               ),
               if (hasConflict) ...[
@@ -281,9 +282,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     color: AppColors.accentRed.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Text(
-                    '時間衝堂',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.accentRed),
+                  child: Text(
+                    I18n.t('conflict_warning'),
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.accentRed),
                   ),
                 ),
               ],
@@ -313,13 +314,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
           const SizedBox(height: 6),
 
           Text(
-            '時間：$dateStr $stime ~ $etime',
+            '$dateStr $stime ~ $etime',
             style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
           if (place.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
-              '地點：$place',
+              '${I18n.t('venue')}: $place',
               style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
             ),
           ],
@@ -333,9 +334,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 color: AppColors.surfaceElevated,
                 borderRadius: BorderRadius.circular(8),
                 onPressed: () => _confirmCancel(eid01: eid01, reseid: reseid, eid: eid, title: title),
-                child: const Text(
-                  '取消報名（退選）',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.accentRed),
+                child: Text(
+                  I18n.t('btn_cancel_drop'),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.accentRed),
                 ),
               ),
             ],
@@ -349,11 +350,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
     showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(
-        title: const Text('確認取消報名'),
-        content: Text('確定要取消【$title】的報名嗎？\n此動作將向校方發送加密退選請求，釋出名額。'),
+        title: Text(I18n.t('drop_confirm_title')),
+        content: Text(I18n.t('drop_confirm_msg', params: {'title': title})),
         actions: [
           CupertinoDialogAction(
-            child: const Text('返回'),
+            child: Text(I18n.t('btn_cancel')),
             onPressed: () => Navigator.pop(context),
           ),
           CupertinoDialogAction(
@@ -364,14 +365,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
               try {
                 final targetId = eid.isNotEmpty ? eid : (reseid.isNotEmpty ? reseid : eid01);
                 await widget.engine.cancelTarget(targetId, eid01: eid01, reseid: reseid, eid: eid);
-                _showMsg('已成功取消報名');
+                _showMsg(I18n.t('drop_success_title'));
                 await _loadRegistered();
                 await widget.engine.refreshLectures();
               } catch (e) {
-                _showMsg('退選失敗：$e');
+                _showMsg('${I18n.t('drop_failed_title')}: $e');
               }
             },
-            child: const Text('確定退選'),
+            child: Text(I18n.t('btn_confirm_drop')),
           ),
         ],
       ),
@@ -385,7 +386,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         content: Text(msg),
         actions: [
           CupertinoDialogAction(
-            child: const Text('確定'),
+            child: Text(I18n.t('btn_ok')),
             onPressed: () => Navigator.pop(context),
           ),
         ],

@@ -11,6 +11,7 @@
     "icons": "node scripts/generate-icons.mjs",
     "test": "node --test test/*.test.mjs",
     "mobile:flutter:run": "cd mobile && flutter run",
+    "mobile:flutter:test": "cd mobile && flutter test",
     "mobile:flutter:build:apk": "cd mobile && flutter build apk --release",
     "mobile:flutter:build:bundle": "cd mobile && flutter build appbundle",
     "mobile:flutter:doctor": "flutter doctor"

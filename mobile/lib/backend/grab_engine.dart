@@ -6,21 +6,34 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'asia_api.dart';
 import 'calendar_helper.dart';
 
+/// 管理講座狀態機、心跳輪詢、自動搶課與畢業門檻追蹤之核心引擎。
 class GrabEngine extends ChangeNotifier {
+  /// 亞大 API 客戶端連線實例。
   final AsiaApi api;
+
+  /// 目前登入之使用者會話資訊。
   Map<String, dynamic>? session;
+
+  /// 經由身分證驗證後取得之學生資料。
   Map<String, dynamic>? stdInfo;
 
+  /// 全校最新講座清單快取。
   List<Map<String, dynamic>> lectures = [];
+
+  /// 目前加入之搶課目標清單。
   List<Map<String, dynamic>> targets = [];
+
+  /// 引擎運作歷史日誌記錄。
   final List<Map<String, dynamic>> logs = [];
   int _logSeq = 0;
 
+  /// 是否正處於自動搶課輪詢監控狀態。
   bool running = false;
   Timer? _timer;
   bool _ticking = false;
   int _errorStreak = 0;
 
+  /// 搶課引擎之各項間隔與行為參數設定。
   Map<String, dynamic> settings = {
     'intervalMs': 2500,
     'burstIntervalMs': 800,
@@ -32,6 +45,7 @@ class GrabEngine extends ChangeNotifier {
     'bfree': 'N',
   };
 
+  /// 四大基本素養畢業門檻與歷年累計場次設定。
   Map<String, dynamic> graduation = {
     'history': {
       'health': 0,
@@ -42,11 +56,13 @@ class GrabEngine extends ChangeNotifier {
     }
   };
 
+  /// 定時搶課排程設定。
   Map<String, dynamic> schedule = {
     'enabled': true,
     'entries': [],
   };
 
+  /// 引擎執行統計數據。
   Map<String, dynamic> stats = {
     'requests': 0,
     'registrations': 0,
@@ -56,8 +72,15 @@ class GrabEngine extends ChangeNotifier {
     'lastError': '',
   };
 
+  /// 建立搶課狀態機引擎實例。
+  ///
+  /// 可傳入自訂之 [apiInstance]；若未提供則預設建立 [AsiaApi.new]。
   GrabEngine({AsiaApi? apiInstance}) : api = apiInstance ?? AsiaApi();
 
+  /// 記錄一筆格式化日誌訊息。
+  ///
+  /// 傳入日誌等級 [level]（如 `'info'`、`'warn'`、`'error'`）與日誌內文 [message]。
+  /// 系統自動限制日誌總容量上限為 500 筆。
   void log(String level, String message) {
     _logSeq++;
     final entry = {
@@ -72,11 +95,17 @@ class GrabEngine extends ChangeNotifier {
     }
   }
 
+  /// 取得指定序號之後產生的所有日誌。
+  ///
+  /// 傳入基準流水序號 [sinceSeq]，若小於或等於 0 則回傳全量日誌副本。
   List<Map<String, dynamic>> logsSince(int sinceSeq) {
     if (sinceSeq <= 0) return List.from(logs);
     return logs.where((l) => (l['seq'] as int) > sinceSeq).toList();
   }
 
+  /// 從本地持久化儲存載入引擎設定與登入狀態。
+  ///
+  /// 讀取 SharedPreferences 中之 `engine_config` 鍵並還原各項參數與帳號資訊。
   Future<void> initFromStorage() async {
     final prefs = await SharedPreferences.getInstance();
     final configStr = prefs.getString('engine_config');
@@ -105,6 +134,9 @@ class GrabEngine extends ChangeNotifier {
     }
   }
 
+  /// 將引擎設定、帳號與排程狀態儲存至本地偏好設定。
+  ///
+  /// 可傳入選擇性修補字典 [patch]。
   Future<void> persistConfig([Map<String, dynamic>? patch]) async {
     final prefs = await SharedPreferences.getInstance();
     final data = {
@@ -122,6 +154,9 @@ class GrabEngine extends ChangeNotifier {
     await prefs.setString('engine_config', jsonEncode(data));
   }
 
+  /// 更新目前使用者登入會話。
+  ///
+  /// 傳入新的會話資料 [newSession]；若傳入 `null` 則代表登出並清除學生驗證資料。
   void setSession(Map<String, dynamic>? newSession) {
     session = newSession != null ? Map<String, dynamic>.from(newSession) : null;
     stdInfo = null;
@@ -133,6 +168,10 @@ class GrabEngine extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 確保學生身分證驗證資料已完成載入。
+  ///
+  /// 若尚未取得學生資訊，則呼叫 [AsiaApi.verifyIdentity] 進行檢驗並快取於 [stdInfo]。
+  /// 若尚未登入或身分證格式不合規，則拋出 [Exception]。
   Future<Map<String, dynamic>> ensureIdentity() async {
     if (stdInfo != null) return stdInfo!;
     final token = session?['token']?.toString();
@@ -153,6 +192,9 @@ class GrabEngine extends ChangeNotifier {
     return info;
   }
 
+  /// 取得所有尚未完成或未關閉之活躍目標講座清單。
+  ///
+  /// 排除狀態為 `'registered'`、`'closed'` 與 `'error'` 之項目。
   List<Map<String, dynamic>> activeTargets() {
     return targets.where((t) {
       final s = (t['status'] ?? '').toString();
@@ -160,6 +202,10 @@ class GrabEngine extends ChangeNotifier {
     }).toList();
   }
 
+  /// 啟動自動搶課狀態機監控輪詢。
+  ///
+  /// 檢查登入憑證與目標佇列，完成身分驗證後將 [running] 標記為 `true` 並觸發初次輪詢。
+  /// 若未登入或目標清單為空則拋出 [Exception]。
   Future<void> start() async {
     if (running) return;
     if (session?['token'] == null) throw Exception('請先登入再啟動');
@@ -176,6 +222,9 @@ class GrabEngine extends ChangeNotifier {
     _scheduleTick(0);
   }
 
+  /// 停止自動搶課輪詢。
+  ///
+  /// 取消當前心跳計時器並可傳入停止原因 [reason]。
   void stop([String reason = '']) {
     final wasRunning = running;
     running = false;
@@ -210,6 +259,9 @@ class GrabEngine extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 執行單次輪詢心跳並對開放目標發動搶課。
+  ///
+  /// 向校方拉取最新講座狀態，更新名額與狀態；當偵測到目標開放或即將開放時自動切換至突發高頻模式。
   Future<void> tick() async {
     if (!running || _ticking) return;
     _ticking = true;
@@ -333,6 +385,10 @@ class GrabEngine extends ChangeNotifier {
     }
   }
 
+  /// 手動立即報名指定之講座。
+  ///
+  /// 傳入講座代碼 [eid01]，繞過輪詢狀態機直接向校方送出報名請求。
+  /// 若報名未成功則拋出 [Exception]；成功則回傳校方訊息。
   Future<String> manualRegister(String eid01) async {
     final token = session?['token']?.toString();
     if (token == null) throw Exception('請先登入');
@@ -366,6 +422,10 @@ class GrabEngine extends ChangeNotifier {
     return msg;
   }
 
+  /// 取消報名已選講座並同步清理目標佇列。
+  ///
+  /// 傳入講座識別碼 [id]，並可提供特定之 [eid]、[reseid] 或 [eid01]。
+  /// 透過校方加密流水號呼叫 [AsiaApi.cancelLecture]；若在已報名清冊中查無退選代碼則拋出 [Exception]。
   Future<String> cancelTarget(String id, {String? eid, String? reseid, String? eid01}) async {
     final token = session?['token']?.toString();
     if (token == null) throw Exception('請先登入');
@@ -435,6 +495,9 @@ class GrabEngine extends ChangeNotifier {
     return title;
   }
 
+  /// 將選定之講座資料列加入搶課目標佇列。
+  ///
+  /// 傳入講座清冊 [rows]，自動過濾重複代碼，回傳實際新增之目標清單。
   List<Map<String, dynamic>> addTargets(List<Map<String, dynamic>> rows) {
     final added = <Map<String, dynamic>>[];
     for (final row in rows) {
@@ -467,12 +530,18 @@ class GrabEngine extends ChangeNotifier {
     return added;
   }
 
+  /// 從搶課目標佇列中移除指定代碼之講座。
+  ///
+  /// 傳入欲移除之講座代碼 [eid01]。
   void removeTarget(String eid01) {
     targets.removeWhere((t) => t['eid01']?.toString() == eid01);
     log('info', '已移除搶課目標：[$eid01]');
     notifyListeners();
   }
 
+  /// 清理目標佇列中已完成報名或已關閉之講座項目。
+  ///
+  /// 移除狀態為 `'registered'`、`'closed'` 或 `'error'` 之目標。
   void clearTargets() {
     targets.removeWhere((t) {
       final s = (t['status'] ?? '').toString();
@@ -482,6 +551,9 @@ class GrabEngine extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 產出引擎目前完整狀態之唯讀快照字典。
+  ///
+  /// 包含當前時間戳記、伺服器網址、會話狀態、統計數據、設定、目標與行事曆資訊。
   Map<String, dynamic> snapshot() {
     return {
       'now': DateTime.now().millisecondsSinceEpoch,
@@ -516,6 +588,9 @@ class GrabEngine extends ChangeNotifier {
     };
   }
 
+  /// 立即向校方伺服器重新拉取最新講座清單。
+  ///
+  /// 呼叫 [AsiaApi.listLectures] 並更新內部 [lectures] 清冊與更新時間戳記。
   Future<void> refreshLectures() async {
     final token = session?['token']?.toString();
     final rows = await api.listLectures(token);
@@ -525,6 +600,9 @@ class GrabEngine extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 若有儲存之帳密則嘗試自動無感登入。
+  ///
+  /// 若會話中包含帳號密碼，則自動呼叫 [AsiaApi.login] 重新獲取權杖並更新講座清冊。
   Future<void> autoLoginIfRemembered() async {
     final username = session?['username']?.toString() ?? '';
     final password = session?['password']?.toString() ?? '';
@@ -561,6 +639,10 @@ class GrabEngine extends ChangeNotifier {
     }
   }
 
+  /// 計算目前已達成之四大基本素養進度與畢業門檻狀態。
+  ///
+  /// 整合歷年累計補登場次與當期已報名成功之講座，計算健康力、關懷力、創新力與卓越力總場次，
+  /// 並判斷是否滿足各素養 >= 2 場且總場次 >= 8 場之畢業門檻。
   Map<String, dynamic> computeGraduationProgress() {
     final history = Map<String, dynamic>.from(graduation['history'] ?? {});
     final histHealth = int.tryParse(history['health']?.toString() ?? '0') ?? 0;
