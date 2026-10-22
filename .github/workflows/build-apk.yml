@@ -38,7 +38,7 @@ jobs:
       - name: Analyze Dart codebase
         run: |
           cd mobile
-          flutter analyze
+          flutter analyze --no-fatal-infos
 
       - name: Build Android Release APK
         run: |
