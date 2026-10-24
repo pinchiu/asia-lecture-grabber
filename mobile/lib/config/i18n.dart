@@ -170,6 +170,9 @@ class I18n {
     // 搶課排程頁
     'targets_title': '搶課排程',
     'clear_finished': '清理已完成',
+    'clear_logs': '清空紀錄',
+    'status_not_logged_in': '尚未登入',
+    'status_logged_in': '已登入',
     'telemetry_title': '搶課狀態機即時儀表板',
     'engine_standby': '引擎待命',
     'engine_polling': '輪詢中',
@@ -299,6 +302,9 @@ class I18n {
     // 搶課排程頁
     'targets_title': 'Grab Targets',
     'clear_finished': 'Clear Done',
+    'clear_logs': 'Clear Logs',
+    'status_not_logged_in': 'Not Logged In',
+    'status_logged_in': 'Logged In',
     'telemetry_title': 'Realtime Engine Telemetry',
     'engine_standby': 'Standby',
     'engine_polling': 'Polling',

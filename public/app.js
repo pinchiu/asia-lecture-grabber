@@ -379,6 +379,8 @@ function applyLanguage(lang) {
   });
 
   lectureSig = '';
+  targetsSig = '';
+  calendarSig = '';
   if (S.snap) {
     render();
   }
@@ -1057,7 +1059,9 @@ function renderGraduation(snap) {
     overallBadge.className = 'grad-status-badge pending';
   }
 
-  // 填寫歷年補登輸入框（若尚未手動聚焦）
+  // 填寫歷年補登輸入框（若面板未展開編輯，且尚未手動聚焦）
+  const histPanel = $('#gradHistoryPanel');
+  const isEditingHist = histPanel && !histPanel.hidden;
   const h = stats.history;
   const healthIn = $('#gradHistHealth');
   const careIn = $('#gradHistCare');
@@ -1065,11 +1069,13 @@ function renderGraduation(snap) {
   const excIn = $('#gradHistExcellence');
   const totalIn = $('#gradHistTotal');
 
-  if (document.activeElement !== healthIn) healthIn.value = h.health || 0;
-  if (document.activeElement !== careIn) careIn.value = h.care || 0;
-  if (document.activeElement !== innIn) innIn.value = h.innovation || 0;
-  if (document.activeElement !== excIn) excIn.value = h.excellence || 0;
-  if (totalIn && document.activeElement !== totalIn) totalIn.value = h.total || 0;
+  if (!isEditingHist) {
+    if (healthIn && document.activeElement !== healthIn) healthIn.value = h.health || 0;
+    if (careIn && document.activeElement !== careIn) careIn.value = h.care || 0;
+    if (innIn && document.activeElement !== innIn) innIn.value = h.innovation || 0;
+    if (excIn && document.activeElement !== excIn) excIn.value = h.excellence || 0;
+    if (totalIn && document.activeElement !== totalIn) totalIn.value = h.total || 0;
+  }
 }
 
 function renderAccount(snap) {
@@ -1148,17 +1154,40 @@ function renderSchedule(snap) {
     .join('');
 }
 
+let calendarSig = '';
+
 function renderCalendar(snap) {
   const events = Array.isArray(S.calEvents) ? S.calEvents : snap.calendar || [];
   const grid = $('#calGrid');
   const hint = $('#calendarHint');
   const upcoming = $('#calUpcoming');
 
+  const badge = $('#navCalBadge');
+  const mobBadge = $('#mobCalBadge');
+  const calCountStr = String(events.length);
+  if (badge) {
+    badge.textContent = calCountStr;
+    badge.hidden = events.length === 0;
+  }
+  if (mobBadge) {
+    mobBadge.textContent = calCountStr;
+    mobBadge.hidden = events.length === 0;
+  }
+
   const now = new Date();
   if (S.calYear === null || S.calMonth === null) {
     S.calYear = now.getFullYear();
     S.calMonth = now.getMonth();
   }
+
+  const sig = JSON.stringify([
+    S.lang,
+    S.calYear,
+    S.calMonth,
+    events.map((e) => [e.eid01, e.dateText, e.timeText, e.hasConflict])
+  ]);
+  if (sig === calendarSig && grid.children.length) return;
+  calendarSig = sig;
 
   $('#calendarCount').textContent = String(events.length);
   $('#calMonth').textContent = `${S.calYear} 年 ${S.calMonth + 1} 月`;
@@ -1200,18 +1229,6 @@ function renderCalendar(snap) {
     .sort((a, b) => a.startAt - b.startAt)
     .slice(0, 6);
 
-  const badge = $('#navCalBadge');
-  const mobBadge = $('#mobCalBadge');
-  const calCountStr = String(events.length);
-  if (badge) {
-    badge.textContent = calCountStr;
-    badge.hidden = events.length === 0;
-  }
-  if (mobBadge) {
-    mobBadge.textContent = calCountStr;
-    mobBadge.hidden = events.length === 0;
-  }
-
   upcoming.innerHTML = nextUp
     .map(
       (ev) => `
@@ -1225,7 +1242,7 @@ function renderCalendar(snap) {
           <div class="up-meta">${renderLiteracyBadges(ev.literacies)} <span class="up-place">${esc(ev.place || '')}</span></div>
         </div>
         <div class="up-action-col">
-          <button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(ev.reseid || '')}" data-eid01="${esc(ev.eid01 || '')}" data-eid="${esc(ev.eid || '')}" title="取消報名（退選）">取消報名</button>
+          <button class="btn sm danger" data-action="cancel-target" data-reseid="${esc(ev.reseid || '')}" data-eid01="${esc(ev.eid01 || '')}" data-eid="${esc(ev.eid || '')}" title="${t('btn_cancel', '取消報名')}">${t('btn_cancel', '取消報名')}</button>
         </div>
       </li>`
     )
@@ -1268,6 +1285,8 @@ function renderAgent(snap) {
   $('#agentNote').textContent = plan.reply || '';
 }
 
+let targetsSig = '';
+
 function renderTargets(snap) {
   const targets = snap.engine?.targets || [];
   const body = $('#targetBody');
@@ -1286,11 +1305,19 @@ function renderTargets(snap) {
   }
 
   if (!targets.length) {
+    targetsSig = '';
     body.innerHTML = '';
     hint.style.display = '';
     return;
   }
   hint.style.display = 'none';
+
+  const sig = JSON.stringify([
+    S.lang,
+    targets.map((t) => [t.eid01, t.status, t.kind, t.appnum, t.note, t.openAt])
+  ]);
+  if (sig === targetsSig && body.children.length) return;
+  targetsSig = sig;
 
   body.innerHTML = targets
     .map((target) => {
@@ -1424,7 +1451,7 @@ function renderLectures(snap) {
       const isRegistered = Number(row.cnt_10 || 0) > 0;
       const conflict = !isRegistered && checkScheduleConflict(row, S.calEvents || S.snap?.calendar || []);
       const conflictHtml = conflict
-        ? `<span class="badge-status k-conflict" title="${t('conflict_title', '與已報名【{title}】時間重疊').replace('{title}', conflict.withTitle)}">${t('conflict_warn', '時段衝突')}</span>`
+        ? `<span class="badge-status k-conflict" title="${esc(t('conflict_title', '與已報名【{title}】時間重疊').replace('{title}', conflict.withTitle))}">${t('conflict_warn', '時段衝突')}</span>`
         : '';
 
       if (isRegistered) {
@@ -1855,7 +1882,7 @@ document.addEventListener('click', (event) => {
 
   if (action === 'toggle-side') {
     const side = $('#sidePanel');
-    side.classList.toggle('open');
+    if (side) side.classList.toggle('open');
     return;
   }
 

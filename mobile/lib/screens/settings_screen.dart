@@ -253,7 +253,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                isLoggedIn ? '${I18n.t('btn_registered')} (${session!['emp_nm'] ?? session['username']})' : I18n.t('not_logged_in_cal').split('，').first,
+                                isLoggedIn ? '${I18n.t('status_logged_in')} (${session!['emp_nm'] ?? session['username']})' : I18n.t('status_not_logged_in'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
@@ -558,7 +558,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             CupertinoButton(
                               padding: EdgeInsets.zero,
-                              child: Text(I18n.t('clear_finished').split('已').first, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                              child: Text(I18n.t('clear_logs'), style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
                               onPressed: () {
                                 widget.engine.logs.clear();
                                 setState(() {});
@@ -796,6 +796,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showDialog(String title, String msg) {
+    if (!mounted) return;
     showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(

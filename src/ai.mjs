@@ -109,8 +109,15 @@ async function remotePlan(aiConfig, lectures, text) {
 
 /** 呼叫 OpenAI 相容 chat/completions，回傳純文字內容。 */
 async function chat(aiConfig, messages) {
-  const base = String(aiConfig.baseUrl || 'https://api.openai.com/v1');
-  const url = new URL('chat/completions', base.endsWith('/') ? base : base + '/');
+  let base = String(aiConfig.baseUrl || 'https://api.openai.com/v1').trim();
+  if (!/^https?:\/\//i.test(base)) {
+    base = 'https://' + base;
+  }
+  let endpoint = base;
+  if (!endpoint.endsWith('/chat/completions')) {
+    endpoint = endpoint.replace(/\/+$/, '') + '/chat/completions';
+  }
+  const url = new URL(endpoint);
 
   let res;
   try {

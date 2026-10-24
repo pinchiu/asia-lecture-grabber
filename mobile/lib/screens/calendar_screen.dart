@@ -380,6 +380,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   void _showMsg(String msg) {
+    if (!mounted) return;
     showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(

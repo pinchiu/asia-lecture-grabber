@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asia-lecture-grabber-v10';
+const CACHE_NAME = 'asia-lecture-grabber-v11';
 const PRECACHE = [
   '/',
   '/index.html',
@@ -29,9 +29,12 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // 僅處理 GET 請求，POST / PUT / DELETE 交由瀏覽器自然傳輸
+  if (event.request.method !== 'GET') return;
+
   const url = new URL(event.request.url);
 
-  // API 請求走網路優先
+  // API 請求走純網路，若離線回傳 503
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() => {
@@ -44,20 +47,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 靜態資源走快取優先，並背景更新
+  // 靜態資源走 Network-First（網路優先），離線時優雅降級回快取
   event.respondWith(
-    caches.match(event.request, { ignoreSearch: true }).then((cached) => {
-      const networked = fetch(event.request)
-        .then((response) => {
-          if (response && response.status === 200 && response.type === 'basic') {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.status === 200 && response.type === 'basic') {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request).then((cached) => {
+          if (cached) return cached;
+          if (event.request.mode === 'navigate') {
+            return caches.match('/index.html');
           }
-          return response;
-        })
-        .catch(() => cached);
-
-      return cached || networked;
-    })
+          return new Response('離線模式，資源無法載入', { status: 504, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+        });
+      })
   );
 });

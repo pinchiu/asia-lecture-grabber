@@ -617,6 +617,7 @@ class _LecturesScreenState extends State<LecturesScreen> {
   }
 
   void _showToast(String msg) {
+    if (!mounted) return;
     showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(

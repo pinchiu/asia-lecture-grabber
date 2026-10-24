@@ -68,7 +68,9 @@ class UpdateService {
       }
 
       final bodyString = await response.transform(utf8.decoder).join();
-      final json = jsonDecode(bodyString) as Map<String, dynamic>;
+      final decoded = jsonDecode(bodyString);
+      if (decoded is! Map) return null;
+      final json = decoded;
 
       final tagName = (json['tag_name'] ?? '').toString();
       final name = (json['name'] ?? tagName).toString();
@@ -78,8 +80,9 @@ class UpdateService {
       String apkUrl = '';
       int apkSize = 0;
 
-      final assets = json['assets'] as List<dynamic>? ?? [];
+      final assets = (json['assets'] is List) ? (json['assets'] as List) : const [];
       for (final asset in assets) {
+        if (asset is! Map) continue;
         final aName = (asset['name'] ?? '').toString();
         if (aName.endsWith('.apk')) {
           apkUrl = (asset['browser_download_url'] ?? '').toString();

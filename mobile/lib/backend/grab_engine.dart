@@ -100,7 +100,7 @@ class GrabEngine extends ChangeNotifier {
   /// 傳入基準流水序號 [sinceSeq]，若小於或等於 0 則回傳全量日誌副本。
   List<Map<String, dynamic>> logsSince(int sinceSeq) {
     if (sinceSeq <= 0) return List.from(logs);
-    return logs.where((l) => (l['seq'] as int) > sinceSeq).toList();
+    return logs.where((l) => ((l['seq'] as num?)?.toInt() ?? 0) > sinceSeq).toList();
   }
 
   /// 從本地持久化儲存載入引擎設定與登入狀態。
@@ -396,7 +396,11 @@ class GrabEngine extends ChangeNotifier {
     final infoWithBfree = Map<String, dynamic>.from(info);
     infoWithBfree['bfree'] = (settings['bfree'] ?? 'N').toString().toUpperCase() == 'Y' ? 'Y' : 'N';
 
-    final row = lectures.firstWhere((r) => r['eid01']?.toString() == eid01, orElse: () => {});
+    Map<String, dynamic> row = lectures.firstWhere((r) => r['eid01']?.toString() == eid01, orElse: () => {});
+    if (row.isEmpty) {
+      await refreshLectures();
+      row = lectures.firstWhere((r) => r['eid01']?.toString() == eid01, orElse: () => {});
+    }
     final reseid = (row['reseid'] ?? '').toString();
 
     final res = await api.registerLecture(

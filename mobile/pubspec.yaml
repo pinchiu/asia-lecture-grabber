@@ -10,7 +10,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  webview_flutter: ^4.10.0
   shared_preferences: ^2.3.0
   cupertino_icons: ^2.0.0
 
@@ -24,4 +23,3 @@ flutter:
   assets:
     - assets/icon-192.png
     - assets/icon-512.png
-    - assets/web/

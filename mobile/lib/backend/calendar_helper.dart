@@ -215,6 +215,16 @@ class CalendarHelper {
     final eidB = (b['eid01'] ?? b['eid'] ?? '').toString();
     if (eidA.isNotEmpty && eidB.isNotEmpty && eidA == eidB) return false;
 
+    // 若兩者均已解析為具備數值時間戳記之事件物件，優先直接比對時間戳
+    final num? startAtA = a['startAt'] as num?;
+    final num? endAtA = (a['endAt'] as num?) ?? (startAtA != null ? startAtA + 7200000 : null);
+    final num? startAtB = b['startAt'] as num?;
+    final num? endAtB = (b['endAt'] as num?) ?? (startAtB != null ? startAtB + 7200000 : null);
+
+    if (startAtA != null && endAtA != null && startAtB != null && endAtB != null) {
+      return startAtA < endAtB && startAtB < endAtA;
+    }
+
     final rawDateA = a['rescsd'] ?? a['sdate'] ?? a['date'];
     final rawDateB = b['rescsd'] ?? b['sdate'] ?? b['date'];
     if (rawDateA == null || rawDateB == null) return false;
@@ -224,11 +234,21 @@ class CalendarHelper {
     if (dateA.isEmpty || dateB.isEmpty || dateA != dateB) return false;
 
     final stimeA = parseHm((a['stime'] ?? a['start'] ?? '').toString());
-    final etimeA = parseHm((a['etime'] ?? a['end'] ?? '').toString());
+    String etimeA = parseHm((a['etime'] ?? a['end'] ?? '').toString());
     final stimeB = parseHm((b['stime'] ?? b['start'] ?? '').toString());
-    final etimeB = parseHm((b['etime'] ?? b['end'] ?? '').toString());
+    String etimeB = parseHm((b['etime'] ?? b['end'] ?? '').toString());
 
-    if (stimeA.isEmpty || etimeA.isEmpty || stimeB.isEmpty || etimeB.isEmpty) return false;
+    if (stimeA.isEmpty || stimeB.isEmpty) return false;
+
+    // 缺少結束時間時，回退依開始時間預設加 2 小時
+    if (etimeA.isEmpty) {
+      final h = int.tryParse(stimeA.substring(0, 2)) ?? 0;
+      etimeA = '${(h + 2).toString().padLeft(2, '0')}:${stimeA.substring(3)}';
+    }
+    if (etimeB.isEmpty) {
+      final h = int.tryParse(stimeB.substring(0, 2)) ?? 0;
+      etimeB = '${(h + 2).toString().padLeft(2, '0')}:${stimeB.substring(3)}';
+    }
 
     return stimeA.compareTo(etimeB) < 0 && stimeB.compareTo(etimeA) < 0;
   }
