@@ -121,13 +121,16 @@ The `mobile/` directory contains the complete Flutter native mobile project, sup
 - Android Studio (Android SDK & Build-Tools) or Xcode (iOS)
 
 ### 2. Local Run & Debug
+The Flutter app includes its native school API client and registration engine. It connects directly to the school system and **does not require the root Node.js server**.
+
+From the project root:
 ```bash
-# Ensure root Node.js server is running: npm start
 npm run mobile:flutter:run
 ```
 Or:
 ```bash
 cd mobile
+flutter pub get
 flutter run
 ```
 
@@ -231,10 +234,10 @@ asia-lecture-grabber/
 
 ## Security & Privacy Notice
 
-- All network operations communicate directly between your machine and school servers; no third-party intermediary proxy is involved.
-- Student ID, password, and the last 4 digits of National ID are stored locally in `data/config.json` (or memory-only if "remember password" is unchecked).
-- The `data/` directory is strictly excluded in `.gitignore` and is never pushed to GitHub.
-- Keep your personal device and configuration secure. Do not share your `config.json` file.
+- The desktop web version communicates with school servers through your local server; the Flutter app connects directly from your phone. Neither uses a third-party intermediary proxy.
+- For the desktop web version, the student ID, password, and last 4 National ID digits are stored locally in `data/config.json` (or memory-only if "remember password" is unchecked). The Flutter app stores credentials on the device according to its "remember credentials" setting.
+- The desktop `data/` directory is excluded in `.gitignore` and must not be uploaded or shared.
+- Keep your computer, mobile device, and configuration secure. Do not share `config.json` or debug output containing personal data.
 
 ---
 
