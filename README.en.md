@@ -2,7 +2,7 @@
 
 [English Documentation](README.en.md) | [繁體中文文件](README.md)
 
-A lightweight, zero-dependency local auto-registration tool and general education graduation threshold dashboard for Asia University's "Online Lecture & General Education Course Registration System" (`https://webap.asia.edu.tw/cfd2020/`).
+A lightweight, zero-dependency local auto-registration tool, general education graduation threshold dashboard, and AI Agent integration module built on the latest Model Context Protocol (MCP 2026-07-28 stateless specification) for Asia University's "Online Lecture & General Education Course Registration System" (`https://webap.asia.edu.tw/cfd2020/`).
 
 > Designed for Asia University students: tracks 4 core general education competencies, monitors registration opening and cancellation drops, and executes instantaneous automated registration.
 > **Please comply with school policies. For personal legal academic and course selection assistance only.**
@@ -20,8 +20,9 @@ According to Asia University general education graduation regulations, undergrad
 
 Real-time threshold calculation dashboard:
 - **Automatic Aggregation**: Fetches registered and completed sessions directly from student portal records and categorizes them automatically.
-- **Historical Credit Logging**: Supports manual entry of credits earned in prior semesters, seamlessly merged with current registrations.
-- **Competency Badges**: Each lecture clearly displays its corresponding core literacy badges and color coding.
+- **Historical Credit Logging**: Supports manual entry of credits earned in prior semesters, seamlessly merged with current registrations (protected from background polling overwrite during editing).
+- **Multi-Literacy Lecture Computation**: Sessions with multiple literacy tags count 1 toward each tagged category, but strictly 1 toward total session count.
+- **Optimal Graduation Route Recommendation**: Algorithmic planner calculates the minimum session path to satisfy all missing requirements while avoiding time conflicts.
 - **Deficit Filtering**: One-click "Only Show My Missing Literacies" to target sessions required for graduation.
 
 ### 2. Real-Time Grabbing Engine
@@ -30,20 +31,21 @@ Real-time threshold calculation dashboard:
 - **Burst Mode Polling**: Automatically shifts to high-frequency polling (default 0.8s) when registration opens or when spots are released.
 - **Polite Interval & Backoff**: Maintains a 2.5s polite polling interval normally, with exponential backoff on network anomalies to avoid server stress.
 - **Automated Authentication**: Exchanges the last 4 digits of student ID for school registration tokens seamlessly.
+- **AIA Intermediate Certificate Auto-Repair**: Asia University IIS server lacks intermediate CA certificates; the engine automatically discovers and repairs intermediate chains locally without disabling TLS verification.
 
 ### 3. Multi-Platform Support & Bilingual i18n: Flutter Native App, PWA, and Web
 - **Bilingual Interface (i18n)**: Both web dashboard and Flutter mobile app support seamless switching between Traditional Chinese and English.
 - **System Language Auto-Detection**: Mobile app defaults to matching device system language (English devices display English automatically) while providing a 3-way manual toggle (System / Traditional Chinese / English) with local persistence.
 - **Flutter Native Mobile App (`mobile/`)**: Built with Google Flutter pure Cupertino framework, featuring iOS physical spring bounce physics, liquid frosted glass navigation bar, online GitHub update checks, and in-app APK download & installation.
-- **Progressive Web App (PWA)**: Standard PWA support allows installation directly via mobile browser ("Add to Home Screen"), providing standalone windowing and Service Worker offline caching.
+- **Progressive Web App (PWA)**: Standard PWA support allows installation directly via mobile browser ("Add to Home Screen"), providing standalone windowing and Network-First Service Worker offline caching.
 - **Desktop Web Version**: Quick-launch scripts (`start.bat` / `start.sh`) open the dashboard in dedicated Chrome App window or default browser.
+- **Schedule Conflict Prevention**: Strict integer-timestamp conflict checking ensures lectures do not overlap.
 
-### 4. Smart Scheduling & AI Selection Agent
-- **Three Scheduling Modes**:
-  - At Opening (starts N seconds before registration begins)
-  - Specific Date & Time (one-time trigger)
-  - Weekly Window (recurring automated start and stop)
-- **AI / Local Rule Selection**: Enter requirements in natural language (e.g. "I need 2 innovation and 1 health lecture"), parsed by OpenAI-compatible models or offline rule engine into candidate queues.
+### 4. AI Agent Module (MCP 2026-07-28 Specification & Agent Skills)
+- **Model Context Protocol (MCP)**: Native compliance with the 2026-07-28 stateless core protocol specification.
+- **Dual Transport**: Supports stdio CLI pipes (Claude Desktop, Cursor, Antigravity) and stateless HTTP (`POST /api/mcp` and `GET /api/mcp`).
+- **Tasks Lifecycle Primitives**: Native `tasks/list`, `tasks/get`, and `tasks/cancel` primitives for asynchronous background grabbing engine monitoring.
+- **Dedicated Agent Skill**: Standardized workflow guidelines and anti-hallucination safeguards in `skills/asia-lecture-assistant/SKILL.md`.
 
 ---
 
@@ -82,48 +84,52 @@ npm start
 
 The service runs at `http://127.0.0.1:5199` by default and will open in your default browser.
 
----
-
-## User Guide
-
-1. **Login & Identity Verification**:
-   - In the sidebar or settings, enter Student ID, password, and the last 4 digits of your National ID, then click "Login & Verify Identity".
-   - The last 4 digits of ID are required by the school API for registration authentication.
-2. **Review Literacy Progress**:
-   - The top dashboard displays progress across the 4 competencies and total sessions.
-   - If you completed sessions in past semesters, click "Past Literacy Credits" to log them.
-3. **Select Lectures & Queue Targets**:
-   - Browse the lecture list, filtering by competency, status, or search query.
-   - Toggle "Only Missing Literacies" to focus on needed competencies.
-   - Click "+ Add Target" to add to the monitoring queue.
-4. **Start the Grabbing Engine**:
-   - Click "Start Engine" to begin polling.
-   - When a session is grabbed, the system triggers sound and desktop notifications, updating targets and calendar immediately.
-5. **Direct Manual Registration & CAPTCHA Bypass**:
-   - **Manual Registration (No AI Required)**:
-     - For "Open" lectures, click "Register" to submit an immediate registration directly to school servers.
-     - Direct Code Input: Enter a course ID (e.g. `1151074`) in the quick-action input for instant submission.
-     - For "Full" lectures, click "+ Waitlist" to keep waiting for dropped spots.
-   - **4-Digit Graphical CAPTCHA Mechanism**:
-     - The 4-digit CAPTCHA on the official school website is generated client-side by Vue.js on an HTML Canvas.
-     - The backend registration API (`POST api/Cfd10/Save`) **does not inspect or require CAPTCHA validation fields**.
-     - This tool connects directly to backend APIs with 0ms OCR latency and zero CAPTCHA errors.
-     - For users operating directly on the official website, a Tampermonkey script (`scripts/asia-captcha-autofill.user.js`) is provided for auto-filling CAPTCHA.
+### Automated Unit Testing
+Run the 92 built-in Node.js tests:
+```bash
+npm test
+```
 
 ---
 
-## Flutter Native Mobile App
+## AI Agent Module (MCP 2026-07-28 Specification)
 
-The `mobile/` directory contains the complete Flutter native mobile project, supporting compilation to Android release APK or iOS:
+### 1. Invocation Channels
+- **Local Stdio MCP Server**:
+  ```bash
+  npm run mcp
+  ```
+  Or directly:
+  ```bash
+  node src/mcp.mjs
+  ```
+- **Local HTTP Endpoint**:
+  - Discovery: `GET /api/mcp`
+  - JSON-RPC Invocation: `POST /api/mcp` (Supports `Mcp-Method` and `Mcp-Name` routing headers)
 
-### 1. Environment Requirements
+### 2. Tool Catalog
+| Tool Name | Purpose | Key Arguments |
+| :--- | :--- | :--- |
+| `asia_list_lectures` | Query lecture catalog with literacy/status filters | `keyword`, `literacy`, `status`, `limit` |
+| `asia_get_lecture` | Fetch detailed lecture metadata | `eid01` (required) |
+| `asia_check_graduation` | Audit 4-literacy progress and deficiencies | None |
+| `asia_register_lecture` | Direct instantaneous registration | `eid01` (required), `bfree` (default N) |
+| `asia_cancel_lecture` | Secure cancellation using school encrypted code | `eid01` (required) |
+| `asia_get_calendar` | Fetch schedule and cross-verify time conflicts | None |
+| `asia_manage_targets` | Manipulate grab target queue | `action`, `eid01` |
+| `asia_get_engine_status` | Telemetry, polling statistics, and logs | `logLimit` |
+
+---
+
+## Mobile App: Flutter Native Build & Installation
+
+The project provides a pure Cupertino Flutter native app under `mobile/`:
+
+### 1. Requirements
 - Flutter SDK (>= 3.10.0)
-- Android Studio (Android SDK & Build-Tools) or Xcode (iOS)
+- Android Studio / Xcode
 
-### 2. Local Run & Debug
-The Flutter app includes its native school API client and registration engine. It connects directly to the school system and **does not require the root Node.js server**.
-
-From the project root:
+### 2. Local Run
 ```bash
 npm run mobile:flutter:run
 ```
@@ -135,58 +141,10 @@ flutter run
 ```
 
 ### 3. Build Android Release APK
-Build the release APK:
 ```bash
 npm run mobile:flutter:build:apk
 ```
-Or:
-```bash
-cd mobile
-flutter build apk --release
-```
-Output path:
-`mobile/build/app/outputs/flutter-apk/app-release.apk`
-
----
-
-## PWA Mobile Version (No Installation Required)
-
-In addition to Flutter native app, standard PWA features allow direct browser access:
-1. Ensure mobile device and computer are on the same Wi-Fi network.
-2. Start server with `HOST=0.0.0.0 npm start`.
-3. **iPhone / iPad (Safari)**: Open address, tap "Share" -> "Add to Home Screen".
-4. **Android (Chrome / Edge)**: Tap "Install App" in menu or address bar banner.
-
----
-
-## Technical Architecture & School API Reverse Engineering
-
-The school portal is a Vue SPA (`http-vue-loader`) with API base `https://webap.asia.edu.tw/cfd2020/`:
-
-| Function | HTTP Method & Path | Description |
-| --- | --- | --- |
-| Authentication | `POST api/Login/Auth` | Sends `{username, password}`, returns Bearer Token |
-| Lecture List | `POST api/Cfd01/Load?op=X01F00` | Public list; with Token returns user `cnt_10` (registered flag) |
-| Lecture Detail | `GET api/Cfd01/GetRes?eid01=` | Detailed metadata including competencies, organizer, UCAN, SDGs |
-| Identity Verification | `POST api/PersonInfo/GetPInfo` | Sends `{p_no, p_id, p_type}` (`p_id` is last 4 ID digits) |
-| Save Registration | `POST api/Cfd10/Save` | Core registration endpoint; requires Token and `std_info` (`bfree` accessibility requirement defaults to `N`) |
-| Drop Registration | `POST api/cfd10/DeleteData?reseid=` | Drops registered session using encrypted school ID |
-| Registered History | `POST api/Cfd01/Load_del?op=X01F00DEL` | Queries active and dropped registration records |
-
-### Core Literacy Flags
-The database tracks competencies using flags `chk1` through `chk8`:
-- `chk4 = 'Y'`: **Health**
-- `chk5 = 'Y'`: **Care**
-- `chk6 = 'Y'`: **Innovation**
-- `chk7 = 'Y'`: **Excellence**
-
-### Registration Status Codes
-- `canapp = 'Y'`: Open
-- `canapp = 'F'`: Full (Waitlist mode polls for dropped spots)
-- `canapp = 'N1'`: Upcoming
-- `canapp = 'N2'`: Closed
-- `canapp = 'C'`: On-site registration
-- `canapp = 'D'`: Other channels
+Output path: `mobile/build/app/outputs/flutter-apk/app-release.apk`.
 
 ---
 
@@ -194,31 +152,44 @@ The database tracks competencies using flags `chk1` through `chk8`:
 
 ```
 asia-lecture-grabber/
-├ package.json                   Project configuration and scripts
+├ package.json                   Project configuration, scripts, and MCP entrypoint
 ├ start.bat                      Windows launch shortcut
 ├ start.sh                       macOS / Linux launch script
 ├ AGENTS.md                      Architecture constraints and developer guidelines
 ├ README.md                      Traditional Chinese documentation
 ├ README.en.md                   English documentation
+├ skills/
+│  └ asia-lecture-assistant/     AI Agent Skill definition
+│     └ SKILL.md                 Skill specification complying with MCP 2026-07-28
 ├ src/
 │  ├ asia.mjs                    School API client with automated AIA intermediate CA repair
 │  ├ engine.mjs                  Grabbing engine state machine and backoff
+│  ├ mcp.mjs                     Model Context Protocol 2026-07-28 stateless server
 │  ├ schedule.mjs                Automated scheduler (3 modes)
 │  ├ calendar.mjs                Calendar event parser and literacy extractor
 │  ├ ai.mjs                      AI agent and offline rule parser
 │  ├ storage.mjs                 Configuration and state local persistence
-│  └ server.mjs                  HTTP server and JSON API
+│  └ server.mjs                  HTTP server, JSON API, and /api/mcp endpoint
+├ test/
+│  ├ asia.test.mjs               TLS repair and school API business logic tests
+│  ├ mcp.test.mjs                MCP 2026-07-28 stateless protocol & Tasks tests
+│  ├ calendar.test.mjs           Timestamp parsing and conflict detection tests
+│  ├ engine.test.mjs             State machine and manual registration tests
+│  ├ schedule.test.mjs           Scheduler modes and global switch constraint tests
+│  ├ server.test.mjs             HTTP router and path traversal security tests
+│  ├ storage.test.mjs            Persistence and concurrent write safety tests
+│  └ ai.test.mjs                 Natural language schedule and prompt parsing tests
 ├ public/
 │  ├ index.html                  Web interface (dashboard, hall, calendar, settings)
 │  ├ style.css                   Bauhaus monochrome and Apple liquid frosted glass styling
-│  ├ app.js                      Frontend state and controller (zero external build dependencies)
+│  ├ app.js                      Frontend state and controller (Vanilla JS with i18n)
 │  ├ manifest.webmanifest        PWA web manifest
-│  ├ sw.js                       Service Worker offline cache
+│  ├ sw.js                       Service Worker (Network-First modern offline caching)
 │  ├ icon.svg                    Vector app icon
 │  ├ icon-192.png                PWA 192x192 icon
 │  └ icon-512.png                PWA 512x512 icon
 ├ mobile/
-│  ├ pubspec.yaml                Flutter project configuration
+│  ├ pubspec.yaml                Flutter pure Cupertino native dependencies
 │  ├ README.md                   Flutter build guidelines
 │  ├ assets/                     Mobile icon assets
 │  ├ lib/                        Flutter Dart source (Cupertino native UI, engine, i18n)
@@ -226,7 +197,7 @@ asia-lecture-grabber/
 │  └ ios/                        iOS native build project
 └ scripts/
    ├ asia-captcha-autofill.user.js Official web portal CAPTCHA auto-filler script
-   ├ desktop-launcher.mjs        Desktop window launcher
+   ├ desktop-launcher.mjs        Desktop window launcher and process lifecycle manager
    └ generate-icons.mjs          Native PNG icon generator
 ```
 

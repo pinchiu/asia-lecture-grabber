@@ -329,6 +329,7 @@ class _TargetsScreenState extends State<TargetsScreen> {
   }
 
   void _showDialog(String title, String msg) {
+    if (!mounted) return;
     showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(

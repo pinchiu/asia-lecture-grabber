@@ -537,7 +537,7 @@
           </div>
           <div class="form">
             <label><span data-i18n="settings_lang_label">選擇顯示語言 (Interface Language)</span>
-              <select id="langSelect" data-action="change-lang">
+              <select id="langSelect">
                 <option value="zh">繁體中文 (Traditional Chinese)</option>
                 <option value="en">English (US)</option>
               </select>
@@ -548,22 +548,22 @@
         <!-- 01 帳號與身份 -->
         <section class="card" id="cardAccount">
           <div class="card-head">
-            <h2><span class="idx">01</span> 學生登入與身份驗證</h2>
+            <h2><span class="idx">01</span> <span data-i18n="sec_account_title">學生登入與身份驗證</span></h2>
           </div>
           <form id="loginForm" class="form">
-            <label>學號
+            <label><span data-i18n="label_username">學號</span>
               <input name="username" autocomplete="username" placeholder="例如 11234567" required>
             </label>
-            <label>密碼
+            <label><span data-i18n="label_password">密碼</span>
               <input type="password" name="password" autocomplete="current-password" required>
             </label>
-            <label>身分證字號末四碼
+            <label><span data-i18n="label_idlast4">身分證字號末四碼</span>
               <input name="idLast4" inputmode="numeric" maxlength="4" placeholder="報名驗證必填末四碼" autocomplete="off">
             </label>
             <label class="check">
-              <input type="checkbox" name="remember"> 記住帳密（以純文字存於本機 data/config.json）
+              <input type="checkbox" name="remember"> <span data-i18n="label_remember">記住帳密（以純文字存於本機 data/config.json）</span>
             </label>
-            <button class="btn primary wide" type="submit">登入校方系統並驗證身份</button>
+            <button class="btn primary wide" type="submit" data-i18n="btn_login">登入校方系統並驗證身份</button>
             <p class="hint" id="accountInfo"></p>
           </form>
         </section>
@@ -571,29 +571,29 @@
         <!-- 02 搶課參數 -->
         <section class="card" id="cardSettings">
           <div class="card-head">
-            <h2><span class="idx">02</span> 搶課設定與無障礙需求</h2>
+            <h2><span class="idx">02</span> <span data-i18n="sec_settings_title">搶課設定與無障礙需求</span></h2>
           </div>
           <div class="form">
-            <label>監控頻率（秒／次）
+            <label><span data-i18n="label_interval">監控頻率（秒／次）</span>
               <input type="number" id="intervalSec" min="1" max="30" step="0.5" value="2.5" inputmode="decimal">
             </label>
-            <label>無障礙空間需求（報名預設值）
+            <label><span data-i18n="label_bfree">無障礙空間需求（報名預設值）</span>
               <select id="bfreeSelect">
-                <option value="N" selected>無需求／否（通常選此項）</option>
-                <option value="Y">有需求／是</option>
+                <option value="N" selected data-i18n="bfree_n">無需求／否（通常選此項）</option>
+                <option value="Y" data-i18n="bfree_y">有需求／是</option>
               </select>
             </label>
-            <label class="check"><input type="checkbox" id="soundToggle"> 搶到時播放提示音</label>
-            <label class="check"><input type="checkbox" id="notifyToggle"> 搶到時發送桌面通知</label>
-            <label class="check"><input type="checkbox" id="stopDoneToggle"> 目標全部完成後自動停止</label>
-            <button class="btn ghost wide" data-action="save-settings">儲存設定</button>
+            <label class="check"><input type="checkbox" id="soundToggle"> <span data-i18n="label_sound">搶到時播放提示音</span></label>
+            <label class="check"><input type="checkbox" id="notifyToggle"> <span data-i18n="label_notify">搶到時發送桌面通知</span></label>
+            <label class="check"><input type="checkbox" id="stopDoneToggle"> <span data-i18n="label_stop_done">目標全部完成後自動停止</span></label>
+            <button class="btn ghost wide" data-action="save-settings" data-i18n="btn_save_settings">儲存設定</button>
           </div>
         </section>
 
         <!-- 03 智慧模型擴充設定 -->
         <section class="card" id="cardAi">
           <div class="card-head">
-            <h2><span class="idx">03</span> 語言模型連線設定</h2>
+            <h2><span class="idx">03</span> <span data-i18n="sec_ai_title">語言模型連線設定</span></h2>
             <span class="tag">選用</span>
           </div>
           <div class="form">
@@ -608,23 +608,23 @@
             <label>模型名稱
               <input id="aiModel" placeholder="gpt-4o-mini" autocomplete="off">
             </label>
-            <button class="btn ghost wide" data-action="save-ai">儲存 AI 設定</button>
+            <button class="btn ghost wide" data-action="save-ai" data-i18n="btn_save_ai">儲存 AI 設定</button>
           </div>
         </section>
 
         <!-- 04 執行日誌 -->
         <section class="card" id="cardLogs">
           <div class="card-head">
-            <h2><span class="idx">04</span> 系統執行紀錄</h2>
+            <h2><span class="idx">04</span> <span data-i18n="sec_logs_title">系統執行紀錄</span></h2>
             <div class="tools">
-              <button class="btn ghost sm" data-action="clear-log">清空紀錄</button>
+              <button class="btn ghost sm" data-action="clear-log" data-i18n="btn_clear_log">清空紀錄</button>
             </div>
           </div>
           <div class="log" id="logBox" role="log" aria-live="polite"></div>
         </section>
       </div>
 
-      <p class="footnote">
+      <p class="footnote" data-i18n="footnote">
         僅供個人學術與自主報名使用。系統以約 2.5 秒禮貌間隔輪詢，避免對校方系統產生負擔。請遵守學校規範。
       </p>
 

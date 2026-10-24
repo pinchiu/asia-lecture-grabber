@@ -39,7 +39,10 @@ class AsiaApi {
   /// 可傳入自訂之伺服器位址 [baseUrl]；若未提供則使用 [defaultBaseUrl]。
   AsiaApi({this.baseUrl = defaultBaseUrl})
       : _client = HttpClient()
-          ..badCertificateCallback = ((X509Certificate cert, String host, int port) => true)
+          ..badCertificateCallback = ((X509Certificate cert, String host, int port) {
+            // 僅對亞大校方伺服器（因 IIS 伺服器缺少中繼憑證）及本地測試環境放行
+            return host.endsWith('asia.edu.tw') || host == '127.0.0.1' || host == 'localhost';
+          })
           ..connectionTimeout = const Duration(seconds: 25);
 
   Uri _resolve(String path) {
@@ -245,8 +248,8 @@ class AsiaApi {
       throw ApiError(text.isNotEmpty ? text : '退選失敗（HTTP ${response.statusCode}）', status: response.statusCode);
     }
 
-    // 校方 DeleteData 成功時回傳空字串 ""
-    if (text.isEmpty) {
+    // 校方 DeleteData 成功時回傳空字串或引號字串 ""
+    if (text.isEmpty || text == '""') {
       return {'ok': true, 'message': '已成功取消報名'};
     }
 

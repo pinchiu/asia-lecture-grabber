@@ -33,6 +33,7 @@ import * as ai from './ai.mjs';
 import { Engine } from './engine.mjs';
 import { Scheduler } from './schedule.mjs';
 import { buildCalendar, generateIcs } from './calendar.mjs';
+import { handleJsonRpcMessage } from './mcp.mjs';
 import {
   PUBLIC_DIR,
   DATA_DIR,
@@ -515,8 +516,38 @@ export function createApp({
         }
 
         case 'POST /api/logs/clear': {
-          engine.logs = [];
+          engine.clearLogs();
           return ok(res, { ok: true });
+        }
+
+        case 'GET /api/mcp': {
+          const response = await handleJsonRpcMessage({ jsonrpc: '2.0', id: 'discovery', method: 'tools/list' }, {
+            api: apiAdapter,
+            storage,
+            engine,
+            scheduler,
+            headers: req.headers
+          });
+          res.setHeader('Mcp-Protocol-Version', '2026-07-28');
+          res.setHeader('Cache-Control', 'public, max-age=60');
+          return ok(res, response);
+        }
+
+        case 'POST /api/mcp': {
+          const body = await readJson(req);
+          const response = await handleJsonRpcMessage(body, {
+            api: apiAdapter,
+            storage,
+            engine,
+            scheduler,
+            headers: req.headers
+          });
+          res.setHeader('Mcp-Protocol-Version', '2026-07-28');
+          if (response === null) {
+            res.writeHead(204);
+            return res.end();
+          }
+          return ok(res, response);
         }
 
         default:
@@ -546,10 +577,11 @@ export function createApp({
       res.end('Forbidden');
       return;
     }
+    const targetFile = file === root ? path.join(root, 'index.html') : file;
     try {
-      const data = await readFile(file);
+      const data = await readFile(targetFile);
       res.writeHead(200, {
-        'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream',
+        'Content-Type': MIME[path.extname(targetFile).toLowerCase()] || 'application/octet-stream',
         'Cache-Control': 'no-store'
       });
       res.end(data);

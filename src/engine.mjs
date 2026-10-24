@@ -611,6 +611,11 @@ export class Engine extends EventEmitter {
     return this.logs.filter((entry) => entry.id > sinceId);
   }
 
+  clearLogs() {
+    this.logs = [];
+    this.emit('state');
+  }
+
   log(level, message) {
     const entry = { id: ++this.logSeq, ts: Date.now(), level, message: String(message) };
     this.logs.push(entry);

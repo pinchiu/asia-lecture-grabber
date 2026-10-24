@@ -26,6 +26,7 @@ function waitForServer(retries = 20) {
 
   http
     .get(URL, (res) => {
+      res.resume();
       if (res.statusCode >= 200 && res.statusCode < 500) {
         console.log('[桌面啟動器] 服務就緒，正在喚起瀏覽器視窗...');
         openBrowser(URL);
@@ -43,10 +44,11 @@ function openBrowser(targetUrl) {
   const isMac = process.platform === 'darwin';
 
   if (isWin) {
-    // 優先以 Chrome App 視窗模式開啟（若有安裝），否則使用預設瀏覽器
-    const chrome = spawn('cmd', ['/c', 'start', 'chrome', `--app=${targetUrl}`], { detached: true, stdio: 'ignore' });
-    chrome.on('error', () => {
-      spawn('cmd', ['/c', 'start', targetUrl], { detached: true, stdio: 'ignore' });
+    // 優先以 Chrome App 視窗模式開啟（若有安裝），若失敗則自動以預設瀏覽器開啟
+    spawn('cmd', ['/c', `start "" chrome --app=${targetUrl} || start "" "${targetUrl}"`], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true
     });
   } else if (isMac) {
     spawn('open', [targetUrl], { detached: true, stdio: 'ignore' });
@@ -54,5 +56,26 @@ function openBrowser(targetUrl) {
     spawn('xdg-open', [targetUrl], { detached: true, stdio: 'ignore' });
   }
 }
+
+// 監聽結束信號，確保退出時不會遺留孤兒伺服器進程持續佔用連接埠
+function cleanup() {
+  if (serverProcess && !serverProcess.killed) {
+    try {
+      serverProcess.kill('SIGTERM');
+    } catch {}
+  }
+}
+
+process.on('SIGINT', () => {
+  cleanup();
+  process.exit(0);
+});
+process.on('SIGTERM', () => {
+  cleanup();
+  process.exit(0);
+});
+process.on('exit', () => {
+  cleanup();
+});
 
 waitForServer();

@@ -22,6 +22,7 @@
 import https from 'node:https';
 import http from 'node:http';
 import tls from 'node:tls';
+import net from 'node:net';
 import crypto from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -35,9 +36,27 @@ export const BASE_URL = (() => {
   return raw.endsWith('/') ? raw : raw + '/';
 })();
 
-const BASE = new URL(BASE_URL);
-const USE_TLS = BASE.protocol === 'https:';
+let currentBaseUrl = BASE_URL;
+let BASE = new URL(currentBaseUrl);
+let USE_TLS = BASE.protocol === 'https:';
 const EXTRA_CA_FILE = path.join(DATA_DIR, 'extra-ca.pem');
+
+export function setBaseUrl(url) {
+  const raw = String(url || '').trim();
+  if (!raw) return;
+  const normalized = raw.endsWith('/') ? raw : raw + '/';
+  currentBaseUrl = normalized;
+  BASE = new URL(currentBaseUrl);
+  USE_TLS = BASE.protocol === 'https:';
+  buildAgent();
+}
+
+export function resetBaseUrl() {
+  currentBaseUrl = BASE_URL;
+  BASE = new URL(currentBaseUrl);
+  USE_TLS = BASE.protocol === 'https:';
+  buildAgent();
+}
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
@@ -69,7 +88,12 @@ export class ApiError extends Error {
 
 let extraCaPem = '';
 let agent = null;
-let repairAttempted = false;
+let repairPromise = null;
+let currentRepairFn = repairTlsChain;
+
+export function _setRepairFnForTest(fn) {
+  currentRepairFn = fn || repairTlsChain;
+}
 
 try {
   extraCaPem = (await readFile(EXTRA_CA_FILE, 'utf8')).trim();
@@ -78,7 +102,20 @@ try {
 }
 
 function buildAgent() {
-  if (!USE_TLS) return;
+  if (!USE_TLS) {
+    if (agent) {
+      try {
+        agent.destroy();
+      } catch {}
+      agent = null;
+    }
+    return;
+  }
+  if (agent) {
+    try {
+      agent.destroy();
+    } catch {}
+  }
   const ca = [...tls.rootCertificates];
   if (extraCaPem) ca.push(extraCaPem);
   agent = new https.Agent({ keepAlive: true, maxSockets: 6, timeout: 30_000, ca });
@@ -90,14 +127,19 @@ function getAgent() {
   return agent;
 }
 
-function toPem(buffer) {
+export function toPem(buffer) {
+  if (!buffer) return '';
   const text = Buffer.isBuffer(buffer) ? buffer.toString('latin1') : String(buffer);
   if (text.includes('-----BEGIN CERTIFICATE-----')) return text;
-  const base64 = Buffer.from(buffer).toString('base64').match(/.{1,64}/g).join('\n');
-  return `-----BEGIN CERTIFICATE-----\n${base64}\n-----END CERTIFICATE-----\n`;
+  const rawBuf = Buffer.isBuffer(buffer) ? buffer : Buffer.from(String(buffer));
+  if (rawBuf.length === 0) return '';
+  const base64 = rawBuf.toString('base64');
+  const lines = base64.match(/.{1,64}/g);
+  if (!lines || lines.length === 0) return '';
+  return `-----BEGIN CERTIFICATE-----\n${lines.join('\n')}\n-----END CERTIFICATE-----\n`;
 }
 
-function safeVerify(cert, publicKey) {
+export function safeVerify(cert, publicKey) {
   try {
     return cert.verify(publicKey);
   } catch {
@@ -105,41 +147,63 @@ function safeVerify(cert, publicKey) {
   }
 }
 
-function extractAiaUrls(rawDer) {
-  const text = Buffer.from(rawDer).toString('latin1');
-  const matches = text.match(/https?:\/\/[^\x00-\x20\x80-\xff]+?\.crt/gi) || [];
+export function extractAiaUrls(rawDer) {
+  if (!rawDer) return [];
+  const buf = Buffer.isBuffer(rawDer) ? rawDer : Buffer.from(rawDer);
+  const text = buf.toString('latin1');
+  const matches = text.match(/https?:\/\/[^\x00-\x20\x80-\xff]+?\.(?:crt|cer)(?:\?[^\x00-\x20\x80-\xff]*)?/gi) || [];
   return [...new Set(matches.map((url) => url.replace(/#+$/, '')))];
 }
 
-function getPeerLeafCertificate() {
+export function getPeerLeafCertificate() {
   return new Promise((resolve, reject) => {
+    let timer = null;
+    const isIp = net.isIP(BASE.hostname);
     const socket = tls.connect(
       {
         host: BASE.hostname,
         port: Number(BASE.port || 443),
-        servername: BASE.hostname,
+        servername: isIp ? undefined : BASE.hostname,
         rejectUnauthorized: false
       },
       () => {
         try {
+          if (timer) clearTimeout(timer);
           const cert = socket.getPeerCertificate(true);
           socket.end();
           if (!cert || !cert.raw) reject(new Error('無法取得伺服器憑證'));
           else resolve(cert.raw);
         } catch (err) {
+          if (timer) clearTimeout(timer);
+          socket.destroy();
           reject(err);
         }
       }
     );
-    socket.on('error', reject);
-    socket.setTimeout(15_000, () => socket.destroy(new Error('讀取憑證逾時')));
+    socket.on('error', (err) => {
+      if (timer) clearTimeout(timer);
+      reject(err);
+    });
+    timer = setTimeout(() => {
+      socket.destroy(new Error('讀取憑證逾時'));
+    }, 15_000);
   });
 }
 
-function downloadBinary(url) {
+export function downloadBinary(url, maxRedirects = 3) {
   return new Promise((resolve, reject) => {
+    if (maxRedirects < 0) {
+      reject(new Error('下載中繼憑證失敗：重導向次數過多'));
+      return;
+    }
     const lib = url.startsWith('https:') ? https : http;
     const req = lib.get(url, { timeout: 15_000, headers: { 'User-Agent': USER_AGENT } }, (res) => {
+      if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
+        res.resume();
+        const redirectUrl = new URL(res.headers.location, url).toString();
+        downloadBinary(redirectUrl, maxRedirects - 1).then(resolve, reject);
+        return;
+      }
       if (res.statusCode !== 200) {
         res.resume();
         reject(new Error(`下載中繼憑證失敗：HTTP ${res.statusCode}`));
@@ -157,25 +221,33 @@ function downloadBinary(url) {
 
 /**
  * 修復憑證鏈：抓取 AIA 中繼憑證，驗證其鏈路後加入信任並快取。
+ * 支援透過參數注入自訂獲取邏輯以利單元測試。
  * @returns {Promise<boolean>} 是否成功修復
  */
-async function repairTlsChain() {
+export async function repairTlsChain({
+  getLeaf = getPeerLeafCertificate,
+  download = downloadBinary,
+  rootCerts = tls.rootCertificates,
+  caFilePath = EXTRA_CA_FILE
+} = {}) {
   if (!USE_TLS) return false;
   try {
-    const leafRaw = await getPeerLeafCertificate();
+    const leafRaw = await getLeaf();
+    if (!leafRaw) return false;
     const urls = extractAiaUrls(leafRaw);
     if (!urls.length) return false;
 
     const leafCert = new crypto.X509Certificate(toPem(leafRaw));
-    const roots = tls.rootCertificates.map((pem) => new crypto.X509Certificate(pem));
+    const roots = rootCerts.map((pem) => (pem instanceof crypto.X509Certificate ? pem : new crypto.X509Certificate(pem)));
 
     for (const url of urls) {
       let candidate;
       try {
-        candidate = toPem(await downloadBinary(url));
+        candidate = toPem(await download(url));
       } catch {
         continue;
       }
+      if (!candidate) continue;
 
       let interCert;
       try {
@@ -196,8 +268,10 @@ async function repairTlsChain() {
 
       extraCaPem = candidate;
       buildAgent();
-      await mkdir(DATA_DIR, { recursive: true });
-      await writeFile(EXTRA_CA_FILE, candidate, 'utf8');
+      try {
+        await mkdir(path.dirname(caFilePath), { recursive: true });
+        await writeFile(caFilePath, candidate, 'utf8');
+      } catch {}
       return true;
     }
     return false;
@@ -213,11 +287,13 @@ async function repairTlsChain() {
 function rawRequest(method, relativePath, headers, body, timeoutMs) {
   return new Promise((resolve, reject) => {
     const lib = USE_TLS ? https : http;
+    const basePath = BASE.pathname.endsWith('/') ? BASE.pathname : BASE.pathname + '/';
+    const cleanRelative = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
     const options = {
       protocol: BASE.protocol,
       hostname: BASE.hostname,
       port: BASE.port || undefined,
-      path: BASE.pathname + relativePath,
+      path: basePath + cleanRelative,
       method,
       headers,
       agent: getAgent(),
@@ -242,27 +318,31 @@ function rawRequest(method, relativePath, headers, body, timeoutMs) {
   });
 }
 
-function isTlsChainError(err) {
+export function isTlsChainError(err) {
   const code = String(err?.code || '');
   const message = String(err?.message || '');
   return (
     code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
+    code === 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY' ||
     code === 'SELF_SIGNED_CERT_IN_CHAIN' ||
     code === 'DEPTH_ZERO_SELF_SIGNED_CERT' ||
-    /unable to verify the first certificate|unable to get local issuer|certificate chain/i.test(message)
+    code === 'CERT_UNTRUSTED' ||
+    /unable to verify the first certificate|unable to get (?:local )?issuer|certificate chain|self[- ]signed certificate/i.test(message)
   );
 }
 
 export function toApiError(err) {
   if (err instanceof ApiError) return err;
   const code = String(err?.code || '');
+  const msg = String(err?.message || '');
   if (code === 'ETIMEDOUT') return new ApiError('請求逾時（學校系統沒有回應）', { status: 0, transient: true });
   if (code === 'ENOTFOUND') return new ApiError('找不到主機（請確認網路或 DNS）', { status: 0, transient: true });
-  if (code === 'ECONNREFUSED' || code === 'ECONNRESET' || code === 'ENETUNREACH')
+  if (code === 'EAI_AGAIN') return new ApiError('DNS 查詢失敗（暫時無法解析校方網址）', { status: 0, transient: true });
+  if (code === 'ECONNREFUSED' || code === 'ECONNRESET' || code === 'ENETUNREACH' || code === 'EHOSTUNREACH')
     return new ApiError(`網路連線失敗（${code}）`, { status: 0, transient: true });
-  if (/CERT|SSL|TLS/i.test(code + err?.message))
-    return new ApiError(`TLS 憑證驗證失敗（${code || err?.message}）`, { status: 0, transient: true });
-  return new ApiError(`網路連線失敗：${err?.message || err}`, { status: 0, transient: true });
+  if (/CERT|SSL|TLS/i.test(code + msg))
+    return new ApiError(`TLS 憑證驗證失敗（${code || msg}）`, { status: 0, transient: true });
+  return new ApiError(`網路連線失敗：${msg || err || '未知錯誤'}`, { status: 0, transient: true });
 }
 
 export async function request(method, relativePath, { body, token, timeoutMs = 25_000, rawText = false } = {}) {
@@ -272,18 +352,25 @@ export async function request(method, relativePath, { body, token, timeoutMs = 2
   if (payload !== undefined) headers['Content-Length'] = Buffer.byteLength(payload);
 
   let response;
-  try {
-    response = await rawRequest(method, relativePath, headers, payload, timeoutMs);
-  } catch (err) {
-    if (isTlsChainError(err) && !repairAttempted) {
-      repairAttempted = true;
-      const repaired = await repairTlsChain();
-      if (repaired) {
-        response = await rawRequest(method, relativePath, headers, payload, timeoutMs);
-      } else {
-        throw toApiError(err);
+  let retried = false;
+
+  while (true) {
+    try {
+      response = await rawRequest(method, relativePath, headers, payload, timeoutMs);
+      break;
+    } catch (err) {
+      if (isTlsChainError(err) && !retried) {
+        retried = true;
+        if (!repairPromise) {
+          repairPromise = currentRepairFn().finally(() => {
+            repairPromise = null;
+          });
+        }
+        const repaired = await repairPromise;
+        if (repaired) {
+          continue;
+        }
       }
-    } else {
       throw toApiError(err);
     }
   }
@@ -297,7 +384,14 @@ export async function request(method, relativePath, { body, token, timeoutMs = 2
   }
 
   if (response.status < 200 || response.status >= 300) {
-    const message = json?.message || json?.Message || `HTTP ${response.status} ${method} ${relativePath}`;
+    let message = json?.message || json?.Message;
+    if (!message && text) {
+      const titleMatch = text.match(/<title>([^<]+)<\/title>/i);
+      if (titleMatch && titleMatch[1]) {
+        message = titleMatch[1].trim();
+      }
+    }
+    message = message || `HTTP ${response.status} ${method} ${relativePath}`;
     throw new ApiError(message, {
       status: response.status,
       payload: json ?? text.slice(0, 800),
@@ -333,6 +427,9 @@ export async function request(method, relativePath, { body, token, timeoutMs = 2
  * @returns {{token: string, emp_id: string, emp_nm: string, emp_dp?: string, emp_rl: string}}
  */
 export async function login(username, password) {
+  if (!username || !password) {
+    throw new ApiError('請提供帳號與密碼', { status: 400 });
+  }
   const json = await request('POST', 'api/Login/Auth', {
     body: { username: String(username), password: String(password) }
   });
@@ -354,7 +451,7 @@ export async function listLectures(token) {
 
 /** 單場講座明細。 */
 export async function getLecture(token, eid01) {
-  const json = await request('GET', `api/Cfd01/GetRes?eid01=${encodeURIComponent(eid01)}`, { token });
+  const json = await request('GET', `api/Cfd01/GetRes?eid01=${encodeURIComponent(eid01 || '')}`, { token });
   return Array.isArray(json?.data) ? json.data[0] || null : null;
 }
 
@@ -373,11 +470,19 @@ export async function verifyIdentity(token, { p_no, p_id, p_type = 'S' }) {
 /** 送出報名（搶課核心）。 */
 export async function registerLecture(token, { std_info, eid01, reseid }) {
   const safeStdInfo = std_info ? { ...std_info, bfree: std_info.bfree || 'N' } : std_info;
-  const json = await request('POST', 'api/Cfd10/Save', {
-    token,
-    body: { std_info: safeStdInfo, eid01, reseid },
-    timeoutMs: 20_000
-  });
+  let json;
+  try {
+    json = await request('POST', 'api/Cfd10/Save', {
+      token,
+      body: { std_info: safeStdInfo, eid01, reseid },
+      timeoutMs: 20_000
+    });
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 200) {
+      return { ok: false, message: err.message, raw: err.payload };
+    }
+    throw err;
+  }
   const message = String(json?.message ?? json?.Message ?? '').trim();
   const ok = json?.success !== false && /成功/.test(message) && !/未成功|失敗|錯誤|不正確|已滿|額滿/.test(message);
   return { ok, message: message || '（系統未回傳訊息）', raw: json };
@@ -395,8 +500,8 @@ export async function cancelLecture(token, regEid) {
     rawText: true
   });
 
-  // 校方 DeleteData 成功時回傳空字串 ""
-  if (!text) {
+  // 校方 DeleteData 成功時回傳空字串 "" 或 JSON 格式的 ""
+  if (!text || text === '""' || json === '') {
     return { ok: true, message: '已成功取消報名' };
   }
 
