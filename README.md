@@ -31,7 +31,7 @@
 - **爆速輪詢**：報名開放瞬間或名額釋出瞬間，自動切換至高速輪詢模式（預設 0.8 秒）。
 - **禮貌退避**：平時維持 2.5 秒禮貌間隔，連線異常時自動指數退避，不對校方伺服器造成負擔。
 - **自動身份驗證**：登入時以身分證字號末四碼換取校方報名所需憑證，全程自動化。
-- **TLS 憑證鏈自動修復**：校方 IIS 伺服器缺少中繼 CA，後端依據 AIA 規範自動下載中繼憑證至本機，嚴禁關閉 TLS 驗證。
+- **TLS 憑證鏈自動修復**：校方 IIS 伺服器缺少中繼 CA，後端依據 AIA 規範自動下載並驗證中繼憑證；Flutter 端以已驗證的中繼憑證作為額外信任錨點，兩端皆維持完整 TLS 驗證，嚴禁關閉驗證或放行任意網域。
 
 ### 3. 多端支援與雙語國際化：Flutter 原生 App、PWA 行動版與電腦網頁版
 - **中英文介面即時切換（i18n）**：網頁版與 Flutter 行動端全面支援繁體中文與英文（English）雙語切換。行動端預設跟隨作業系統語言，並支援手動切換與即時持久化。
@@ -86,7 +86,7 @@ npm start
 啟動後服務預設運行於 `http://127.0.0.1:5199`，瀏覽器會自動開啟。
 
 ### 執行單元測試
-專案包含 92 項基於 Node.js 內建測試模組的自動化測試：
+專案包含 96 項基於 Node.js 內建測試模組的自動化測試：
 ```bash
 npm test
 ```
@@ -137,14 +137,16 @@ npm test
   ```bash
   node src/mcp.mjs
   ```
+  stdio 進入點會載入 `data/config.json` 與 `data/state.json`、建立本機搶課引擎；若已記住帳密會自動登入，因此 8 項工具在 stdio 模式下皆可完整運作。
 - **本機 HTTP 端點**：
   - 探索端點：`GET /api/mcp`（回傳工具清冊與快取中繼標頭）
   - 調用端點：`POST /api/mcp`（支援 `Mcp-Method` 與 `Mcp-Name` HTTP 標頭導向）
+  - 安全限制：僅接受 loopback Origin 與 `Content-Type: application/json`；跨站瀏覽器請求會回傳 `403`，非 JSON 請求會回傳 `415`。伺服器預設只綁定 `127.0.0.1`。
 
 ### 2. 核心工具目錄 (Tool Catalog)
 | 工具名稱 | 功能職責 | 關鍵參數 |
 | :--- | :--- | :--- |
-| `asia_list_lectures` | 查詢當期講座清冊，支援多維度篩選 | `keyword`, `literacy`, `status`, `limit` |
+| `asia_list_lectures` | 查詢當期講座清冊，支援多維度篩選 | `keyword`, `literacy`, `status`, `refresh`, `limit` |
 | `asia_get_lecture` | 查詢單場講座詳細資料與素養規格 | `eid01`（必填，如 `L01`） |
 | `asia_check_graduation` | 分析四大素養畢業門檻達成率與缺額 | 無 |
 | `asia_register_lecture` | 秒速直報指定講座（零延遲） | `eid01`（必填）, `bfree`（無障礙空間需求 Y/N） |
@@ -263,9 +265,11 @@ asia-lecture-grabber/
 │  └ asia-lecture-assistant/     AI 代理專用技能規格目錄
 │     └ SKILL.md                 遵循 MCP 2026-07-28 規範之 Agent Skill
 ├ src/
-│  ├ asia.mjs                    校方 API 客戶端（含 AIA 中繼憑證自動修補與連線池）
+│  ├ asia.mjs                    校方 API 客戶端（含 AIA 中繼憑證自動修補調度與連線池）
+│  ├ tls.mjs                     TLS 憑證鏈輔助（AIA 提取、中繼憑證下載與驗證）
+│  ├ runtime.mjs                 共用執行期組裝（引擎、自動登入、狀態持久化）
 │  ├ engine.mjs                  搶課核心引擎（狀態機、突發輪詢、退避機制）
-│  ├ mcp.mjs                     Model Context Protocol 2026-07-28 無狀態伺服器
+│  ├ mcp.mjs                     Model Context Protocol 2026-07-28 無狀態伺服器（stdio 與 HTTP）
 │  ├ schedule.mjs                定時排程器（開放前 N 秒、特定時刻、每週時段）
 │  ├ calendar.mjs                行事曆轉換、四大素養提取與衝堂檢驗
 │  ├ ai.mjs                      智慧選課代理與本機離線規則解析器

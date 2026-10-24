@@ -30,22 +30,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as defaultApi from './asia.mjs';
 import * as ai from './ai.mjs';
-import { Engine } from './engine.mjs';
 import { Scheduler } from './schedule.mjs';
 import { buildCalendar, generateIcs } from './calendar.mjs';
 import { handleJsonRpcMessage } from './mcp.mjs';
-import {
-  PUBLIC_DIR,
-  DATA_DIR,
-  defaultStorage,
-  loadConfig as defaultLoadConfig,
-  loadState as defaultLoadState,
-  saveConfig as defaultSaveConfig,
-  saveState as defaultSaveState
-} from './storage.mjs';
+import { autoLoginEngine, bindStatePersistence, createRuntime } from './runtime.mjs';
+import { PUBLIC_DIR, defaultStorage } from './storage.mjs';
 
 export const PORT = Number(process.env.PORT || 5199);
-export const HOST = process.env.HOST || '0.0.0.0';
+// 預設只綁定 loopback；需要手機或區網連線時，使用者必須明確設定 HOST=0.0.0.0。
+export const HOST = process.env.HOST || '127.0.0.1';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -77,7 +70,16 @@ function fail(res, message, status = 400) {
   return sendJson(res, status, { error: String(message || '未知錯誤') });
 }
 
-async function readJson(req) {
+async function readJson(req, { requireJson = false } = {}) {
+  if (requireJson) {
+    const contentType = String(req.headers['content-type'] || '').toLowerCase();
+    if (!contentType.startsWith('application/json')) {
+      const err = new Error('Content-Type 必須為 application/json');
+      err.status = 415;
+      throw err;
+    }
+  }
+
   const chunks = [];
   let size = 0;
   for await (const chunk of req) {
@@ -103,6 +105,29 @@ function resolveErrorStatus(err, apiAdapter) {
     return 502;
   }
   return 400;
+}
+
+function isLoopbackHostname(hostname) {
+  return hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '[::1]' || hostname === '::1';
+}
+
+/**
+ * MCP 端點只允許本機瀏覽器來源或無 Origin 的非瀏覽器客戶端。
+ * 瀏覽器跨站請求必定帶 Origin；封鎖非 loopback 來源可防止任意網頁
+ * 在使用者已登入的情況下代為呼叫報名或退選工具。
+ */
+function assertLoopbackOrigin(req) {
+  const origin = req.headers.origin;
+  if (!origin) return;
+  let hostname = '';
+  try {
+    hostname = new URL(origin).hostname;
+  } catch {}
+  if (!isLoopbackHostname(hostname)) {
+    const err = new Error('僅允許本機來源呼叫 MCP 端點');
+    err.status = 403;
+    throw err;
+  }
 }
 
 /**
@@ -199,6 +224,20 @@ export function createApp({
       engine.stats.lastSyncAt = Date.now();
     }
     return engine.lectures;
+  }
+
+  /**
+   * 組裝 MCP 呼叫情境。授權憑證以 getToken 動態取得，
+   * 避免登入、登出或重新登入後仍使用啟動時的舊 token。
+   */
+  function mcpContext(headers) {
+    return {
+      api: apiAdapter,
+      storage,
+      engine,
+      getToken: () => engine.session?.token || null,
+      headers
+    };
   }
 
   async function handleApi(req, res, url) {
@@ -521,27 +560,20 @@ export function createApp({
         }
 
         case 'GET /api/mcp': {
-          const response = await handleJsonRpcMessage({ jsonrpc: '2.0', id: 'discovery', method: 'tools/list' }, {
-            api: apiAdapter,
-            storage,
-            engine,
-            scheduler,
-            headers: req.headers
-          });
+          assertLoopbackOrigin(req);
+          const response = await handleJsonRpcMessage(
+            { jsonrpc: '2.0', id: 'discovery', method: 'tools/list' },
+            mcpContext(req.headers)
+          );
           res.setHeader('Mcp-Protocol-Version', '2026-07-28');
           res.setHeader('Cache-Control', 'public, max-age=60');
           return ok(res, response);
         }
 
         case 'POST /api/mcp': {
-          const body = await readJson(req);
-          const response = await handleJsonRpcMessage(body, {
-            api: apiAdapter,
-            storage,
-            engine,
-            scheduler,
-            headers: req.headers
-          });
+          assertLoopbackOrigin(req);
+          const body = await readJson(req, { requireJson: true });
+          const response = await handleJsonRpcMessage(body, mcpContext(req.headers));
           res.setHeader('Mcp-Protocol-Version', '2026-07-28');
           if (response === null) {
             res.writeHead(204);
@@ -604,44 +636,7 @@ export function createApp({
   });
 
   async function autoLogin() {
-    const username = String(currentConfig.account?.username || '').trim();
-    const password = String(currentConfig.account?.password || '');
-    const idLast4 = String(currentConfig.account?.idLast4 || '').trim();
-
-    if (!username || !password) return;
-
-    try {
-      engine.log('info', `正在使用已記住的帳號（${username}）自動登入校方系統…`);
-      const user = await apiAdapter.login(username, password);
-      engine.setSession({
-        token: user.token,
-        emp_id: String(user.emp_id || username),
-        emp_nm: String(user.emp_nm || ''),
-        emp_rl: String(user.emp_rl || ''),
-        idLast4,
-        username,
-        password
-      });
-      engine.log('success', `[自動登入成功] 歡迎回來，${user.emp_nm || username}`);
-
-      if (idLast4) {
-        try {
-          await engine.ensureIdentity();
-        } catch (err) {
-          engine.log('warn', `身分驗證失敗：${err.message}`);
-        }
-      }
-
-      try {
-        const rows = await apiAdapter.listLectures(engine.session.token);
-        engine.applyRows(rows);
-        engine.stats.lastSyncAt = Date.now();
-      } catch {}
-
-      engine.emit('state');
-    } catch (err) {
-      engine.log('warn', `自動登入失敗（可能密碼已變更）：${err.message}`);
-    }
+    await autoLoginEngine({ engine, api: apiAdapter, config: currentConfig });
   }
 
   return {
@@ -664,22 +659,8 @@ export async function startServer({
   api: apiAdapter = defaultApi,
   publicDir = PUBLIC_DIR
 } = {}) {
-  let config = await storage.loadConfig();
-  const savedState = await storage.loadState();
-
-  const engine = new Engine({
-    settings: config.engine,
-    targets: savedState.targets,
-    api: apiAdapter
-  });
-
-  let saveTimer = null;
-  engine.onChange = () => {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-      storage.saveState({ targets: engine.targets }).catch((err) => console.error('[state] 保存失敗：', err.message));
-    }, 800);
-  };
+  let { engine, config } = await createRuntime({ storage, api: apiAdapter });
+  const flushState = bindStatePersistence(engine, storage);
 
   const scheduler = new Scheduler({
     enabled: config.schedule?.enabled !== false,
@@ -734,7 +715,7 @@ export async function startServer({
     engine.stop('伺服器關閉');
     clearInterval(schedulerTimer);
     try {
-      await storage.saveState({ targets: engine.targets });
+      await flushState();
     } catch (err) {
       console.error('[state] 保存失敗：', err.message);
     }

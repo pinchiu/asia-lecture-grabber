@@ -14,14 +14,7 @@ import {
   STATUS_LABEL,
   setBaseUrl,
   resetBaseUrl,
-  isTlsChainError,
-  toPem,
-  extractAiaUrls,
-  safeVerify,
-  getPeerLeafCertificate,
-  downloadBinary,
   repairTlsChain,
-  _setRepairFnForTest,
   request,
   login,
   listLectures,
@@ -31,6 +24,14 @@ import {
   cancelLecture,
   listRegistered
 } from '../src/asia.mjs';
+import {
+  isTlsChainError,
+  toPem,
+  extractAiaUrls,
+  safeVerify,
+  getPeerLeafCertificate,
+  downloadBinary
+} from '../src/tls.mjs';
 
 // 用於本地端 HTTPS 憑證測試之自簽 PFX 二進位資料（密碼：testpass）
 const TEST_PFX_BASE64 =
@@ -368,7 +369,7 @@ describe('asia.mjs 校方通訊錯誤與狀態測試', () => {
 
     try {
       setBaseUrl(`https://localhost:${port}/cfd2020/`);
-      const rawDer = await getPeerLeafCertificate();
+      const rawDer = await getPeerLeafCertificate(`https://localhost:${port}/cfd2020/`);
       assert.ok(rawDer && Buffer.isBuffer(rawDer));
       const parsed = new crypto.X509Certificate(toPem(rawDer));
       assert.equal(parsed.subject, 'CN=localhost');
@@ -379,12 +380,10 @@ describe('asia.mjs 校方通訊錯誤與狀態測試', () => {
   });
 
   test('getPeerLeafCertificate 連線異常防護', async () => {
-    setBaseUrl('https://127.0.0.1:59999/cfd2020/');
     await assert.rejects(
-      () => getPeerLeafCertificate(),
+      () => getPeerLeafCertificate('https://127.0.0.1:59999/cfd2020/'),
       (err) => Boolean(err)
     );
-    resetBaseUrl();
   });
 
   test('request 請求方法、標頭、UTF-8 BOM 與錯誤狀態碼解析', async () => {
@@ -522,22 +521,22 @@ describe('asia.mjs 校方通訊錯誤與狀態測試', () => {
       setBaseUrl(`https://localhost:${port}/cfd2020/`);
 
       // 第一次修復失敗時，應拋出 TLS 錯誤
-      _setRepairFnForTest(async () => {
+      const failRepair = async () => {
         repairCalls++;
         return false;
-      });
+      };
 
       await assert.rejects(
-        () => request('GET', 'api/test/tls-fail'),
+        () => request('GET', 'api/test/tls-fail', { repair: failRepair }),
         (err) => err.message.includes('TLS 憑證驗證失敗')
       );
       assert.equal(repairCalls, 1);
 
       // 當修復成功時，應自動重試並成功取得結果；同時多個請求應共享同一個 repairPromise
       let sharedRepairCount = 0;
-      _setRepairFnForTest(async () => {
+      const sharedRepair = async () => {
         sharedRepairCount++;
-        const raw = await getPeerLeafCertificate();
+        const raw = await getPeerLeafCertificate(`https://localhost:${port}/cfd2020/`);
         const cert = new crypto.X509Certificate(toPem(raw));
         await repairTlsChain({
           getLeaf: async () => Buffer.from(`${cert.toString()}\nhttp://dummy.com/ca.crt`),
@@ -545,18 +544,17 @@ describe('asia.mjs 校方通訊錯誤與狀態測試', () => {
           rootCerts: [cert]
         });
         return true;
-      });
+      };
 
       const [res1, res2] = await Promise.all([
-        request('GET', 'api/test/retry-1'),
-        request('GET', 'api/test/retry-2')
+        request('GET', 'api/test/retry-1', { repair: sharedRepair }),
+        request('GET', 'api/test/retry-2', { repair: sharedRepair })
       ]);
 
       assert.equal(res1.success, true);
       assert.equal(res2.success, true);
       assert.equal(sharedRepairCount, 1);
     } finally {
-      _setRepairFnForTest(null);
       await new Promise((res) => httpsServer.close(res));
       resetBaseUrl();
     }

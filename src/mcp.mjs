@@ -7,8 +7,8 @@
  * 3. 快取中繼標註（Cache Metadata）：tools/list 包含 ttlMs 與 cacheScope
  * 4. 2026-07-28 Tasks 標準擴展原語（tasks/list, tasks/get, tasks/cancel）
  * 5. 雙向通訊介面：
- *    - CLI stdio 管道：供 Claude Desktop、Cursor、Antigravity 等終端 AI Agent 調用
- *    - HTTP 端點：供 Web / 雲端代理透過 POST /api/mcp 調用
+ *    - CLI stdio 管道：啟動時載入本機設定與引擎，供 Claude Desktop、Cursor、Antigravity 等終端 AI Agent 調用
+ *    - HTTP 端點：供 Web / 雲端代理透過 POST /api/mcp 調用（僅限本機來源）
  *
  * 核心工具（Tools）：
  *   - asia_list_lectures: 講座清冊查詢與素養篩選
@@ -22,9 +22,12 @@
  */
 
 import readline from 'node:readline';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import * as defaultApi from './asia.mjs';
 import * as defaultStorage from './storage.mjs';
 import { extractLiteracies, buildCalendar, findConflicts } from './calendar.mjs';
+import { autoLoginEngine, bindStatePersistence, createRuntime } from './runtime.mjs';
 
 export const MCP_SERVER_INFO = {
   name: 'asia-lecture-grabber',
@@ -34,10 +37,37 @@ export const MCP_SERVER_INFO = {
 export const MCP_PROTOCOL_VERSION = '2026-07-28';
 export const SUPPORTED_PROTOCOL_VERSIONS = ['2026-07-28', '2024-11-05'];
 
+const ENGINE_TASK_ID = 'grab-engine-poller';
+const TASK_NOT_FOUND_CODE = -32001;
+const TOTAL_THRESHOLD = 8;
+
+/**
+ * 四大素養的單一來源定義。
+ * key 對應 storage 的 health/care/innovation/excellence；
+ * label 對應校方欄位與 extractLiteracies 回傳的中文名稱。
+ */
+const LITERACIES = [
+  { key: 'health', label: '健康力', threshold: 2 },
+  { key: 'care', label: '關懷力', threshold: 2 },
+  { key: 'innovation', label: '創新力', threshold: 2 },
+  { key: 'excellence', label: '卓越力', threshold: 2 }
+];
+
+/**
+ * 參數缺失或格式錯誤。呼叫端會轉為 JSON-RPC -32602。
+ */
+class InvalidParamError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'InvalidParamError';
+  }
+}
+
 export const MCP_TOOLS = [
   {
     name: 'asia_list_lectures',
-    description: '查詢亞洲大學當期通識講座清單，支援依四大素養（健康力、關懷力、創新力、卓越力）、報名狀態（可報名、已額滿等）與關鍵字篩選。',
+    description:
+      '查詢亞洲大學當期通識講座清單，支援依四大素養（健康力、關懷力、創新力、卓越力）、報名狀態（可報名、已額滿等）與關鍵字篩選。未登入時僅能取得公開清單；需要個人報名狀態時請先登入。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -54,6 +84,10 @@ export const MCP_TOOLS = [
           type: 'string',
           enum: ['Y', 'F', 'N1', 'N2', 'C', 'D'],
           description: '篩選報名狀態：Y(可報名)、F(已額滿)、N1(未開放)、N2(已截止)、C(現場報名)'
+        },
+        refresh: {
+          type: 'boolean',
+          description: '設為 true 時強制重新向校方取得清單，不使用本機快取'
         },
         limit: {
           type: 'integer',
@@ -78,7 +112,8 @@ export const MCP_TOOLS = [
   },
   {
     name: 'asia_check_graduation',
-    description: '分析目前已報名場次與歷年補登紀錄，計算四大基本素養（健康力、關懷力、創新力、卓越力各需 ≥ 2 次，總場合計需 ≥ 8 場）之畢業門檻達成率與尚缺場次。',
+    description:
+      '分析目前已報名場次與歷年補登紀錄，計算四大基本素養（健康力、關懷力、創新力、卓越力各需 >= 2 次，總場合計需 >= 8 場）之畢業門檻達成率與尚缺場次。',
     inputSchema: {
       type: 'object',
       properties: {}
@@ -86,7 +121,7 @@ export const MCP_TOOLS = [
   },
   {
     name: 'asia_register_lecture',
-    description: '直接向校方系統送出指定講座之報名請求。具備零延遲直報特性，支援無障礙空間需求設定。',
+    description: '直接向校方系統送出指定講座之報名請求。需先於本機完成登入。具備零延遲直報特性，支援無障礙空間需求設定。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -97,7 +132,7 @@ export const MCP_TOOLS = [
         bfree: {
           type: 'string',
           enum: ['Y', 'N'],
-          description: '無障礙空間需求（預設 N）'
+          description: '本次報名的無障礙空間需求（預設沿用本機設定）'
         }
       },
       required: ['eid01']
@@ -105,7 +140,7 @@ export const MCP_TOOLS = [
   },
   {
     name: 'asia_cancel_lecture',
-    description: '取消已報名之講座（退選）。系統會自動比對校方伺服器核發之加密流水代號並完成退選。',
+    description: '取消已報名之講座（退選）。需先於本機完成登入。系統會自動比對校方伺服器核發之加密流水代號並完成退選。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -160,6 +195,26 @@ export const MCP_TOOLS = [
 ];
 
 /**
+ * 建立引擎任務的統一視圖，供 tasks/list 與 tasks/get 共用，避免同一任務出現兩種欄位形狀。
+ * @param {object} engine
+ */
+function engineTaskView(engine) {
+  const state = engine.getState();
+  return {
+    taskId: ENGINE_TASK_ID,
+    name: '亞洲大學通識搶課輪詢器',
+    status: state.running ? 'running' : 'idle',
+    mode: state.mode,
+    targetsCount: state.targets?.length || 0,
+    targets: engine.targetsView(),
+    stats: state.stats,
+    _meta: {
+      protocolVersion: MCP_PROTOCOL_VERSION
+    }
+  };
+}
+
+/**
  * 處理單一 JSON-RPC 2.0 請求（符合 MCP 2026-07-28 無狀態協定規範）。
  */
 export async function handleJsonRpcMessage(message, context = {}) {
@@ -167,7 +222,7 @@ export async function handleJsonRpcMessage(message, context = {}) {
     return {
       jsonrpc: '2.0',
       id: null,
-      error: { code: -32600, message: 'Invalid Request: payload must be a JSON object' }
+      error: { code: -32600, message: '無效的請求：內容必須是 JSON 物件' }
     };
   }
 
@@ -255,7 +310,7 @@ export async function handleJsonRpcMessage(message, context = {}) {
           id,
           error: {
             code: -32602,
-            message: 'Invalid params: tool name is required in params.name or Mcp-Name header'
+            message: '參數錯誤：需在 params.name 或 Mcp-Name 標頭提供工具名稱'
           }
         };
       }
@@ -278,14 +333,13 @@ export async function handleJsonRpcMessage(message, context = {}) {
           }
         };
       } catch (err) {
-        const isParamError = err?.name === 'InvalidParamError' || String(err?.message || '').startsWith('缺少必要參數');
-        if (isParamError) {
+        if (err?.name === 'InvalidParamError') {
           return {
             jsonrpc: '2.0',
             id,
             error: {
               code: -32602,
-              message: `Invalid params: ${err?.message || err}`
+              message: `參數錯誤：${err.message}`
             }
           };
         }
@@ -312,24 +366,11 @@ export async function handleJsonRpcMessage(message, context = {}) {
     // 2026-07-28 Tasks Primitive 原語擴展
     case 'tasks/list': {
       const engine = context.engine;
-      const tasks = [];
-      if (engine) {
-        const state = engine.getState();
-        tasks.push({
-          taskId: 'grab-engine-poller',
-          name: '亞洲大學通識搶課輪詢器',
-          status: state.running ? 'running' : 'idle',
-          mode: state.mode,
-          targetsCount: state.targets?.length || 0,
-          totalPolls: state.stats?.polls || 0,
-          totalSuccess: state.stats?.successes || 0
-        });
-      }
       return {
         jsonrpc: '2.0',
         id,
         result: {
-          tasks,
+          tasks: engine ? [engineTaskView(engine)] : [],
           _meta: {
             protocolVersion: MCP_PROTOCOL_VERSION
           }
@@ -345,28 +386,24 @@ export async function handleJsonRpcMessage(message, context = {}) {
           id,
           error: {
             code: -32602,
-            message: 'Invalid params: taskId is required'
+            message: '參數錯誤：缺少 taskId'
           }
         };
       }
 
       const engine = context.engine;
-      if (taskId === 'grab-engine-poller' && engine) {
-        const state = engine.getState();
+      if (taskId === ENGINE_TASK_ID) {
+        if (!engine) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: { code: TASK_NOT_FOUND_CODE, message: '本機引擎尚未就緒' }
+          };
+        }
         return {
           jsonrpc: '2.0',
           id,
-          result: {
-            taskId,
-            name: '亞洲大學通識搶課輪詢器',
-            status: state.running ? 'running' : 'idle',
-            mode: state.mode,
-            targets: engine.targetsView(),
-            stats: state.stats,
-            _meta: {
-              protocolVersion: MCP_PROTOCOL_VERSION
-            }
-          }
+          result: engineTaskView(engine)
         };
       }
 
@@ -374,8 +411,8 @@ export async function handleJsonRpcMessage(message, context = {}) {
         jsonrpc: '2.0',
         id,
         error: {
-          code: -32602,
-          message: `Task not found: ${taskId}`
+          code: TASK_NOT_FOUND_CODE,
+          message: `找不到任務：${taskId}`
         }
       };
     }
@@ -388,13 +425,20 @@ export async function handleJsonRpcMessage(message, context = {}) {
           id,
           error: {
             code: -32602,
-            message: 'Invalid params: taskId is required'
+            message: '參數錯誤：缺少 taskId'
           }
         };
       }
 
       const engine = context.engine;
-      if (taskId === 'grab-engine-poller' && engine) {
+      if (taskId === ENGINE_TASK_ID) {
+        if (!engine) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: { code: TASK_NOT_FOUND_CODE, message: '本機引擎尚未就緒' }
+          };
+        }
         engine.stop();
         return {
           jsonrpc: '2.0',
@@ -414,8 +458,8 @@ export async function handleJsonRpcMessage(message, context = {}) {
         jsonrpc: '2.0',
         id,
         error: {
-          code: -32602,
-          message: `Task not found: ${taskId}`
+          code: TASK_NOT_FOUND_CODE,
+          message: `找不到任務：${taskId}`
         }
       };
     }
@@ -426,7 +470,7 @@ export async function handleJsonRpcMessage(message, context = {}) {
         id,
         error: {
           code: -32601,
-          message: `Method not found: ${method || '<empty>'}`
+          message: `找不到方法：${method || '<空白>'}`
         }
       };
     }
@@ -434,18 +478,32 @@ export async function handleJsonRpcMessage(message, context = {}) {
 }
 
 /**
+ * 取得已報名清單；未登入或查詢失敗時回傳空陣列。
+ * @param {object} api
+ * @param {string|null} token
+ */
+async function fetchRegistered(api, token) {
+  if (!token) return [];
+  try {
+    return await api.listRegistered(token);
+  } catch {
+    return [];
+  }
+}
+
+/**
  * 執行特定 MCP 工具呼叫。
  */
-export async function executeTool(name, args = {}, context = {}) {
+async function executeTool(name, args = {}, context = {}) {
   const api = context.api || defaultApi;
   const storage = context.storage || defaultStorage;
   const engine = context.engine;
-  const token = engine?.session?.token || null;
+  const token = typeof context.getToken === 'function' ? context.getToken() : null;
 
   switch (name) {
     case 'asia_list_lectures': {
       let rows = engine?.lectures || [];
-      if (!rows.length) {
+      if (args.refresh === true || !rows.length) {
         rows = await api.listLectures(token);
         if (engine) engine.applyRows(rows);
       }
@@ -453,11 +511,12 @@ export async function executeTool(name, args = {}, context = {}) {
       let filtered = rows;
       if (args.keyword) {
         const kw = String(args.keyword).toLowerCase();
-        filtered = filtered.filter((r) =>
-          String(r.rescnm || '').toLowerCase().includes(kw) ||
-          String(r.teachm || '').toLowerCase().includes(kw) ||
-          String(r.locale || '').toLowerCase().includes(kw) ||
-          String(r.reseid || '').toLowerCase().includes(kw)
+        filtered = filtered.filter(
+          (r) =>
+            String(r.rescnm || '').toLowerCase().includes(kw) ||
+            String(r.teachm || '').toLowerCase().includes(kw) ||
+            String(r.locale || '').toLowerCase().includes(kw) ||
+            String(r.reseid || '').toLowerCase().includes(kw)
         );
       }
 
@@ -497,7 +556,7 @@ export async function executeTool(name, args = {}, context = {}) {
     }
 
     case 'asia_get_lecture': {
-      if (!args.eid01) throw new Error('缺少必要參數：eid01');
+      if (!args.eid01) throw new InvalidParamError('缺少必要參數：eid01');
       const detail = await api.getLecture(token, String(args.eid01));
       if (!detail) throw new Error(`找不到代號為 ${args.eid01} 的講座`);
       return {
@@ -510,71 +569,64 @@ export async function executeTool(name, args = {}, context = {}) {
     case 'asia_check_graduation': {
       const config = await storage.loadConfig();
       const hist = config?.graduation?.history || {};
+      const registeredList = await fetchRegistered(api, token);
 
-      let registeredList = [];
-      if (token) {
-        try {
-          registeredList = await api.listRegistered(token);
-        } catch {}
-      }
-
-      const currentLits = {
-        健康力: Number(hist.health || 0),
-        關懷力: Number(hist.care || 0),
-        創新力: Number(hist.innovation || 0),
-        卓越力: Number(hist.excellence || 0)
-      };
+      const current = Object.fromEntries(LITERACIES.map((lit) => [lit.key, Number(hist[lit.key] || 0)]));
+      const keyByLabel = new Map(LITERACIES.map((lit) => [lit.label, lit.key]));
 
       const countedEids = new Set();
       for (const row of registeredList) {
-        if (!countedEids.has(row.eid01)) {
-          countedEids.add(row.eid01);
-          const lits = extractLiteracies(row);
-          for (const lit of lits) {
-            if (currentLits[lit] !== undefined) currentLits[lit] += 1;
-          }
+        if (countedEids.has(row.eid01)) continue;
+        countedEids.add(row.eid01);
+        for (const label of extractLiteracies(row)) {
+          const key = keyByLabel.get(label);
+          if (key) current[key] += 1;
         }
       }
 
       const currentTotal = Number(hist.total || 0) + countedEids.size;
-      const threshold = { total: 8, health: 2, care: 2, innovation: 2, excellence: 2 };
+      const deficiencies = LITERACIES.filter((lit) => current[lit.key] < lit.threshold).map((lit) => ({
+        literacy: lit.label,
+        need: lit.threshold - current[lit.key]
+      }));
 
-      const deficiencies = [];
-      if (currentLits['健康力'] < threshold.health) deficiencies.push({ literacy: '健康力', need: threshold.health - currentLits['健康力'] });
-      if (currentLits['關懷力'] < threshold.care) deficiencies.push({ literacy: '關懷力', need: threshold.care - currentLits['關懷力'] });
-      if (currentLits['創新力'] < threshold.innovation) deficiencies.push({ literacy: '創新力', need: threshold.innovation - currentLits['創新力'] });
-      if (currentLits['卓越力'] < threshold.excellence) deficiencies.push({ literacy: '卓越力', need: threshold.excellence - currentLits['卓越力'] });
-
-      const totalNeed = Math.max(0, threshold.total - currentTotal);
-      const isGraduationReady = deficiencies.length === 0 && totalNeed === 0;
+      const totalNeed = Math.max(0, TOTAL_THRESHOLD - currentTotal);
+      const progress = {
+        total: {
+          current: currentTotal,
+          threshold: TOTAL_THRESHOLD,
+          fulfilled: currentTotal >= TOTAL_THRESHOLD
+        }
+      };
+      for (const lit of LITERACIES) {
+        progress[lit.key] = {
+          current: current[lit.key],
+          threshold: lit.threshold,
+          fulfilled: current[lit.key] >= lit.threshold
+        };
+      }
 
       return {
-        isGraduationReady,
-        progress: {
-          total: { current: currentTotal, threshold: threshold.total, fulfilled: currentTotal >= threshold.total },
-          health: { current: currentLits['健康力'], threshold: threshold.health, fulfilled: currentLits['健康力'] >= threshold.health },
-          care: { current: currentLits['關懷力'], threshold: threshold.care, fulfilled: currentLits['關懷力'] >= threshold.care },
-          innovation: { current: currentLits['創新力'], threshold: threshold.innovation, fulfilled: currentLits['創新力'] >= threshold.innovation },
-          excellence: { current: currentLits['卓越力'], threshold: threshold.excellence, fulfilled: currentLits['卓越力'] >= threshold.excellence }
-        },
+        isGraduationReady: deficiencies.length === 0 && totalNeed === 0,
+        progress,
         deficiencies,
         totalNeed
       };
     }
 
     case 'asia_register_lecture': {
-      if (!args.eid01) throw new Error('缺少必要參數：eid01');
+      if (!args.eid01) throw new InvalidParamError('缺少必要參數：eid01');
+      if (args.bfree !== undefined && args.bfree !== 'Y' && args.bfree !== 'N') {
+        throw new InvalidParamError('bfree 必須為 Y 或 N');
+      }
       if (!engine) throw new Error('本機引擎尚未就緒');
       if (!engine.session?.token) throw new Error('請先於搶課助手登入帳號');
-      if (args.bfree) {
-        engine.settings.bfree = args.bfree === 'Y' ? 'Y' : 'N';
-      }
-      const message = await engine.manualRegister(String(args.eid01));
+      const message = await engine.manualRegister(String(args.eid01), { bfree: args.bfree });
       return { ok: true, message, eid01: args.eid01 };
     }
 
     case 'asia_cancel_lecture': {
-      if (!args.eid01) throw new Error('缺少必要參數：eid01');
+      if (!args.eid01) throw new InvalidParamError('缺少必要參數：eid01');
       if (!engine) throw new Error('本機引擎尚未就緒');
       if (!engine.session?.token) throw new Error('請先於搶課助手登入帳號');
       const title = await engine.cancelTarget(String(args.eid01));
@@ -582,12 +634,7 @@ export async function executeTool(name, args = {}, context = {}) {
     }
 
     case 'asia_get_calendar': {
-      let registered = [];
-      if (token) {
-        try {
-          registered = await api.listRegistered(token);
-        } catch {}
-      }
+      const registered = await fetchRegistered(api, token);
       const allRows = [...(engine?.lectures || []).filter((r) => Number(r.cnt_10 || 0) > 0), ...registered];
       const events = buildCalendar(allRows);
       const conflictIds = findConflicts(events);
@@ -621,12 +668,12 @@ export async function executeTool(name, args = {}, context = {}) {
         return { ok: true, message: '已清除已完成目標', targets: engine.targetsView() };
       }
       if (action === 'remove') {
-        if (!args.eid01) throw new Error('缺少必要參數：eid01');
+        if (!args.eid01) throw new InvalidParamError('缺少必要參數：eid01');
         engine.removeTarget(String(args.eid01));
         return { ok: true, message: `已移除目標 ${args.eid01}`, targets: engine.targetsView() };
       }
       if (action === 'add') {
-        if (!args.eid01) throw new Error('缺少必要參數：eid01');
+        if (!args.eid01) throw new InvalidParamError('缺少必要參數：eid01');
         let lectures = engine.lectures || [];
         if (!lectures.length) {
           lectures = await api.listLectures(token);
@@ -637,7 +684,7 @@ export async function executeTool(name, args = {}, context = {}) {
         const added = engine.addTargets([row], 1);
         return { ok: true, addedCount: added.length, targets: engine.targetsView() };
       }
-      throw new Error(`不支援的 action: ${action}`);
+      throw new InvalidParamError(`不支援的 action：${action}`);
     }
 
     case 'asia_get_engine_status': {
@@ -654,6 +701,38 @@ export async function executeTool(name, args = {}, context = {}) {
     default:
       throw new Error(`未知的工具名稱：${name}`);
   }
+}
+
+/**
+ * 建立 stdio 模式所需的引擎情境。
+ *
+ * 這是 stdio 與 HTTP 兩個傳輸介面的共同介面：呼叫端只需提供 api / storage，
+ * 即可取得含 engine 與動態 token 的 context；不再出現「stdio 有工具但沒有引擎」的半殘狀態。
+ *
+ * @param {object} options
+ * @param {object} [options.api]
+ * @param {object} [options.storage]
+ * @param {boolean} [options.autoLogin]
+ */
+export async function createStdioContext({
+  api = defaultApi,
+  storage = defaultStorage,
+  autoLogin = true
+} = {}) {
+  const { engine, config } = await createRuntime({ storage, api });
+  if (autoLogin) {
+    await autoLoginEngine({ engine, api, config });
+  }
+  const flushState = bindStatePersistence(engine, storage);
+
+  return {
+    api,
+    storage,
+    engine,
+    config,
+    flushState,
+    getToken: () => engine.session?.token || null
+  };
 }
 
 /**
@@ -681,16 +760,42 @@ export function runStdioMcpServer(context = {}) {
         JSON.stringify({
           jsonrpc: '2.0',
           id: null,
-          error: { code: -32700, message: 'Parse error: invalid JSON' }
+          error: { code: -32700, message: '解析錯誤：JSON 格式不正確' }
         }) + '\n'
       );
     }
   });
 
-  process.stderr.write(`[asia-mcp] Asia Lecture Grabber MCP Server is running over stdio (spec 2026-07-28).\n`);
+  process.stderr.write(
+    '[asia-mcp] 亞洲大學講座助手 MCP 伺服器已透過 stdio 啟動（規格 2026-07-28）。\n'
+  );
 }
 
-// 若直接以 node src/mcp.mjs 執行，自動啟動 stdio MCP 伺服器
-if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'))) {
-  runStdioMcpServer();
+/**
+ * stdio 進入點：先載入本機引擎與已記住帳號，再開始處理 JSON-RPC。
+ */
+export async function startStdioServer() {
+  const context = await createStdioContext({ autoLogin: false });
+
+  // 先開始處理 JSON-RPC，再於背景自動登入，避免校方網路較慢時拖垮 MCP 初始化。
+  autoLoginEngine({ engine: context.engine, api: context.api, config: context.config }).catch(() => {});
+
+  const shutdown = async () => {
+    try {
+      await context.flushState();
+    } catch {}
+    process.exit(0);
+  };
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+
+  runStdioMcpServer(context);
+}
+
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+if (isMain) {
+  startStdioServer().catch((err) => {
+    process.stderr.write(`[asia-mcp] 啟動失敗：${err?.message || err}\n`);
+    process.exitCode = 1;
+  });
 }

@@ -278,7 +278,7 @@ export class Engine extends EventEmitter {
     }
   }
 
-  async manualRegister(queryId) {
+  async manualRegister(queryId, { bfree } = {}) {
     if (!this.session?.token) throw new Error('請先登入');
     const id = String(queryId || '').trim();
     if (!id) throw new Error('請提供講座識別碼或課程代號');
@@ -291,7 +291,9 @@ export class Engine extends EventEmitter {
     if (!row) throw new Error('找不到該講座，請確認課程代號或重新整理清單');
 
     const std = await this.ensureIdentity();
-    const stdWithBfree = { ...std, bfree: this.settings.bfree || 'N' };
+    // bfree 由呼叫端逐次指定；未指定時才回退使用全域設定，避免工具呼叫永久改寫引擎設定。
+    const bfreeValue = bfree === 'Y' || bfree === 'N' ? bfree : this.settings.bfree || 'N';
+    const stdWithBfree = { ...std, bfree: bfreeValue };
     const res = await this.api.registerLecture(this.session.token, { std_info: stdWithBfree, eid01: row.eid01, reseid: row.reseid });
     if (!res.ok) throw new Error(res.message);
 

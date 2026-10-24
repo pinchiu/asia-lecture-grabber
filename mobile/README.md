@@ -104,13 +104,13 @@ mobile/
 │  ├ main.dart                  App 根元件、主題、分頁與更新提示
 │  ├ config/
 │  │  ├ constants.dart          色彩、尺寸與共用常數
-│  │  └ i18n.dart               雙語國際化與語言偏好
+│  │  ├ i18n.dart               雙語國際化與語言偏好
+│  │  └ school_certs.dart       校方 AIA 中繼憑證（TLS 信任錨點）
 │  ├ backend/
 │  │  ├ asia_api.dart           校方 API 原生客戶端
 │  │  ├ grab_engine.dart        搶課狀態機與本機持久化
 │  │  ├ calendar_helper.dart    民國年、素養與行事曆輔助邏輯
-│  │  ├ update_service.dart     版本檢查與 APK 更新
-│  │  └ in_app_server.dart      App 內本機服務
+│  │  └ update_service.dart     版本檢查與 APK 更新
 │  └ screens/
 │     ├ lectures_screen.dart    講座情報與素養門檻
 │     ├ targets_screen.dart     搶課目標與引擎狀態

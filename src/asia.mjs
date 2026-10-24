@@ -22,11 +22,19 @@
 import https from 'node:https';
 import http from 'node:http';
 import tls from 'node:tls';
-import net from 'node:net';
 import crypto from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { DATA_DIR } from './storage.mjs';
+import {
+  createTlsAgent,
+  downloadBinary,
+  extractAiaUrls,
+  getPeerLeafCertificate,
+  isTlsChainError,
+  safeVerify,
+  toPem
+} from './tls.mjs';
 
 const DEFAULT_BASE = 'https://webap.asia.edu.tw/cfd2020/';
 
@@ -89,11 +97,6 @@ export class ApiError extends Error {
 let extraCaPem = '';
 let agent = null;
 let repairPromise = null;
-let currentRepairFn = repairTlsChain;
-
-export function _setRepairFnForTest(fn) {
-  currentRepairFn = fn || repairTlsChain;
-}
 
 try {
   extraCaPem = (await readFile(EXTRA_CA_FILE, 'utf8')).trim();
@@ -116,9 +119,7 @@ function buildAgent() {
       agent.destroy();
     } catch {}
   }
-  const ca = [...tls.rootCertificates];
-  if (extraCaPem) ca.push(extraCaPem);
-  agent = new https.Agent({ keepAlive: true, maxSockets: 6, timeout: 30_000, ca });
+  agent = createTlsAgent(extraCaPem);
 }
 
 function getAgent() {
@@ -127,105 +128,13 @@ function getAgent() {
   return agent;
 }
 
-export function toPem(buffer) {
-  if (!buffer) return '';
-  const text = Buffer.isBuffer(buffer) ? buffer.toString('latin1') : String(buffer);
-  if (text.includes('-----BEGIN CERTIFICATE-----')) return text;
-  const rawBuf = Buffer.isBuffer(buffer) ? buffer : Buffer.from(String(buffer));
-  if (rawBuf.length === 0) return '';
-  const base64 = rawBuf.toString('base64');
-  const lines = base64.match(/.{1,64}/g);
-  if (!lines || lines.length === 0) return '';
-  return `-----BEGIN CERTIFICATE-----\n${lines.join('\n')}\n-----END CERTIFICATE-----\n`;
-}
-
-export function safeVerify(cert, publicKey) {
-  try {
-    return cert.verify(publicKey);
-  } catch {
-    return false;
-  }
-}
-
-export function extractAiaUrls(rawDer) {
-  if (!rawDer) return [];
-  const buf = Buffer.isBuffer(rawDer) ? rawDer : Buffer.from(rawDer);
-  const text = buf.toString('latin1');
-  const matches = text.match(/https?:\/\/[^\x00-\x20\x80-\xff]+?\.(?:crt|cer)(?:\?[^\x00-\x20\x80-\xff]*)?/gi) || [];
-  return [...new Set(matches.map((url) => url.replace(/#+$/, '')))];
-}
-
-export function getPeerLeafCertificate() {
-  return new Promise((resolve, reject) => {
-    let timer = null;
-    const isIp = net.isIP(BASE.hostname);
-    const socket = tls.connect(
-      {
-        host: BASE.hostname,
-        port: Number(BASE.port || 443),
-        servername: isIp ? undefined : BASE.hostname,
-        rejectUnauthorized: false
-      },
-      () => {
-        try {
-          if (timer) clearTimeout(timer);
-          const cert = socket.getPeerCertificate(true);
-          socket.end();
-          if (!cert || !cert.raw) reject(new Error('無法取得伺服器憑證'));
-          else resolve(cert.raw);
-        } catch (err) {
-          if (timer) clearTimeout(timer);
-          socket.destroy();
-          reject(err);
-        }
-      }
-    );
-    socket.on('error', (err) => {
-      if (timer) clearTimeout(timer);
-      reject(err);
-    });
-    timer = setTimeout(() => {
-      socket.destroy(new Error('讀取憑證逾時'));
-    }, 15_000);
-  });
-}
-
-export function downloadBinary(url, maxRedirects = 3) {
-  return new Promise((resolve, reject) => {
-    if (maxRedirects < 0) {
-      reject(new Error('下載中繼憑證失敗：重導向次數過多'));
-      return;
-    }
-    const lib = url.startsWith('https:') ? https : http;
-    const req = lib.get(url, { timeout: 15_000, headers: { 'User-Agent': USER_AGENT } }, (res) => {
-      if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
-        res.resume();
-        const redirectUrl = new URL(res.headers.location, url).toString();
-        downloadBinary(redirectUrl, maxRedirects - 1).then(resolve, reject);
-        return;
-      }
-      if (res.statusCode !== 200) {
-        res.resume();
-        reject(new Error(`下載中繼憑證失敗：HTTP ${res.statusCode}`));
-        return;
-      }
-      const chunks = [];
-      res.on('data', (chunk) => chunks.push(chunk));
-      res.on('end', () => resolve(Buffer.concat(chunks)));
-      res.on('error', reject);
-    });
-    req.on('timeout', () => req.destroy(new Error('下載中繼憑證逾時')));
-    req.on('error', reject);
-  });
-}
-
 /**
  * 修復憑證鏈：抓取 AIA 中繼憑證，驗證其鏈路後加入信任並快取。
  * 支援透過參數注入自訂獲取邏輯以利單元測試。
  * @returns {Promise<boolean>} 是否成功修復
  */
 export async function repairTlsChain({
-  getLeaf = getPeerLeafCertificate,
+  getLeaf = () => getPeerLeafCertificate(currentBaseUrl),
   download = downloadBinary,
   rootCerts = tls.rootCertificates,
   caFilePath = EXTRA_CA_FILE
@@ -318,19 +227,6 @@ function rawRequest(method, relativePath, headers, body, timeoutMs) {
   });
 }
 
-export function isTlsChainError(err) {
-  const code = String(err?.code || '');
-  const message = String(err?.message || '');
-  return (
-    code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
-    code === 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY' ||
-    code === 'SELF_SIGNED_CERT_IN_CHAIN' ||
-    code === 'DEPTH_ZERO_SELF_SIGNED_CERT' ||
-    code === 'CERT_UNTRUSTED' ||
-    /unable to verify the first certificate|unable to get (?:local )?issuer|certificate chain|self[- ]signed certificate/i.test(message)
-  );
-}
-
 export function toApiError(err) {
   if (err instanceof ApiError) return err;
   const code = String(err?.code || '');
@@ -345,7 +241,11 @@ export function toApiError(err) {
   return new ApiError(`網路連線失敗：${msg || err || '未知錯誤'}`, { status: 0, transient: true });
 }
 
-export async function request(method, relativePath, { body, token, timeoutMs = 25_000, rawText = false } = {}) {
+export async function request(
+  method,
+  relativePath,
+  { body, token, timeoutMs = 25_000, rawText = false, repair = repairTlsChain } = {}
+) {
   const headers = { ...JSON_HEADERS };
   if (token) headers.Authorization = 'Bearer ' + token;
   const payload = body === undefined ? undefined : JSON.stringify(body);
@@ -362,7 +262,7 @@ export async function request(method, relativePath, { body, token, timeoutMs = 2
       if (isTlsChainError(err) && !retried) {
         retried = true;
         if (!repairPromise) {
-          repairPromise = currentRepairFn().finally(() => {
+          repairPromise = repair().finally(() => {
             repairPromise = null;
           });
         }

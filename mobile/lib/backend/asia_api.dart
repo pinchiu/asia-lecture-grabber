@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import '../config/school_certs.dart';
+
 /// 表示與亞洲大學伺服器通訊時所發生的 API 例外狀況。
 class ApiError implements Exception {
   /// 錯誤描述訊息。
@@ -37,13 +39,15 @@ class AsiaApi {
   /// 建立亞大 API 客戶端實例。
   ///
   /// 可傳入自訂之伺服器位址 [baseUrl]；若未提供則使用 [defaultBaseUrl]。
-  AsiaApi({this.baseUrl = defaultBaseUrl})
-      : _client = HttpClient()
-          ..badCertificateCallback = ((X509Certificate cert, String host, int port) {
-            // 僅對亞大校方伺服器（因 IIS 伺服器缺少中繼憑證）及本地測試環境放行
-            return host.endsWith('asia.edu.tw') || host == '127.0.0.1' || host == 'localhost';
-          })
-          ..connectionTimeout = const Duration(seconds: 25);
+  /// TLS 驗證維持開啟：除作業系統根憑證外，額外信任校方 AIA 中繼憑證，
+  /// 不使用 badCertificateCallback 放行任何網域。
+  AsiaApi({this.baseUrl = defaultBaseUrl}) : _client = _createVerifiedClient();
+
+  static HttpClient _createVerifiedClient() {
+    final client = HttpClient(context: buildSchoolSecurityContext());
+    client.connectionTimeout = const Duration(seconds: 25);
+    return client;
+  }
 
   Uri _resolve(String path) {
     final base = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';

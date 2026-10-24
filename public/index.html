@@ -594,18 +594,18 @@
         <section class="card" id="cardAi">
           <div class="card-head">
             <h2><span class="idx">03</span> <span data-i18n="sec_ai_title">語言模型連線設定</span></h2>
-            <span class="tag">選用</span>
+            <span class="tag" data-i18n="tag_optional">選用</span>
           </div>
           <div class="form">
-            <label class="check"><input type="checkbox" id="aiEnabled"> 啟用智慧語言模型（OpenAI 相容 API）</label>
-            <p class="hint">不啟用亦可完整使用本機智慧規則解析素養與排程。</p>
-            <label>API 位址
+            <label class="check"><input type="checkbox" id="aiEnabled"> <span data-i18n="ai_enable_label">啟用智慧語言模型（OpenAI 相容 API）</span></label>
+            <p class="hint" data-i18n="ai_hint">不啟用亦可完整使用本機智慧規則解析素養與排程。</p>
+            <label><span data-i18n="ai_base_url">API 位址</span>
               <input id="aiBaseUrl" placeholder="https://api.openai.com/v1" autocomplete="off">
             </label>
-            <label>API Key
-              <input id="aiKey" type="password" placeholder="sk-…（留空＝不變更）" autocomplete="off">
+            <label><span data-i18n="ai_api_key">API Key</span>
+              <input id="aiKey" type="password" placeholder="sk-…（留空＝不變更）" data-i18n-placeholder="ai_key_placeholder_empty" autocomplete="off">
             </label>
-            <label>模型名稱
+            <label><span data-i18n="ai_model">模型名稱</span>
               <input id="aiModel" placeholder="gpt-4o-mini" autocomplete="off">
             </label>
             <button class="btn ghost wide" data-action="save-ai" data-i18n="btn_save_ai">儲存 AI 設定</button>

@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
   handleJsonRpcMessage,
+  createStdioContext,
   MCP_TOOLS,
   MCP_SERVER_INFO,
   MCP_PROTOCOL_VERSION,
@@ -53,15 +54,20 @@ function createMockApi(overrides = {}) {
     }
   ];
 
+  let lastRegistration = null;
   return {
     BASE_URL: 'https://mock.asia.edu.tw/',
     STATUS_LABEL: { Y: '可報名', F: '已額滿', N1: '未開放', N2: '已截止', C: '現場報名', D: '其他方式' },
     listLectures: async () => lectures,
     getLecture: async (token, eid) => lectures.find((l) => l.eid01 === eid) || null,
     listRegistered: async () => [lectures[0]],
-    registerLecture: async () => ({ ok: true, message: '報名成功' }),
+    registerLecture: async (token, payload) => {
+      lastRegistration = payload;
+      return { ok: true, message: '報名成功' };
+    },
     cancelLecture: async () => ({ ok: true, message: '已成功取消報名' }),
     verifyIdentity: async () => ({ chi_name: '王小明', dept_name_s: '資工系', email: 'test@asia.edu.tw' }),
+    lastRegistration: () => lastRegistration,
     ...overrides
   };
 }
@@ -102,7 +108,8 @@ describe('mcp.mjs Model Context Protocol (MCP 2026-07-28 規範) 伺服器模組
     context = {
       api: mockApi,
       storage: mockStorage,
-      engine
+      engine,
+      getToken: () => engine.session?.token || null
     };
   });
 
@@ -332,6 +339,112 @@ describe('mcp.mjs Model Context Protocol (MCP 2026-07-28 規範) 伺服器模組
     assert.equal(errRes.error.code, -32602);
   });
 
+  test('tasks/list 與 tasks/get 使用一致任務視圖，未知任務回傳 -32001', async () => {
+    const listRes = await handleJsonRpcMessage(
+      { jsonrpc: '2.0', id: 24, method: 'tasks/list' },
+      context
+    );
+    const task = listRes.result.tasks[0];
+    assert.equal(task.taskId, 'grab-engine-poller');
+    assert.ok(task.stats);
+    assert.ok(Array.isArray(task.targets));
+    assert.equal(typeof task.targetsCount, 'number');
+
+    const getRes = await handleJsonRpcMessage(
+      { jsonrpc: '2.0', id: 25, method: 'tasks/get', params: { taskId: 'grab-engine-poller' } },
+      context
+    );
+    assert.deepEqual(Object.keys(getRes.result).sort(), Object.keys(task).sort());
+
+    const missingRes = await handleJsonRpcMessage(
+      { jsonrpc: '2.0', id: 26, method: 'tasks/get', params: { taskId: 'no-such-task' } },
+      context
+    );
+    assert.equal(missingRes.error.code, -32001);
+  });
+
+  test('asia_list_lectures 預設使用快取，refresh=true 時強制重取', async () => {
+    let calls = 0;
+    const api = {
+      ...mockApi,
+      listLectures: async () => {
+        calls += 1;
+        return mockApi.listLectures();
+      }
+    };
+    const cachedContext = { ...context, api };
+
+    await handleJsonRpcMessage(
+      { jsonrpc: '2.0', id: 27, method: 'tools/call', params: { name: 'asia_list_lectures', arguments: {} } },
+      cachedContext
+    );
+    assert.equal(calls, 0);
+
+    await handleJsonRpcMessage(
+      {
+        jsonrpc: '2.0',
+        id: 28,
+        method: 'tools/call',
+        params: { name: 'asia_list_lectures', arguments: { refresh: true } }
+      },
+      cachedContext
+    );
+    assert.equal(calls, 1);
+  });
+
+  test('asia_register_lecture 逐次指定 bfree，不覆寫引擎全域設定', async () => {
+    engine.settings.bfree = 'N';
+
+    const res = await handleJsonRpcMessage(
+      {
+        jsonrpc: '2.0',
+        id: 29,
+        method: 'tools/call',
+        params: { name: 'asia_register_lecture', arguments: { eid01: 'L02', bfree: 'Y' } }
+      },
+      context
+    );
+
+    assert.equal(res.result.isError, undefined);
+    assert.equal(engine.settings.bfree, 'N');
+    assert.equal(mockApi.lastRegistration().std_info.bfree, 'Y');
+  });
+
+  test('createStdioContext 載入引擎與動態 token，stdio 不再缺少 engine', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'mcp-stdio-test-'));
+    const storage = createStorage({ dataDir: dir });
+    await storage.saveConfig({ account: { username: '', password: '', idLast4: '' } });
+
+    try {
+      const stdioContext = await createStdioContext({ api: mockApi, storage, autoLogin: false });
+      assert.ok(stdioContext.engine);
+      assert.equal(typeof stdioContext.getToken, 'function');
+
+      stdioContext.engine.setSession({
+        token: 'stdio-token',
+        emp_id: '11000001',
+        emp_nm: '王小明',
+        emp_rl: 'Student',
+        idLast4: '5678'
+      });
+
+      const res = await handleJsonRpcMessage(
+        {
+          jsonrpc: '2.0',
+          id: 40,
+          method: 'tools/call',
+          params: { name: 'asia_get_engine_status', arguments: { logLimit: 1 } }
+        },
+        stdioContext
+      );
+      const payload = JSON.parse(res.result.content[0].text);
+      assert.equal(payload.session.emp_id, '11000001');
+      assert.equal(stdioContext.getToken(), 'stdio-token');
+    } finally {
+      await rm(dir, { recursive: true, force: true }).catch(() => {});
+    }
+  });
+
   test('2026-07-28 Header-Based Routing 標頭導向測試', async () => {
     const res = await handleJsonRpcMessage(
       {
@@ -396,7 +509,27 @@ describe('mcp.mjs Model Context Protocol (MCP 2026-07-28 規範) 伺服器模組
       const getData = await getRes.json();
       assert.equal(getData.result.tools.length, 8);
 
-      // 2) POST /api/mcp 透過 HTTP 發送 JSON-RPC tools/list
+      // 2) 跨站 Origin 必須被拒絕（防止任意網頁代為報名或退選）
+      const blockedRes = await fetch(`http://127.0.0.1:${port}/api/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: 'http://evil.example',
+          Connection: 'close'
+        },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 98, method: 'tools/list' })
+      });
+      assert.equal(blockedRes.status, 403);
+
+      // 3) 非 JSON Content-Type 必須被拒絕（阻擋 text/plain 簡單請求 CSRF）
+      const wrongTypeRes = await fetch(`http://127.0.0.1:${port}/api/mcp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain', Connection: 'close' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 99, method: 'tools/list' })
+      });
+      assert.equal(wrongTypeRes.status, 415);
+
+      // 4) POST /api/mcp 透過 HTTP 發送 JSON-RPC tools/list
       const res = await fetch(`http://127.0.0.1:${port}/api/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Connection: 'close' },

@@ -46,6 +46,7 @@ metadata:
   }
 }
 ```
+stdio 進入點會載入 `data/config.json` 與 `data/state.json`、建立本機搶課引擎，並在已記住帳密時自動登入。因此 `asia_register_lecture`、`asia_cancel_lecture`、`asia_manage_targets` 與 `asia_get_engine_status` 在 stdio 模式下皆可運作；若未登入，工具會回傳明確的登入提示。
 
 ### 1.2 HTTP 無狀態端點模式 (雲端 / Web 代理)
 向伺服器發送標準 JSON-RPC 2.0 POST 請求至 `http://127.0.0.1:5199/api/mcp`。
@@ -53,6 +54,7 @@ metadata:
 - 標頭 `Mcp-Method: tools/call`
 - 標頭 `Mcp-Name: asia_list_lectures`
 - 伺服器回應標頭包含 `Mcp-Protocol-Version: 2026-07-28`
+- 安全限制：伺服器預設只綁定 `127.0.0.1`，且 `POST /api/mcp` 僅接受 loopback Origin 與 `Content-Type: application/json`。跨站瀏覽器請求會收到 `403`，非 JSON 請求會收到 `415`；非瀏覽器客戶端可省略 Origin。
 
 ```http
 POST /api/mcp HTTP/1.1
@@ -90,6 +92,7 @@ Mcp-Name: asia_list_lectures
     - `N1`: 未開放
     - `N2`: 已截止
     - `C`: 現場報名
+  - `refresh`（boolean，選填，預設 false）：設為 true 時強制重新向校方取得清單，不使用本機快取。
   - `limit`（integer，選填，預設 50，上限 200）：回傳筆數。
 
 ### 2.2 `asia_get_lecture`
@@ -108,13 +111,13 @@ Mcp-Name: asia_list_lectures
 - 參數：無。
 
 ### 2.4 `asia_register_lecture`
-- 職責：向校方系統直接發送報名請求。具備零 OCR 延遲特性。
+- 職責：向校方系統直接發送報名請求。具備零 OCR 延遲特性。需先在搶課助手完成登入。
 - 參數：
   - `eid01`（string，必填）：要報名的講座識別碼。
-  - `bfree`（string，選填，預設 `"N"`）：無障礙空間需求（`"Y"` 或 `"N"`）。
+  - `bfree`（string，選填）：本次報名的無障礙空間需求（`"Y"` 或 `"N"`）；未提供時沿用本機設定，且不會改寫全域設定。
 
 ### 2.5 `asia_cancel_lecture`
-- 職責：退選已報名講座。自動匹配校方伺服器加密流水號（格式 `ID...`）確保安全退選。
+- 職責：退選已報名講座。自動匹配校方伺服器加密流水號（格式 `ID...`）確保安全退選。需先在搶課助手完成登入。
 - 參數：
   - `eid01`（string，必填）：要取消報名的講座代碼。
 
@@ -140,8 +143,9 @@ Mcp-Name: asia_list_lectures
 針對非同步搶課與定時排程，本模組實作 2026-07-28 Tasks 標準擴展原語：
 
 - `tasks/list`：列出所有執行中的背景任務（如搶課引擎輪詢任務 `grab-engine-poller`）。
-- `tasks/get`：依 `taskId` 查詢任務執行進度、輪詢次數、成功場次與目標清冊。
+- `tasks/get`：依 `taskId` 查詢任務執行進度、輪詢次數、成功場次與目標清冊；與 `tasks/list` 使用相同任務視圖。
 - `tasks/cancel`：中止搶課任務運作，避免無謂消耗伺服器資源。
+- 錯誤碼：缺少 `taskId` 回傳 `-32602`；未知 `taskId` 或引擎尚未就緒回傳 `-32001`。
 
 ---
 

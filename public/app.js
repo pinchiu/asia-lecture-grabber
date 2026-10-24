@@ -135,6 +135,14 @@ const I18N = {
     label_stop_done: '目標全部完成後自動停止',
     btn_save_settings: '儲存設定',
     sec_ai_title: '語言模型連線設定',
+    tag_optional: '選用',
+    ai_enable_label: '啟用智慧語言模型（OpenAI 相容 API）',
+    ai_hint: '不啟用亦可完整使用本機智慧規則解析素養與排程。',
+    ai_base_url: 'API 位址',
+    ai_api_key: 'API Key',
+    ai_model: '模型名稱',
+    ai_key_placeholder_saved: '已設定金鑰（留空＝不變更）',
+    ai_key_placeholder_empty: 'sk-…（留空＝不變更）',
     btn_save_ai: '儲存 AI 設定',
     sec_logs_title: '系統執行紀錄',
     btn_clear_log: '清空紀錄',
@@ -277,6 +285,14 @@ const I18N = {
     label_stop_done: 'Auto-stop when all targets finished',
     btn_save_settings: 'Save Settings',
     sec_ai_title: 'LLM Connection Settings',
+    tag_optional: 'Optional',
+    ai_enable_label: 'Enable Smart Language Model (OpenAI-compatible API)',
+    ai_hint: 'Local smart rule parsing of literacies and schedules remains fully available when disabled.',
+    ai_base_url: 'API Base URL',
+    ai_api_key: 'API Key',
+    ai_model: 'Model Name',
+    ai_key_placeholder_saved: 'Key configured (leave blank to keep current)',
+    ai_key_placeholder_empty: 'sk-… (leave blank to keep current)',
     btn_save_ai: 'Save AI Config',
     sec_logs_title: 'System Execution Logs',
     btn_clear_log: 'Clear Logs',
@@ -309,6 +325,11 @@ function getStatusLabel(code) {
   return t('st_' + code, STATUS_LABEL[code] || code);
 }
 
+function setAiKeyPlaceholder(ready) {
+  const input = $('#aiKey');
+  if (input) input.placeholder = t(ready ? 'ai_key_placeholder_saved' : 'ai_key_placeholder_empty');
+}
+
 const LITERACIES = [
   { id: 'health', key: 'chk4', label: '健康力', en: 'Health', min: 2 },
   { id: 'care', key: 'chk5', label: '關懷力', en: 'Care', min: 2 },
@@ -339,6 +360,15 @@ const S = {
   deferredInstallPrompt: null,
   lang: localStorage.getItem('au_lang') || (typeof navigator !== 'undefined' && navigator.language && navigator.language.toLowerCase().startsWith('en') ? 'en' : 'zh')
 };
+
+/* DOM 簽名快取：輪詢時若畫面內容未變動，即跳過重建以避免點擊事件被中斷 */
+const signatures = { lectures: '', targets: '', calendar: '' };
+
+function unchanged(key, sig, container) {
+  if (signatures[key] === sig && container.children.length) return true;
+  signatures[key] = sig;
+  return false;
+}
 
 function applyLanguage(lang) {
   S.lang = lang === 'en' ? 'en' : 'zh';
@@ -378,9 +408,11 @@ function applyLanguage(lang) {
     if (txt) el.setAttribute('title', txt);
   });
 
-  lectureSig = '';
-  targetsSig = '';
-  calendarSig = '';
+  setAiKeyPlaceholder(Boolean(S.snap?.ai?.ready));
+
+  Object.keys(signatures).forEach((key) => {
+    signatures[key] = '';
+  });
   if (S.snap) {
     render();
   }
@@ -1154,8 +1186,6 @@ function renderSchedule(snap) {
     .join('');
 }
 
-let calendarSig = '';
-
 function renderCalendar(snap) {
   const events = Array.isArray(S.calEvents) ? S.calEvents : snap.calendar || [];
   const grid = $('#calGrid');
@@ -1186,8 +1216,7 @@ function renderCalendar(snap) {
     S.calMonth,
     events.map((e) => [e.eid01, e.dateText, e.timeText, e.hasConflict])
   ]);
-  if (sig === calendarSig && grid.children.length) return;
-  calendarSig = sig;
+  if (unchanged('calendar', sig, grid)) return;
 
   $('#calendarCount').textContent = String(events.length);
   $('#calMonth').textContent = `${S.calYear} 年 ${S.calMonth + 1} 月`;
@@ -1285,8 +1314,6 @@ function renderAgent(snap) {
   $('#agentNote').textContent = plan.reply || '';
 }
 
-let targetsSig = '';
-
 function renderTargets(snap) {
   const targets = snap.engine?.targets || [];
   const body = $('#targetBody');
@@ -1305,7 +1332,7 @@ function renderTargets(snap) {
   }
 
   if (!targets.length) {
-    targetsSig = '';
+    signatures.targets = '';
     body.innerHTML = '';
     hint.style.display = '';
     return;
@@ -1316,8 +1343,7 @@ function renderTargets(snap) {
     S.lang,
     targets.map((t) => [t.eid01, t.status, t.kind, t.appnum, t.note, t.openAt])
   ]);
-  if (sig === targetsSig && body.children.length) return;
-  targetsSig = sig;
+  if (unchanged('targets', sig, body)) return;
 
   body.innerHTML = targets
     .map((target) => {
@@ -1399,8 +1425,6 @@ function visibleLectures() {
   });
 }
 
-let lectureSig = '';
-
 function renderLectures(snap) {
   const rows = visibleLectures();
   const body = $('#lectureBody');
@@ -1417,8 +1441,7 @@ function renderLectures(snap) {
     [...watched],
     rows.map((row) => [row.eid01, row.canapp, row.appnum, row.cnt_10, row.chk4, row.chk5, row.chk6, row.chk7])
   ]);
-  if (sig === lectureSig && body.children.length) return;
-  lectureSig = sig;
+  if (unchanged('lectures', sig, body)) return;
 
   $('#lectureCount').textContent = `${rows.length}/${S.lectures.length}`;
   const bridge = $('#lecturesBridgeBar');
@@ -1585,7 +1608,7 @@ async function fillForms(snap) {
   $('#aiEnabled').checked = Boolean(aiConfig.enabled);
   $('#aiBaseUrl').value = aiConfig.baseUrl || '';
   $('#aiModel').value = aiConfig.model || '';
-  $('#aiKey').placeholder = aiConfig.ready ? '已設定金鑰（留空＝不變更）' : 'sk-…（留空＝不變更）';
+  setAiKeyPlaceholder(Boolean(aiConfig.ready));
 
   const history = snap.graduation?.history || {};
   $('#gradHistHealth').value = history.health || 0;
