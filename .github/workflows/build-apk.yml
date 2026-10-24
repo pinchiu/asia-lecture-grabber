@@ -35,6 +35,11 @@ jobs:
           cd mobile
           flutter pub get
 
+      - name: Run Flutter tests
+        run: |
+          cd mobile
+          flutter test
+
       - name: Analyze Dart codebase
         run: |
           cd mobile

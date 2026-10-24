@@ -120,14 +120,16 @@ npm start
 - Android Studio（含 Android SDK 與 Platform-Tools）或 Xcode（iOS）
 
 ### 2. 本地執行與除錯
+Flutter App 內建原生校方 API 客戶端與搶課引擎，會直接連線校方系統，**不需啟動根目錄的 Node.js 伺服器**。
+
+由專案根目錄執行：
 ```bash
-# 確保根目錄 Node.js 服務已啟動：npm start
-# 接著執行 Flutter App
 npm run mobile:flutter:run
 ```
-或直接進入目錄：
+或直接進入行動端目錄：
 ```bash
 cd mobile
+flutter pub get
 flutter run
 ```
 
@@ -145,12 +147,8 @@ flutter build apk --release
 `mobile/build/app/outputs/flutter-apk/app-release.apk`
 將該 APK 傳送至 Android 手機即可直接安裝使用。
 
-### 4. 伺服器連線設定
-開啟 Flutter App 後，App 預設連線至 `http://10.0.2.2:5199`（Android 模擬器專用位址）。
-若在實體手機上使用：
-1. 確保手機與電腦連線至相同的 Wi-Fi 區域網路。
-2. 點擊 App 頂端右上角「設定」按鈕。
-3. 輸入電腦之區域網路 IP（例如 `http://192.168.1.100:5199`），點擊「儲存並重新連線」即可。
+### 4. 行動端登入與設定
+開啟 Flutter App 的「系統設定」分頁，輸入校園入口帳號、密碼與身分證字號末四碼，即可由手機直接登入校方系統。設定頁亦提供語言偏好、記住帳密、歷年素養補登、版本更新與引擎日誌；無須設定電腦 IP，也不依賴電腦保持開機。
 
 ---
 
@@ -230,7 +228,7 @@ asia-lecture-grabber/
 │  ├ pubspec.yaml                Flutter 專案相依配置
 │  ├ README.md                   Flutter 原生打包指南
 │  ├ assets/                     行動端圖示資產
-│  ├ lib/                        Flutter Dart 原始碼（WebView、設定面板、主題）
+│  ├ lib/                        Flutter Dart 原始碼（Cupertino 原生介面、引擎、i18n）
 │  ├ android/                    Android 原生建置專案（含權限與 Gradle 設定）
 │  └ ios/                        iOS 原生建置專案（含 Info.plist 與權限）
 └ scripts/
@@ -243,10 +241,10 @@ asia-lecture-grabber/
 
 ## 資料安全性與個人隱私說明
 
-- 本系統所有操作均於本機伺服器完成，未架設任何外部中繼伺服器。
-- 學生帳號、密碼及身分證末四碼儲存於本地 `data/config.json`（若未勾選記住密碼則僅暫存於記憶體中）。
-- `data/` 資料夾已被 `.gitignore` 排除，絕不會上傳至 GitHub 或向外洩漏。
-- 請妥善保管個人電腦與組態檔，切勿將包含帳密之 `config.json` 交付他人。
+- 電腦網頁版由本機伺服器與校方系統通訊；Flutter 行動端則由手機直接連線校方系統，皆未架設外部中繼伺服器。
+- 電腦網頁版之學生帳號、密碼及身分證末四碼儲存於本地 `data/config.json`（若未勾選記住密碼則僅暫存於記憶體中）；Flutter 行動端則依「記住帳密」設定保存在行動裝置本機。
+- 電腦網頁版的 `data/` 資料夾已被 `.gitignore` 排除，不應上傳至 GitHub 或對外分享。
+- 請妥善保管個人電腦、行動裝置與組態檔，切勿將包含帳密之 `config.json` 或除錯資料交付他人。
 
 ---
 

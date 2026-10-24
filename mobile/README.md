@@ -1,16 +1,16 @@
-# 亞洲大學講座報名助手 — Flutter 行動端 App
+# 亞洲大學講座報名助手 — Flutter 原生行動端
 
-本目錄為專案的 Flutter 原生行動應用程式封裝，提供 Android 與 iOS 雙平台的原生 App 體驗。
+本目錄為專案的 Flutter 原生行動應用程式，提供 Android 與 iOS 雙平台體驗。App 採用 Cupertino 介面，並以純 Dart 實作校方 API 客戶端、搶課引擎與行事曆邏輯；不是 WebView 包裝，也不依賴電腦端的 Node.js 伺服器。
 
 ---
 
-## 特色與架構說明
+## 特色與架構
 
-- **雙平台原生支援**：支援 Android 與 iOS 系統，具備流暢原生標題列、連線狀態指示與鍵盤適配。
-- **WebView 整合**：採用官方 `webview_flutter` 核心，具備硬體加速、高更新率與即時資料載入能力。
-- **動態伺服器位址切換**：內建「伺服器連線設定」面板，支援切換本機電腦區域網路 IP（如 `http://192.168.1.50:5199`）、Android 模擬器專用位址（`10.0.2.2:5199`）或自訂伺服器域名。
-- **斷線重試機制**：伺服器未連通時提供清楚的排查說明與重試按鈕，無縫協助使用者建立連線。
-- **本地設定持久化**：使用 `shared_preferences` 自動保存使用者輸入的伺服器位址，下次開啟自動記憶。
+- **原生獨立運作**：手機直接連線校方系統，登入、講座查詢、報名、退選與排程監控均在 App 內完成。
+- **Cupertino 原生介面**：包含講座情報、搶課排程、個人行程與系統設定四個主要分頁。
+- **雙語國際化**：支援跟隨系統語言、繁體中文與英文，並保存使用者偏好。
+- **本機設定持久化**：依使用者設定保存帳密、歷年素養與搶課目標。
+- **版本更新**：支援檢查新版本，以及在 Android App 內下載與安裝 APK 更新。
 
 ---
 
@@ -20,55 +20,75 @@
 2. **Android 開發環境**：Android Studio（含 Android SDK 與 Platform Tools）。
 3. **iOS 開發環境**（僅限 macOS）：Xcode 與 CocoaPods。
 
+可先執行 `flutter doctor` 檢查開發環境。
+
 ---
 
 ## 快速開始
 
 ### 1. 安裝套件相依
 
-進入 `mobile/` 目錄並執行套件下載：
-
 ```bash
 cd mobile
 flutter pub get
 ```
 
-### 2. 本地執行與除錯
+### 2. 執行 App
 
-請先確保根目錄下的 Node.js 伺服器正在執行（`npm start`）。
+```bash
+flutter run
+```
 
-- **Android 模擬器**：
-  ```bash
-  flutter run
-  ```
-  預設連線網址為 `http://10.0.2.2:5199`。
+或由專案根目錄執行：
 
-- **實體手機（需透過同一個 Wi-Fi 連線）**：
-  1. 查詢電腦的區域網路 IP（Windows 請執行 `ipconfig`，macOS / Linux 請執行 `ifconfig`）。
-  2. 執行 `flutter run`。
-  3. 進入 App 後點擊右上角「設定」圖示，輸入電腦的 IP（例如 `http://192.168.1.100:5199`）並點擊「儲存並重新連線」。
+```bash
+npm run mobile:flutter:run
+```
+
+行動端會直接連線校方系統，**不需先執行 `npm start`，也不需設定電腦的區域網路 IP**。
+
+### 3. 登入與設定
+
+開啟「系統設定」分頁，輸入校園入口帳號、密碼與身分證字號末四碼。此處也可調整語言、記住帳密、歷年素養補登與更新偏好，並查看引擎日誌。
 
 ---
 
-## 打包發布指令
-
-### 打包 Android APK 安裝檔
+## 測試與靜態分析
 
 ```bash
+cd mobile
+flutter test
+flutter analyze --no-fatal-infos
+```
+
+也可由專案根目錄執行 `npm run mobile:flutter:test`。
+
+---
+
+## 打包發布
+
+### Android APK
+
+```bash
+cd mobile
 flutter build apk --release
 ```
-建置完成後，APK 安裝檔位於：
-`build/app/outputs/flutter-apk/app-release.apk`
 
-### 打包 Android App Bundle (Google Play 上架格式)
+建置完成後，APK 位於 `build/app/outputs/flutter-apk/app-release.apk`。
+
+### Android App Bundle
 
 ```bash
+cd mobile
 flutter build appbundle --release
 ```
 
-### 打包 iOS 應用程式
+### iOS 應用程式
+
+在 macOS 環境執行：
 
 ```bash
+cd mobile
 flutter build ipa --release
 ```
 
@@ -76,17 +96,33 @@ flutter build ipa --release
 
 ## 目錄結構
 
-```
+```text
 mobile/
-├ pubspec.yaml               Flutter 專案相依設定檔
-├ assets/                    圖示與靜態資源
+├ pubspec.yaml                  Flutter 專案與相依設定
+├ assets/                       圖示與靜態資源
 ├ lib/
-│  ├ main.dart               程式進入點與主題配置
+│  ├ main.dart                  App 根元件、主題、分頁與更新提示
 │  ├ config/
-│  │  └ constants.dart       色彩主題與連線常數
+│  │  ├ constants.dart          色彩、尺寸與共用常數
+│  │  └ i18n.dart               雙語國際化與語言偏好
+│  ├ backend/
+│  │  ├ asia_api.dart           校方 API 原生客戶端
+│  │  ├ grab_engine.dart        搶課狀態機與本機持久化
+│  │  ├ calendar_helper.dart    民國年、素養與行事曆輔助邏輯
+│  │  ├ update_service.dart     版本檢查與 APK 更新
+│  │  └ in_app_server.dart      App 內本機服務
 │  └ screens/
-│     ├ webview_screen.dart  主介面 WebView 控制器與錯誤畫面
-│     └ settings_modal.dart  伺服器位址切換設定視窗
-├ android/                   Android 原生專案代碼與配置
-└ ios/                       iOS 原生專案代碼與配置
+│     ├ lectures_screen.dart    講座情報與素養門檻
+│     ├ targets_screen.dart     搶課目標與引擎狀態
+│     ├ calendar_screen.dart    已報名行程與退選
+│     └ settings_screen.dart    登入、偏好、補登與系統設定
+├ test/                         Flutter 單元測試
+├ android/                      Android 原生專案
+└ ios/                          iOS 原生專案
 ```
+
+---
+
+## 資料安全
+
+登入資料會依「記住帳密」設定保存在裝置本機。請妥善保管裝置，不要分享含有個人資料的設定或除錯輸出；登入憑證與個人身分資料不應寫入提交紀錄或上傳至公開倉庫。
