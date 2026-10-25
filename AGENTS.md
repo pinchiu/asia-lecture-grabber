@@ -75,7 +75,7 @@
 - **嚴格規範**：
   - 全專案所有代碼、日誌、介面、文件及提交紀錄中，**嚴格禁止使用任何表情符號（Emoji）**。
   - 所有註解、文件與使用者溝通一律使用**繁體中文（台灣用語）**。
-  - **Git 提交訊息（Commit Messages）一律強制使用英文（English）**，並遵循 Conventional Commits 規範（例如 `feat:`, `fix:`, `docs:`, `refactor:` 等）。
+  - **Git 提交訊息（Commit Messages）一律強制使用英文（English），包含標題與內文**，並遵循 Conventional Commits 規範（例如 `feat:`, `fix:`, `docs:`, `refactor:` 等）；不得使用中文或中英混合。
 
 ## 資料與版本控制
 
