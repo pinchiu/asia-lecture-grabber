@@ -46,6 +46,8 @@ metadata:
   }
 }
 ```
+> `<REPO_ROOT>` 請替換為本專案在本機的絕對路徑。
+
 stdio 進入點會載入 `data/config.json` 與 `data/state.json`、建立本機搶課引擎，並在已記住帳密時於背景自動登入。登入完成前，`asia_register_lecture`、`asia_cancel_lecture` 等需要授權的工具會回傳明確的登入提示；完成後 8 項工具皆可運作。`runStdioMcpServer()` 會拒絕沒有 engine 的 context。
 
 ### 1.2 HTTP 無狀態端點模式 (本機 Web 代理)
