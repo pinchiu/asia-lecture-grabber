@@ -267,9 +267,11 @@ a { color: inherit; text-decoration: none; }
   bottom: 3px;
   left: 0;
   width: 0;
-  border-radius: 9px;
-  background: #ffffff;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  /* 與 Flutter 原生版一致：15% 白色半透明磨砂膠囊，而非純白實心 */
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1),
               width 0.28s cubic-bezier(0.2, 0.9, 0.3, 1),
               background 0.2s ease,
@@ -288,12 +290,12 @@ a { color: inherit; text-decoration: none; }
 
 .nav-segments.is-dragging .nav-segment-glider {
   transition: none !important;
-  background: rgba(255, 255, 255, 0.76) !important;
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45),
-              0 0 0 1px rgba(255, 255, 255, 0.5),
-              inset 0 1px 2px rgba(255, 255, 255, 0.9) !important;
+  background: rgba(255, 255, 255, 0.26) !important;
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35),
+              0 0 0 1px rgba(255, 255, 255, 0.4),
+              inset 0 1px 2px rgba(255, 255, 255, 0.55) !important;
   opacity: 0.96;
 }
 
@@ -321,8 +323,9 @@ a { color: inherit; text-decoration: none; }
 }
 
 .nav-segment-btn.active {
-  color: #000000;
+  color: #ffffff;
   font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .seg-badge {
@@ -331,14 +334,16 @@ a { color: inherit; text-decoration: none; }
   font-weight: 700;
   padding: 1px 6px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.2);
-  color: #000000;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   transition: background 0.18s ease, color 0.18s ease;
 }
 
 .nav-segment-btn:not(.active) .seg-badge {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.72);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .brand-text h1 {
@@ -1985,9 +1990,9 @@ table.grid td.right {
     right: 0 !important;
     width: 100% !important;
     z-index: var(--z-sticky) !important;
-    background: rgba(14, 15, 19, 0.9) !important;
-    backdrop-filter: blur(28px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+    background: rgba(18, 20, 24, 0.86) !important;
+    backdrop-filter: blur(25px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
     border-bottom: 0.5px solid rgba(255, 255, 255, 0.14) !important;
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 16px rgba(0, 0, 0, 0.4) !important;
     padding-top: env(safe-area-inset-top, 0px) !important;
@@ -2150,10 +2155,11 @@ table.grid td.right {
     right: 0 !important;
     width: 100% !important;
     z-index: var(--z-sticky) !important;
-    background: rgba(14, 15, 19, 0.9) !important;
-    backdrop-filter: blur(28px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
-    border-top: 0.5px solid rgba(255, 255, 255, 0.14) !important;
+    /* 對齊 Flutter 原生版：40% 深色磨砂 + 25px 模糊 */
+    background: rgba(18, 18, 18, 0.4) !important;
+    backdrop-filter: blur(25px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
+    border-top: 0.5px solid rgba(255, 255, 255, 0.17) !important;
     border-left: none !important;
     border-right: none !important;
     border-bottom: none !important;
@@ -2174,7 +2180,7 @@ table.grid td.right {
     gap: 3px;
     background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(255, 255, 255, 0.54);
     padding: 4px 2px;
     min-height: 48px;
     cursor: pointer;
@@ -2182,6 +2188,27 @@ table.grid td.right {
     border-radius: 0;
     transition: transform 0.1s ease, color 0.15s ease;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 與原生版一致：選取分頁後方的 15% 白色半透明膠囊 */
+  .mob-tab.active::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    left: 5px;
+    right: 5px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+  }
+
+  .mob-icon-wrap,
+  .mob-label {
+    position: relative;
+    z-index: 1;
   }
 
   .mob-tab:active {
@@ -2205,7 +2232,7 @@ table.grid td.right {
   .mob-icon {
     width: 20px;
     height: 20px;
-    stroke: rgba(255, 255, 255, 0.45);
+    stroke: rgba(255, 255, 255, 0.54);
     transition: transform 0.15s ease, stroke 0.15s ease;
   }
 
@@ -2264,7 +2291,8 @@ table.grid td.right {
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .topbar, .card, .pill, .btn.ghost, .mobile-nav, .side, .toast {
+  .topbar, .card, .pill, .btn.ghost, .mobile-nav, .side, .toast,
+  .nav-segments, .nav-segment-glider, .mob-tab.active::before {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background-color: var(--bg-surface) !important;

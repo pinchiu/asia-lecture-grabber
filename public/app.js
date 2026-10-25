@@ -1682,6 +1682,8 @@ function initSegmentDrag() {
   let activePointerId = null;
   const dragThreshold = 4;
   let hasMovedPastThreshold = false;
+  let pointerCaptured = false;
+  let suppressClick = false;
   let rafId = null;
 
   const buttons = () => [...nav.querySelectorAll('.nav-segment-btn')];
@@ -1709,11 +1711,8 @@ function initSegmentDrag() {
     activePointerId = e.pointerId;
     isDragging = true;
     hasMovedPastThreshold = false;
-
-    // 立即捕獲指標，避免被瀏覽器滾動或手勢攔截
-    try {
-      nav.setPointerCapture(activePointerId);
-    } catch {}
+    pointerCaptured = false;
+    suppressClick = false;
   });
 
   window.addEventListener('pointermove', (e) => {
@@ -1723,7 +1722,15 @@ function initSegmentDrag() {
     if (!hasMovedPastThreshold) {
       if (Math.abs(dx) > dragThreshold) {
         hasMovedPastThreshold = true;
+        suppressClick = true;
         nav.classList.add('is-dragging');
+        // 只有真正開始拖曳時才捕獲指標；單純點擊保留原生 click target。
+        if (!pointerCaptured) {
+          try {
+            nav.setPointerCapture(activePointerId);
+            pointerCaptured = true;
+          } catch {}
+        }
         if (navigator.vibrate) navigator.vibrate(6);
       } else {
         return;
@@ -1756,9 +1763,12 @@ function initSegmentDrag() {
     activePointerId = null;
     nav.classList.remove('is-dragging');
     if (rafId) cancelAnimationFrame(rafId);
-    try {
-      nav.releasePointerCapture(e.pointerId);
-    } catch {}
+    if (pointerCaptured) {
+      try {
+        nav.releasePointerCapture(e.pointerId);
+      } catch {}
+      pointerCaptured = false;
+    }
 
     if (hasMovedPastThreshold) {
       const gliderCenter = currentLeft + gliderWidth / 2;
@@ -1784,17 +1794,18 @@ function initSegmentDrag() {
       } else {
         updateGlider(document.body.dataset.view, true);
       }
-    } else {
-      // 點擊觸發
-      const targetBtn = e.target.closest('.nav-segment-btn');
-      if (targetBtn && targetBtn.dataset.view) {
-        if (navigator.vibrate) navigator.vibrate(6);
-        switchView(targetBtn.dataset.view);
-      } else {
-        updateGlider(document.body.dataset.view, true);
-      }
     }
+    // 未超過拖曳門檻時不在此切換，讓原生 click 走 delegated click handler，
+    // 避免 pointer capture 把 target 變成 nav 而導致點擊失效。
   };
+
+  // 拖曳結束後瀏覽器仍可能補發 click；在 capture 階段吃掉，避免重複切換。
+  nav.addEventListener('click', (e) => {
+    if (!suppressClick) return;
+    suppressClick = false;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
 
   window.addEventListener('pointerup', onPointerEnd);
   window.addEventListener('pointercancel', onPointerEnd);
