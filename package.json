@@ -9,6 +9,7 @@
     "dev": "node --watch src/server.mjs",
     "desktop": "node scripts/desktop-launcher.mjs",
     "icons": "node scripts/generate-icons.mjs",
+    "mobile:icons": "node scripts/generate-mobile-icons.mjs",
     "contract": "node scripts/generate-contract.mjs",
     "mcp": "node src/mcp.mjs",
     "test": "node --test test/*.test.mjs",

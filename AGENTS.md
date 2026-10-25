@@ -21,6 +21,7 @@
 - 安裝相依：`cd mobile && flutter pub get`
 - 執行行動端 App：`npm run mobile:flutter:run`（或進入 `mobile/` 執行 `flutter run`）。
 - 執行行動端單元測試：`npm run mobile:flutter:test`（或進入 `mobile/` 執行 `flutter test`）。
+- 重新產生 Android 啟動圖示與 App 共用圖示：`npm run mobile:icons`（來源為 `mobile/assets/icon/*.svg`，需要 ImageMagick 7 與 RSVG 委派）。
 - 打包 Android 原生 APK：`npm run mobile:flutter:build:apk`（產出於 `mobile/build/app/outputs/flutter-apk/app-release.apk`）。
 - 打包 Android App Bundle：`npm run mobile:flutter:build:bundle`。
 - 檢查 Flutter 環境：`npm run mobile:flutter:doctor`。
@@ -69,6 +70,7 @@
   - 校方 DeleteData 端點成功時會回傳空字串 `""` 或 JSON 雙引號 `""`，**嚴禁只檢查 `.isEmpty`**，必須同時檢查 `text.isEmpty || text == '""'`，且在清冊尚未匹配到加密代碼前，**嚴禁在未成功呼叫校方 API 的情況下擅自將本機標記為退選成功**。
 - **雙語拆字串陷阱**：嚴禁在 UI 或邏輯中依賴中文全形標點（如 `，` 或特定漢字）做 `split`，英文介面無該字符會引發溢出破版或文字截斷錯誤；所有文案必須透過 `i18n.dart` 或 `app.js` 的 I18N 字典提供獨立鍵。
 - **衝堂檢驗必須具備時間戳**：進行衝堂檢測時，比較之事件物件必須優先具備 `startAt` 與 `endAt` 數值時間戳記，不可直接拿未經解析的原始資料物件比對；若缺少結束時間，依通識規範預設以開始時間補 2 小時。
+- **App 圖示四層必須同步**：`mobile/assets/icon/` 內四個 SVG 共用同一組座標系，`app-icon.svg` 為滿版主檔（主體 1.25 倍），`app-icon-foreground.svg` 必須維持 1.05 倍以完整落在 Android 自適應圖示安全圈；修改後執行 `npm run mobile:icons` 重新產生，嚴禁手改 `mipmap-*` 內的 PNG 或 `mipmap-anydpi-v26`、`mipmap-anydpi-v33` 的 XML。
 - **MCP 2026-07-28 無狀態調用**：2026-07-28 規範下移除 protocol-level stateful session 與強制握手要求，客戶端可直接呼叫 `tools/list`、`tools/call` 或 `tasks/*`，伺服器必須支援自包含請求與標頭導向（`Mcp-Method` / `Mcp-Name`）。stdio 模式必須透過 `createStdioContext()` 載入引擎，`runStdioMcpServer()` 會拒絕沒有 engine 的 context；HTTP 模式與 stdio 共用 `createMcpContext()`，授權憑證一律以 `getToken` 動態取得。stdio 的自動登入在背景執行，登入完成前需要授權的工具會回報尚未登入。
 - **手動報名與圖形驗證碼特性**：校方伺服器端報名端點（`api/Cfd10/Save`）根本未校驗圖形驗證碼，因此後端通訊無需任何 OCR，零秒延遲且無驗證碼錯誤風險。
 - **排程依賴**：排程器由伺服器內部 10 秒計時器驅動；若伺服器未運行或電腦處於睡眠狀態，排程將不會觸發。

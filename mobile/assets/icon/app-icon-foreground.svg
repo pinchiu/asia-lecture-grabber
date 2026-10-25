@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!--
+    行動端 App Icon 前景層：透明底，供 Android 自適應圖示疊加於背景層之上。
+    主體需維持在 108dp 圖層的 66dp 安全圈內，避免被圓形或水滴形遮罩裁切。
+  -->
+  <defs>
+    <linearGradient id="gold" x1="8%" y1="0%" x2="92%" y2="100%">
+      <stop offset="0%" stop-color="#ffe9b8"/>
+      <stop offset="24%" stop-color="#ffc247"/>
+      <stop offset="56%" stop-color="#ffab14"/>
+      <stop offset="100%" stop-color="#d97705"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.30"/>
+      <stop offset="62%" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="drop" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="24"/>
+    </filter>
+    <mask id="ticketMask">
+      <rect x="246" y="326" width="532" height="344" rx="60" fill="#ffffff"/>
+      <circle cx="246" cy="498" r="46" fill="#000000"/>
+      <circle cx="778" cy="498" r="46" fill="#000000"/>
+      <path d="M 566 376 L 436 542 L 506 542 L 470 640 L 598 472 L 522 472 Z" fill="#000000"/>
+    </mask>
+  </defs>
+
+  <g transform="translate(512 512) scale(1.05) translate(-512 -512)">
+    <g transform="rotate(-12 512 498)">
+      <g filter="url(#drop)" opacity="0.65">
+        <rect x="246" y="352" width="532" height="344" rx="60" fill="#000000"/>
+      </g>
+
+      <g mask="url(#ticketMask)">
+        <rect x="246" y="326" width="532" height="344" rx="60" fill="url(#gold)"/>
+        <rect x="246" y="326" width="532" height="172" rx="60" fill="url(#sheen)" opacity="0.55"/>
+        <rect x="246" y="590" width="532" height="80" fill="#8a4b02" opacity="0.16"/>
+      </g>
+
+      <line x1="660" y1="372" x2="660" y2="624" stroke="#0a0b0f" stroke-opacity="0.28" stroke-width="7" stroke-dasharray="8 16" stroke-linecap="round"/>
+
+      <circle cx="706" cy="430" r="10" fill="#30d158"/>
+      <circle cx="706" cy="476" r="10" fill="#64d2ff"/>
+      <circle cx="706" cy="522" r="10" fill="#ff9f0a"/>
+      <circle cx="706" cy="568" r="10" fill="#bf5af2"/>
+
+      <rect x="248" y="328" width="528" height="340" rx="58" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="3"/>
+    </g>
+  </g>
+</svg>

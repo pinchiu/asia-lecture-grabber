@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!--
+    行動端 App Icon 單色層：透明底白色剪影，供 Android 13+ 主題圖示（Themed Icons）著色使用。
+    僅保留票券輪廓、凹口與閃電簍空，避免細小節點在著色後糊成一團。
+  -->
+  <defs>
+    <mask id="ticketMask">
+      <rect x="246" y="326" width="532" height="344" rx="60" fill="#ffffff"/>
+      <circle cx="246" cy="498" r="46" fill="#000000"/>
+      <circle cx="778" cy="498" r="46" fill="#000000"/>
+      <path d="M 566 376 L 436 542 L 506 542 L 470 640 L 598 472 L 522 472 Z" fill="#000000"/>
+    </mask>
+  </defs>
+
+  <g transform="translate(512 512) scale(1.05) translate(-512 -512)">
+    <g transform="rotate(-12 512 498)">
+      <rect x="246" y="326" width="532" height="344" rx="60" fill="#ffffff" mask="url(#ticketMask)"/>
+    </g>
+  </g>
+</svg>

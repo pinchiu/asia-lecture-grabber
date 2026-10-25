@@ -94,12 +94,33 @@ flutter build ipa --release
 
 ---
 
+## App 圖示
+
+Android 啟動圖示與 App 內共用圖示由 `assets/icon/` 的向量主檔產生，視覺延續曜石黑玻璃介面：琥珀金票券代表講座入場資格，中央閃電代表自動搶課速度，票根四色節點對應健康力、關懷力、創新力與卓越力。
+
+| 檔案 | 用途 |
+| --- | --- |
+| `assets/icon/app-icon.svg` | 滿版 1024 主檔，供 iOS、舊版 Android 與對外預覽使用 |
+| `assets/icon/app-icon-background.svg` | Android 自適應圖示背景層（曜石黑底與暖光） |
+| `assets/icon/app-icon-foreground.svg` | Android 自適應圖示前景層（透明底，主體維持於安全圈內） |
+| `assets/icon/app-icon-monochrome.svg` | Android 13 以上主題圖示單色層 |
+
+修改任一圖層後，於專案根目錄執行：
+
+```bash
+npm run mobile:icons
+```
+
+指令會產生 `android/app/src/main/res/mipmap-*` 內的舊版圖示、自適應圖示三層 PNG 與對應 XML，並同步更新 `assets/icon-192.png`、`assets/icon-512.png`。執行環境需要 ImageMagick 7（含 librsvg/RSVG 委派）；應用程式本身仍維持零執行期相依。四份 SVG 共用同一組座標系，滿版主檔使用 1.25 倍主體比例，自適應前景使用 1.05 倍以保留 Android 遮罩安全圈，調整時請一併確認。
+
+---
+
 ## 目錄結構
 
 ```text
 mobile/
 ├ pubspec.yaml                  Flutter 專案與相依設定
-├ assets/                       圖示與靜態資源
+├ assets/                       圖示與靜態資源（icon/ 內為 SVG 圖示主檔）
 ├ lib/
 │  ├ main.dart                  App 根元件、主題、分頁與更新提示
 │  ├ config/

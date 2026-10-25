@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!--
+    行動端 App Icon 背景層：供 Android 自適應圖示（adaptive icon）與主檔共用。
+    內容僅含曜石黑底、暖光與票券外溢光，不得加入任何主體圖形。
+  -->
+  <defs>
+    <radialGradient id="bg" cx="38%" cy="30%" r="90%">
+      <stop offset="0%" stop-color="#1d2334"/>
+      <stop offset="44%" stop-color="#0d0f16"/>
+      <stop offset="100%" stop-color="#06070a"/>
+    </radialGradient>
+    <filter id="halo" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="90"/>
+    </filter>
+    <filter id="spill" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="40"/>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <ellipse cx="512" cy="520" rx="300" ry="250" fill="#ff9f0a" opacity="0.16" filter="url(#halo)"/>
+  <g transform="translate(512 512) scale(1.05) translate(-512 -512)">
+    <g transform="rotate(-12 512 498)">
+      <rect x="246" y="326" width="532" height="344" rx="60" fill="#ffb020" opacity="0.22" filter="url(#spill)"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,84 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!--
+    亞洲大學講座助手：行動端 App Icon 主檔（滿版 1024，供 iOS 與各平台縮放使用）。
+    設計語彙：曜石黑玻璃底 + 琥珀金票券 + 閃電（搶課速度）+ 四力票根節點。
+    幾何另行拆分於 app-icon-background.svg 與 app-icon-foreground.svg，
+    修改時請保持三檔座標一致，再執行 npm run mobile:icons 產生所有尺寸。
+  -->
+  <defs>
+    <radialGradient id="bg" cx="38%" cy="30%" r="90%">
+      <stop offset="0%" stop-color="#1d2334"/>
+      <stop offset="44%" stop-color="#0d0f16"/>
+      <stop offset="100%" stop-color="#06070a"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="8%" y1="0%" x2="92%" y2="100%">
+      <stop offset="0%" stop-color="#ffe9b8"/>
+      <stop offset="24%" stop-color="#ffc247"/>
+      <stop offset="56%" stop-color="#ffab14"/>
+      <stop offset="100%" stop-color="#d97705"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.30"/>
+      <stop offset="62%" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="halo" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="90"/>
+    </filter>
+    <filter id="spill" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="40"/>
+    </filter>
+    <filter id="drop" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="24"/>
+    </filter>
+    <mask id="ticketMask">
+      <rect x="246" y="326" width="532" height="344" rx="60" fill="#ffffff"/>
+      <circle cx="246" cy="498" r="46" fill="#000000"/>
+      <circle cx="778" cy="498" r="46" fill="#000000"/>
+      <path d="M 566 376 L 436 542 L 506 542 L 470 640 L 598 472 L 522 472 Z" fill="#000000"/>
+    </mask>
+  </defs>
+
+  <!-- 曜石黑玻璃底層 -->
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <!-- 玻璃邊緣極細高光，於深色桌面上維持圖示邊界 -->
+  <rect x="1.5" y="1.5" width="1021" height="1021" fill="none" stroke="#ffffff" stroke-opacity="0.055" stroke-width="3"/>
+
+  <!-- 主體後方暖光與外溢光，形塑聚光與材質深度 -->
+  <ellipse cx="512" cy="520" rx="300" ry="250" fill="#ff9f0a" opacity="0.16" filter="url(#halo)"/>
+  <g transform="translate(512 512) scale(1.25) translate(-512 -512)">
+    <g transform="rotate(-12 512 498)">
+      <rect x="246" y="326" width="532" height="344" rx="60" fill="#ffb020" opacity="0.22" filter="url(#spill)"/>
+    </g>
+  </g>
+
+  <g transform="translate(512 512) scale(1.25) translate(-512 -512)">
+    <g transform="rotate(-12 512 498)">
+      <!-- 票券投影 -->
+      <g filter="url(#drop)" opacity="0.65">
+        <rect x="246" y="352" width="532" height="344" rx="60" fill="#000000"/>
+      </g>
+
+      <!-- 票券本體：以遮罩鑿出左右票券凹口與中央閃電 -->
+      <g mask="url(#ticketMask)">
+        <rect x="246" y="326" width="532" height="344" rx="60" fill="url(#gold)"/>
+        <rect x="246" y="326" width="532" height="172" rx="60" fill="url(#sheen)" opacity="0.55"/>
+        <rect x="246" y="590" width="532" height="80" fill="#8a4b02" opacity="0.16"/>
+      </g>
+
+      <!-- 票根虛線 -->
+      <line x1="660" y1="372" x2="660" y2="624" stroke="#0a0b0f" stroke-opacity="0.28" stroke-width="7" stroke-dasharray="8 16" stroke-linecap="round"/>
+
+      <!-- 四力票根節點：健康力、關懷力、創新力、卓越力 -->
+      <circle cx="706" cy="430" r="10" fill="#30d158"/>
+      <circle cx="706" cy="476" r="10" fill="#64d2ff"/>
+      <circle cx="706" cy="522" r="10" fill="#ff9f0a"/>
+      <circle cx="706" cy="568" r="10" fill="#bf5af2"/>
+
+      <!-- 內緣高光 -->
+      <rect x="248" y="328" width="528" height="340" rx="58" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="3"/>
+    </g>
+  </g>
+</svg>
+
+
