@@ -27,5 +27,8 @@ mobile/ios/Podfile.lock
 mobile/ios/Runner/GeneratedPluginRegistrant.*
 mobile/ios/Flutter/
 
+# graphify 本機執行狀態（內含絕對路徑與時間戳，換機器即失效）
 graphify-out/.*
 graphify-out/cache/
+graphify-out/cost.json
+graphify-out/manifest.json
