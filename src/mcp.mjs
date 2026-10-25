@@ -636,7 +636,7 @@ async function executeTool(name, args = {}, context = {}) {
         throw new InvalidParamError('bfree 必須為 Y 或 N');
       }
       if (!engine) throw new Error('本機引擎尚未就緒');
-      if (!engine.session?.token) throw new Error('請先於搶課助手登入帳號');
+      if (!token) throw new Error('請先於搶課助手登入帳號');
       const message = await engine.manualRegister(String(args.eid01), { bfree: args.bfree });
       return { ok: true, message, eid01: args.eid01 };
     }
@@ -644,7 +644,7 @@ async function executeTool(name, args = {}, context = {}) {
     case 'asia_cancel_lecture': {
       if (!args.eid01) throw new InvalidParamError('缺少必要參數：eid01');
       if (!engine) throw new Error('本機引擎尚未就緒');
-      if (!engine.session?.token) throw new Error('請先於搶課助手登入帳號');
+      if (!token) throw new Error('請先於搶課助手登入帳號');
       const title = await engine.cancelTarget(String(args.eid01));
       return { ok: true, message: `已成功取消報名：${title}` };
     }
@@ -765,6 +765,46 @@ export async function createStdioContext({ api = defaultApi, storage = defaultSt
 /**
  * 啟動基於標準輸入輸出的 stdio JSON-RPC MCP 伺服器。
  */
+/**
+ * 建立逐行 JSON-RPC 處理器。
+ *
+ * JSON-RPC 回應以 id 配對，但逐行序列化處理可避免工具副作用交錯執行。
+ * 將 write 參數化後，測試可越過 process.stdin/stdout 直接驗證佇列與解析錯誤。
+ *
+ * @param {object} context
+ * @param {(text: string) => void} [write]
+ * @returns {(line: string) => Promise<void>}
+ */
+export function createStdioLineHandler(context, write = (text) => process.stdout.write(text)) {
+  let queue = Promise.resolve();
+
+  async function handleLine(line) {
+    const trimmed = String(line || '').trim();
+    if (!trimmed) return;
+
+    try {
+      const message = JSON.parse(trimmed);
+      const response = await handleJsonRpcMessage(message, context);
+      if (response !== null) {
+        write(JSON.stringify(response) + '\n');
+      }
+    } catch {
+      write(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: null,
+          error: { code: -32700, message: '解析錯誤：JSON 格式不正確' }
+        }) + '\n'
+      );
+    }
+  }
+
+  return (line) => {
+    queue = queue.then(() => handleLine(line)).catch(() => {});
+    return queue;
+  };
+}
+
 export function runStdioMcpServer(context) {
   if (!context?.engine) {
     throw new Error('stdio MCP 必須提供引擎情境，請使用 createStdioContext()');
@@ -776,33 +816,7 @@ export function runStdioMcpServer(context) {
     terminal: false
   });
 
-  // JSON-RPC 回應以 id 配對，但逐行序列化處理可避免工具副作用交錯執行。
-  let queue = Promise.resolve();
-
-  async function handleLine(line) {
-    const trimmed = String(line || '').trim();
-    if (!trimmed) return;
-
-    try {
-      const message = JSON.parse(trimmed);
-      const response = await handleJsonRpcMessage(message, context);
-      if (response !== null) {
-        process.stdout.write(JSON.stringify(response) + '\n');
-      }
-    } catch {
-      process.stdout.write(
-        JSON.stringify({
-          jsonrpc: '2.0',
-          id: null,
-          error: { code: -32700, message: '解析錯誤：JSON 格式不正確' }
-        }) + '\n'
-      );
-    }
-  }
-
-  rl.on('line', (line) => {
-    queue = queue.then(() => handleLine(line)).catch(() => {});
-  });
+  rl.on('line', createStdioLineHandler(context));
 
   process.stderr.write(
     '[asia-mcp] 亞洲大學講座助手 MCP 伺服器已透過 stdio 啟動（規格 2026-07-28）。\n'

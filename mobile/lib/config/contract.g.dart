@@ -11,8 +11,17 @@ const int missingEndFallbackMs = 7200000;
 /// 畢業總場次門檻。
 const int graduationTotalThreshold = 8;
 
-/// 單一素養畢業門檻。
-const int graduationLiteracyThreshold = 2;
+/// 健康力畢業門檻。
+const int graduationHealthThreshold = 2;
+
+/// 關懷力畢業門檻。
+const int graduationCareThreshold = 2;
+
+/// 創新力畢業門檻。
+const int graduationInnovationThreshold = 2;
+
+/// 卓越力畢業門檻。
+const int graduationExcellenceThreshold = 2;
 
 /// 判斷校方退選回應是否代表成功。
 bool isCancelSuccessText(String text) => cancelSuccessTexts.contains(text.trim());

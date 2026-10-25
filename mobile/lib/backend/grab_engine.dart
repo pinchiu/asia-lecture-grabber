@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/contract.g.dart';
 import 'asia_api.dart';
 import 'calendar_helper.dart';
 
@@ -584,7 +585,13 @@ class GrabEngine extends ChangeNotifier {
         'saved': (session?['password'] ?? '').toString().isNotEmpty,
       },
       'graduation': {
-        'threshold': {'total': 8, 'health': 2, 'care': 2, 'innovation': 2, 'excellence': 2},
+        'threshold': {
+          'total': graduationTotalThreshold,
+          'health': graduationHealthThreshold,
+          'care': graduationCareThreshold,
+          'innovation': graduationInnovationThreshold,
+          'excellence': graduationExcellenceThreshold,
+        },
         'history': graduation['history'] ?? {'health': 0, 'care': 0, 'innovation': 0, 'excellence': 0, 'total': 0},
       },
       'schedule': schedule,
@@ -679,14 +686,38 @@ class GrabEngine extends ChangeNotifier {
     final totalExcellence = histExcellence + currExcellence;
     final totalLectures = histTotal + currTotal;
 
-    final isQualified = totalHealth >= 2 && totalCare >= 2 && totalInnovation >= 2 && totalExcellence >= 2 && totalLectures >= 8;
+    final isQualified = totalHealth >= graduationHealthThreshold &&
+        totalCare >= graduationCareThreshold &&
+        totalInnovation >= graduationInnovationThreshold &&
+        totalExcellence >= graduationExcellenceThreshold &&
+        totalLectures >= graduationTotalThreshold;
 
     return {
-      'health': {'current': totalHealth, 'target': 2, 'done': totalHealth >= 2},
-      'care': {'current': totalCare, 'target': 2, 'done': totalCare >= 2},
-      'innovation': {'current': totalInnovation, 'target': 2, 'done': totalInnovation >= 2},
-      'excellence': {'current': totalExcellence, 'target': 2, 'done': totalExcellence >= 2},
-      'total': {'current': totalLectures, 'target': 8, 'done': totalLectures >= 8},
+      'health': {
+        'current': totalHealth,
+        'target': graduationHealthThreshold,
+        'done': totalHealth >= graduationHealthThreshold,
+      },
+      'care': {
+        'current': totalCare,
+        'target': graduationCareThreshold,
+        'done': totalCare >= graduationCareThreshold,
+      },
+      'innovation': {
+        'current': totalInnovation,
+        'target': graduationInnovationThreshold,
+        'done': totalInnovation >= graduationInnovationThreshold,
+      },
+      'excellence': {
+        'current': totalExcellence,
+        'target': graduationExcellenceThreshold,
+        'done': totalExcellence >= graduationExcellenceThreshold,
+      },
+      'total': {
+        'current': totalLectures,
+        'target': graduationTotalThreshold,
+        'done': totalLectures >= graduationTotalThreshold,
+      },
       'qualified': isQualified,
       'isQualified': isQualified,
     };

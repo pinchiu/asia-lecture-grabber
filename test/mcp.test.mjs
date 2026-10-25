@@ -7,6 +7,7 @@ import path from 'node:path';
 import {
   handleJsonRpcMessage,
   createStdioContext,
+  createStdioLineHandler,
   MCP_TOOLS,
   MCP_SERVER_INFO,
   MCP_PROTOCOL_VERSION,
@@ -456,6 +457,24 @@ describe('mcp.mjs Model Context Protocol (MCP 2026-07-28 規範) 伺服器模組
     }
   });
 
+  test('stdio 逐行處理器會序列化請求並回報 JSON-RPC -32700', async () => {
+    const output = [];
+    const handleLine = createStdioLineHandler(context, (text) => output.push(text));
+
+    await Promise.all([
+      handleLine('{"jsonrpc":"2.0","id":50,"method":"ping"}'),
+      handleLine('{bad json'),
+      handleLine('{"jsonrpc":"2.0","id":51,"method":"tools/list"}')
+    ]);
+
+    const messages = output.map((text) => JSON.parse(text.trim()));
+    assert.equal(messages[0].id, 50);
+    assert.equal(messages[0].result.status, 'ok');
+    assert.equal(messages[1].error.code, -32700);
+    assert.equal(messages[2].id, 51);
+    assert.equal(messages[2].result.tools.length, 8);
+  });
+
   test('2026-07-28 Header-Based Routing 標頭導向測試', async () => {
     const res = await handleJsonRpcMessage(
       {
@@ -559,7 +578,26 @@ describe('mcp.mjs Model Context Protocol (MCP 2026-07-28 規範) 伺服器模組
       });
       assert.equal(registerWrongType.status, 415);
 
-      // 5) MCP 的 JSON 解析錯誤與 stdio 一致，回傳 JSON-RPC -32700
+      // 5) 無 body 的 POST 仍必須帶 JSON Content-Type
+      const bodylessRes = await fetch(`http://127.0.0.1:${port}/api/logout`, {
+        method: 'POST',
+        headers: { Connection: 'close' }
+      });
+      assert.equal(bodylessRes.status, 415);
+
+      // 6) 同源 loopback Origin 應被允許
+      const sameOriginRes = await fetch(`http://127.0.0.1:${port}/api/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: `http://127.0.0.1:${port}`,
+          Connection: 'close'
+        },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 100, method: 'tools/list' })
+      });
+      assert.equal(sameOriginRes.status, 200);
+
+      // 7) MCP 的 JSON 解析錯誤與 stdio 一致，回傳 JSON-RPC -32700
       const malformed = await fetch(`http://127.0.0.1:${port}/api/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Connection: 'close' },
@@ -570,7 +608,7 @@ describe('mcp.mjs Model Context Protocol (MCP 2026-07-28 規範) 伺服器模組
       const malformedBody = await malformed.json();
       assert.equal(malformedBody.error.code, -32700);
 
-      // 6) POST /api/mcp 透過 HTTP 發送 JSON-RPC tools/list
+      // 8) POST /api/mcp 透過 HTTP 發送 JSON-RPC tools/list
       const res = await fetch(`http://127.0.0.1:${port}/api/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Connection: 'close' },

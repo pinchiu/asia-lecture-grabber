@@ -72,17 +72,17 @@ function fail(res, message, status = 400) {
   return sendJson(res, status, { error: String(message || '未知錯誤') });
 }
 
-async function readJson(req, { requireJson = true } = {}) {
-  const hasBody =
-    Number(req.headers['content-length'] || 0) > 0 || Boolean(req.headers['transfer-encoding']);
-  if (requireJson && hasBody) {
-    const contentType = String(req.headers['content-type'] || '').toLowerCase();
-    if (!contentType.startsWith('application/json')) {
-      const err = new Error('Content-Type 必須為 application/json');
-      err.status = 415;
-      throw err;
-    }
+function assertJsonContentType(req) {
+  const contentType = String(req.headers['content-type'] || '').toLowerCase();
+  if (!contentType.startsWith('application/json')) {
+    const err = new Error('Content-Type 必須為 application/json');
+    err.status = 415;
+    throw err;
   }
+}
+
+async function readJson(req, { requireJson = true } = {}) {
+  if (requireJson) assertJsonContentType(req);
 
   const chunks = [];
   let size = 0;
@@ -140,8 +140,9 @@ function assertAllowedOrigin(req) {
   }
 
   const host = String(req.headers.host || '');
-  const sameLanOrigin = url.host === host && net.isIP(url.hostname) !== 0;
-  if (isLoopbackHostname(url.hostname) || sameLanOrigin) return;
+  const hostname = url.hostname.replace(/^\[|\]$/g, '');
+  const sameOrigin = url.host === host && (isLoopbackHostname(hostname) || net.isIP(hostname) !== 0);
+  if (sameOrigin) return;
 
   const err = new Error('僅允許本機或同源區網請求呼叫 API');
   err.status = 403;
@@ -244,8 +245,11 @@ export function createApp({
     const route = `${method} ${pathname}`;
 
     try {
-      // 所有變更狀態的 API 一律檢查 Origin，避免跨站簡單請求代為操作。
-      if (method === 'POST') assertAllowedOrigin(req);
+      // 所有變更狀態的 API 一律檢查 Origin 與 JSON Content-Type，避免跨站簡單請求代為操作。
+      if (method === 'POST') {
+        assertAllowedOrigin(req);
+        assertJsonContentType(req);
+      }
 
       switch (route) {
         case 'GET /api/state':

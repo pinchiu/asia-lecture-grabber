@@ -16,7 +16,10 @@ void main() {
 
     test('畢業門檻與 AGENTS.md 一致', () {
       expect(graduationTotalThreshold, equals(8));
-      expect(graduationLiteracyThreshold, equals(2));
+      expect(graduationHealthThreshold, equals(2));
+      expect(graduationCareThreshold, equals(2));
+      expect(graduationInnovationThreshold, equals(2));
+      expect(graduationExcellenceThreshold, equals(2));
     });
   });
 }

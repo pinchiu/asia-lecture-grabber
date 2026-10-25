@@ -857,7 +857,7 @@ function renderTelemetry(snap) {
 async function getJSON(path, options = {}) {
   const res = await fetch(path, {
     method: options.method || 'GET',
-    headers: options.body ? { 'Content-Type': 'application/json' } : undefined,
+    headers: { 'Content-Type': 'application/json' },
     body: options.body ? JSON.stringify(options.body) : undefined
   });
   const text = await res.text();

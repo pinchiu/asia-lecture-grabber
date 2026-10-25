@@ -93,9 +93,14 @@ The service runs at `http://127.0.0.1:5199` by default and binds to loopback onl
 
 ### Running Unit Tests
 
-The project includes 101 automated tests built on Node.js's built-in test module:
+The project includes 102 automated tests built on Node.js's built-in test module:
 ```bash
 npm test
+```
+
+After changing the shared contract in `src/contract.mjs`, regenerate the Flutter constants:
+```bash
+npm run contract
 ```
 
 ---
@@ -321,6 +326,8 @@ asia-lecture-grabber/
 │  ├ lib/                        Flutter Dart source code
 │  │  ├ main.dart                CupertinoApp root widget and online update pipeline
 │  │  ├ config/i18n.dart         Bilingual i18n state machine (automatic system language adaptation)
+│  │  ├ config/contract.g.dart   Shared contract constants generated from src/contract.mjs
+│  │  ├ config/school_certs.dart School AIA intermediate certificate (TLS trust anchor)
 │  │  ├ backend/                 Pure Dart school API client and state machine engine
 │  │  └ screens/                 Four native screens (lectures, targets, schedule, settings)
 │  ├ android/                    Android native build project (permissions and Gradle configuration)
@@ -328,6 +335,7 @@ asia-lecture-grabber/
 └ scripts/
    ├ asia-captcha-autofill.user.js Official website CAPTCHA auto-fill and barrier-free requirement automation script
    ├ desktop-launcher.mjs         Desktop window launcher and orphan process cleanup script
+   ├ generate-contract.mjs        Generate Flutter shared contract constants
    └ generate-icons.mjs           Native PNG icon generator
 ```
 

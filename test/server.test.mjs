@@ -13,12 +13,11 @@ function requestHttp(server, method, pathname, body = null, headers = {}) {
   return new Promise((resolve, reject) => {
     const addr = server.address();
     const port = addr.port;
-    const reqHeaders = { ...headers };
+    const reqHeaders = { 'Content-Type': 'application/json', ...headers };
     let payload = null;
 
     if (body !== null) {
       payload = typeof body === 'string' ? body : JSON.stringify(body);
-      reqHeaders['Content-Type'] = 'application/json';
       reqHeaders['Content-Length'] = Buffer.byteLength(payload);
     }
 

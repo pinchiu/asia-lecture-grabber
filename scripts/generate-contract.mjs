@@ -33,8 +33,17 @@ const int missingEndFallbackMs = ${MISSING_END_FALLBACK_MS};
 /// 畢業總場次門檻。
 const int graduationTotalThreshold = ${GRADUATION_THRESHOLDS.total};
 
-/// 單一素養畢業門檻。
-const int graduationLiteracyThreshold = ${GRADUATION_THRESHOLDS.health};
+/// 健康力畢業門檻。
+const int graduationHealthThreshold = ${GRADUATION_THRESHOLDS.health};
+
+/// 關懷力畢業門檻。
+const int graduationCareThreshold = ${GRADUATION_THRESHOLDS.care};
+
+/// 創新力畢業門檻。
+const int graduationInnovationThreshold = ${GRADUATION_THRESHOLDS.innovation};
+
+/// 卓越力畢業門檻。
+const int graduationExcellenceThreshold = ${GRADUATION_THRESHOLDS.excellence};
 
 /// 判斷校方退選回應是否代表成功。
 bool isCancelSuccessText(String text) => cancelSuccessTexts.contains(text.trim());

@@ -350,7 +350,9 @@ class CalendarHelper {
       final startAtMs = ev['startAt'] as int?;
       final endAtMs = ev['endAt'] as int?;
       final start = startAtMs != null ? DateTime.fromMillisecondsSinceEpoch(startAtMs) : DateTime.now();
-      final end = endAtMs != null ? DateTime.fromMillisecondsSinceEpoch(endAtMs) : start.add(const Duration(hours: 2));
+      final end = endAtMs != null
+        ? DateTime.fromMillisecondsSinceEpoch(endAtMs)
+        : start.add(const Duration(milliseconds: missingEndFallbackMs));
 
       final litsList = ev['literacies'] as List?;
       final lits = litsList != null && litsList.isNotEmpty ? litsList.join('、') : '一般';

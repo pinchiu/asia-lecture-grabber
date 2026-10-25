@@ -8,7 +8,7 @@
 ### 電腦網頁版、伺服器與 AI Agent 模組
 - 啟動後端與介面：`npm start`（= `node src/server.mjs`），或雙擊 `start.bat`。
 - 開發模式（後端檔變更自動重啟）：`npm run dev`（`node --watch`）。
-- 執行自動化單元測試：`npm test`（基於 Node.js 內建 `node:test` 與 `node:assert`，共 101 項測試，覆蓋率達 90%~100%）。
+- 執行自動化單元測試：`npm test`（基於 Node.js 內建 `node:test` 與 `node:assert`，共 102 項測試，覆蓋率達 90%~100%）。
 - 重新產生 Flutter 共用契約常數：`npm run contract`（來源為 `src/contract.mjs`，輸出 `mobile/lib/config/contract.g.dart`）。
 - 啟動 MCP stdio 伺服器：`npm run mcp`（= `node src/mcp.mjs`，供 Claude Desktop、Cursor、Antigravity 調用）。
 - 桌面視窗喚起：`npm run desktop`（啟動後端並以 Chrome App 視窗模式或預設瀏覽器開啟）。
@@ -33,7 +33,7 @@
   - `src/asia.mjs`：校方 API 客戶端、AIA 中繼憑證自動修補調度、KeepAlive 連線池、IIS 錯誤頁面與 BOM 字符過濾、OpenSSL 錯誤代碼相容、重導向容錯與退選二引號相容處理。
   - `src/tls.mjs`：TLS 憑證鏈輔助（DER／PEM 轉換、AIA 網址提取、葉憑證讀取、中繼憑證下載與鏈路驗證、KeepAlive agent 建立），以明確參數操作、不依賴模組全域狀態。
 - **AI 代理與 MCP 調用模組 (MCP 2026-07-28 最新規格)**：
-  - `src/mcp.mjs`：遵循 2026-07-28 無狀態架構規格，支援 stdio 與 HTTP 雙調用模式、8 項核心 Tools、Tasks 標準生命週期原語（`tasks/list`, `tasks/get`, `tasks/cancel`）、HTTP Header 路由導向（`Mcp-Method` 與 `Mcp-Name`）與快取中繼（`ttlMs`, `cacheScope`）。stdio 進入點會載入本機設定、建立引擎並以記住帳密自動登入，因此 8 項工具在兩種傳輸模式下皆可運作；授權憑證以 `getToken` 動態取得。
+  - `src/mcp.mjs`：遵循 2026-07-28 無狀態架構規格，支援 stdio 與 HTTP 雙調用模式、8 項核心 Tools、Tasks 標準生命週期原語（`tasks/list`, `tasks/get`, `tasks/cancel`）、HTTP Header 路由導向（`Mcp-Method` 與 `Mcp-Name`）與快取中繼（`ttlMs`, `cacheScope`）。stdio 進入點會載入本機設定、建立引擎並以記住帳密於背景自動登入；登入完成後 8 項工具在兩種傳輸模式下皆可運作，完成前需要授權的工具會回報尚未登入。授權憑證以 `getToken` 動態取得。
   - `src/runtime.mjs`：伺服器與 stdio MCP 共用的執行期組裝（載入設定／目標、建立引擎、自動登入、目標去抖動持久化）。
   - `src/contract.mjs`：Node 與 Flutter 共用的校方行為契約（退選成功字串、缺少結束時間的 2 小時預設、畢業門檻）。修改後必須執行 `npm run contract` 產生 Dart 常數。
   - `skills/asia-lecture-assistant/SKILL.md`：現代 Agent Skills 規格檔，提供外部 AI 代理完整標準決策樹、最佳選課路徑演算法與 100% 清單存在性防幻覺護欄。
