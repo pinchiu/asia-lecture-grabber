@@ -416,7 +416,7 @@ describe('mcp.mjs Model Context Protocol (MCP 2026-07-28 規範) 伺服器模組
     await storage.saveConfig({ account: { username: '', password: '', idLast4: '' } });
 
     try {
-      const stdioContext = await createStdioContext({ api: mockApi, storage, autoLogin: false });
+      const stdioContext = await createStdioContext({ api: mockApi, storage });
       assert.ok(stdioContext.engine);
       assert.equal(typeof stdioContext.getToken, 'function');
 
@@ -440,6 +440,17 @@ describe('mcp.mjs Model Context Protocol (MCP 2026-07-28 規範) 伺服器模組
       const payload = JSON.parse(res.result.content[0].text);
       assert.equal(payload.session.emp_id, '11000001');
       assert.equal(stdioContext.getToken(), 'stdio-token');
+
+      const registerRes = await handleJsonRpcMessage(
+        {
+          jsonrpc: '2.0',
+          id: 41,
+          method: 'tools/call',
+          params: { name: 'asia_register_lecture', arguments: { eid01: 'L02' } }
+        },
+        stdioContext
+      );
+      assert.equal(registerRes.result.isError, undefined);
     } finally {
       await rm(dir, { recursive: true, force: true }).catch(() => {});
     }
@@ -529,7 +540,37 @@ describe('mcp.mjs Model Context Protocol (MCP 2026-07-28 規範) 伺服器模組
       });
       assert.equal(wrongTypeRes.status, 415);
 
-      // 4) POST /api/mcp 透過 HTTP 發送 JSON-RPC tools/list
+      // 4) 其他變更狀態的 API 同樣受 Origin 與 Content-Type 保護
+      const registerBlocked = await fetch(`http://127.0.0.1:${port}/api/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: 'http://evil.example',
+          Connection: 'close'
+        },
+        body: JSON.stringify({ eid01: 'L01' })
+      });
+      assert.equal(registerBlocked.status, 403);
+
+      const registerWrongType = await fetch(`http://127.0.0.1:${port}/api/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain', Connection: 'close' },
+        body: JSON.stringify({ eid01: 'L01' })
+      });
+      assert.equal(registerWrongType.status, 415);
+
+      // 5) MCP 的 JSON 解析錯誤與 stdio 一致，回傳 JSON-RPC -32700
+      const malformed = await fetch(`http://127.0.0.1:${port}/api/mcp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Connection: 'close' },
+        body: '{bad json'
+      });
+      assert.equal(malformed.status, 200);
+      assert.equal(malformed.headers.get('mcp-protocol-version'), '2026-07-28');
+      const malformedBody = await malformed.json();
+      assert.equal(malformedBody.error.code, -32700);
+
+      // 6) POST /api/mcp 透過 HTTP 發送 JSON-RPC tools/list
       const res = await fetch(`http://127.0.0.1:${port}/api/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Connection: 'close' },

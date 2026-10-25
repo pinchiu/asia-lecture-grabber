@@ -25,6 +25,7 @@
  */
 
 import http from 'node:http';
+import net from 'node:net';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,7 +33,8 @@ import * as defaultApi from './asia.mjs';
 import * as ai from './ai.mjs';
 import { Scheduler } from './schedule.mjs';
 import { buildCalendar, generateIcs } from './calendar.mjs';
-import { handleJsonRpcMessage } from './mcp.mjs';
+import { GRADUATION_THRESHOLDS } from './contract.mjs';
+import { createMcpContext, handleJsonRpcMessage } from './mcp.mjs';
 import { autoLoginEngine, bindStatePersistence, createRuntime } from './runtime.mjs';
 import { PUBLIC_DIR, defaultStorage } from './storage.mjs';
 
@@ -70,8 +72,10 @@ function fail(res, message, status = 400) {
   return sendJson(res, status, { error: String(message || '未知錯誤') });
 }
 
-async function readJson(req, { requireJson = false } = {}) {
-  if (requireJson) {
+async function readJson(req, { requireJson = true } = {}) {
+  const hasBody =
+    Number(req.headers['content-length'] || 0) > 0 || Boolean(req.headers['transfer-encoding']);
+  if (requireJson && hasBody) {
     const contentType = String(req.headers['content-type'] || '').toLowerCase();
     if (!contentType.startsWith('application/json')) {
       const err = new Error('Content-Type 必須為 application/json');
@@ -93,7 +97,9 @@ async function readJson(req, { requireJson = false } = {}) {
   try {
     return JSON.parse(text);
   } catch {
-    throw new Error('請求格式錯誤（需為 JSON）');
+    const err = new Error('請求格式錯誤（需為 JSON）');
+    err.jsonRpcParseError = true;
+    throw err;
   }
 }
 
@@ -112,22 +118,34 @@ function isLoopbackHostname(hostname) {
 }
 
 /**
- * MCP 端點只允許本機瀏覽器來源或無 Origin 的非瀏覽器客戶端。
- * 瀏覽器跨站請求必定帶 Origin；封鎖非 loopback 來源可防止任意網頁
- * 在使用者已登入的情況下代為呼叫報名或退選工具。
+ * 所有變更狀態的 API 只允許：
+ * 1. 無 Origin 的非瀏覽器客戶端（curl、AI Agent）。
+ * 2. loopback 來源（本機網頁）。
+ * 3. 同源且 Host 為 IP 的區網來源（HOST=0.0.0.0 時的手機 PWA）。
+ *
+ * 瀏覽器跨站請求必定帶 Origin；以 IP 判斷可避免 DNS rebinding
+ * 將攻擊者網域解析到 127.0.0.1 後冒充同源。
  */
-function assertLoopbackOrigin(req) {
+function assertAllowedOrigin(req) {
   const origin = req.headers.origin;
   if (!origin) return;
-  let hostname = '';
+
+  let url;
   try {
-    hostname = new URL(origin).hostname;
-  } catch {}
-  if (!isLoopbackHostname(hostname)) {
-    const err = new Error('僅允許本機來源呼叫 MCP 端點');
+    url = new URL(origin);
+  } catch {
+    const err = new Error('Origin 格式不正確');
     err.status = 403;
     throw err;
   }
+
+  const host = String(req.headers.host || '');
+  const sameLanOrigin = url.host === host && net.isIP(url.hostname) !== 0;
+  if (isLoopbackHostname(url.hostname) || sameLanOrigin) return;
+
+  const err = new Error('僅允許本機或同源區網請求呼叫 API');
+  err.status = 403;
+  throw err;
 }
 
 /**
@@ -197,13 +215,7 @@ export function createApp({
         saved: Boolean(currentConfig.account?.password)
       },
       graduation: {
-        threshold: {
-          total: 8,
-          health: 2,
-          care: 2,
-          innovation: 2,
-          excellence: 2
-        },
+        threshold: { ...GRADUATION_THRESHOLDS },
         history: {
           health: Math.max(0, Number(currentConfig.graduation?.history?.health || 0)),
           care: Math.max(0, Number(currentConfig.graduation?.history?.care || 0)),
@@ -226,26 +238,15 @@ export function createApp({
     return engine.lectures;
   }
 
-  /**
-   * 組裝 MCP 呼叫情境。授權憑證以 getToken 動態取得，
-   * 避免登入、登出或重新登入後仍使用啟動時的舊 token。
-   */
-  function mcpContext(headers) {
-    return {
-      api: apiAdapter,
-      storage,
-      engine,
-      getToken: () => engine.session?.token || null,
-      headers
-    };
-  }
-
   async function handleApi(req, res, url) {
     const method = req.method;
     const pathname = url.pathname;
     const route = `${method} ${pathname}`;
 
     try {
+      // 所有變更狀態的 API 一律檢查 Origin，避免跨站簡單請求代為操作。
+      if (method === 'POST') assertAllowedOrigin(req);
+
       switch (route) {
         case 'GET /api/state':
           return ok(res, snapshot());
@@ -560,10 +561,10 @@ export function createApp({
         }
 
         case 'GET /api/mcp': {
-          assertLoopbackOrigin(req);
+          assertAllowedOrigin(req);
           const response = await handleJsonRpcMessage(
             { jsonrpc: '2.0', id: 'discovery', method: 'tools/list' },
-            mcpContext(req.headers)
+            createMcpContext({ api: apiAdapter, storage, engine, headers: req.headers })
           );
           res.setHeader('Mcp-Protocol-Version', '2026-07-28');
           res.setHeader('Cache-Control', 'public, max-age=60');
@@ -571,9 +572,23 @@ export function createApp({
         }
 
         case 'POST /api/mcp': {
-          assertLoopbackOrigin(req);
-          const body = await readJson(req, { requireJson: true });
-          const response = await handleJsonRpcMessage(body, mcpContext(req.headers));
+          let body;
+          try {
+            body = await readJson(req);
+          } catch (err) {
+            if (!err?.jsonRpcParseError) throw err;
+            // 與 stdio 一致：JSON 解析失敗回傳 JSON-RPC -32700。
+            res.setHeader('Mcp-Protocol-Version', '2026-07-28');
+            return ok(res, {
+              jsonrpc: '2.0',
+              id: null,
+              error: { code: -32700, message: '解析錯誤：JSON 格式不正確' }
+            });
+          }
+          const response = await handleJsonRpcMessage(
+            body,
+            createMcpContext({ api: apiAdapter, storage, engine, headers: req.headers })
+          );
           res.setHeader('Mcp-Protocol-Version', '2026-07-28');
           if (response === null) {
             res.writeHead(204);

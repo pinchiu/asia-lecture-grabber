@@ -32,6 +32,7 @@
 - **禮貌退避**：平時維持 2.5 秒禮貌間隔，連線異常時自動指數退避，不對校方伺服器造成負擔。
 - **自動身份驗證**：登入時以身分證字號末四碼換取校方報名所需憑證，全程自動化。
 - **TLS 憑證鏈自動修復**：校方 IIS 伺服器缺少中繼 CA，後端依據 AIA 規範自動下載並驗證中繼憑證；Flutter 端以已驗證的中繼憑證作為額外信任錨點，兩端皆維持完整 TLS 驗證，嚴禁關閉驗證或放行任意網域。
+- **定時自動啟動**：排程器支援三種模式（開放前 N 秒、特定日期時間一次性、每週重複時段），具備邊緣觸發與跨午夜處理，且不覆寫使用者的全域停用開關。排程由伺服器內部 10 秒計時器驅動，服務停止或電腦睡眠時不會觸發。
 
 ### 3. 多端支援與雙語國際化：Flutter 原生 App、PWA 行動版與電腦網頁版
 - **中英文介面即時切換（i18n）**：網頁版與 Flutter 行動端全面支援繁體中文與英文（English）雙語切換。行動端預設跟隨作業系統語言，並支援手動切換與即時持久化。
@@ -83,10 +84,10 @@ chmod +x start.sh
 npm start
 ```
 
-啟動後服務預設運行於 `http://127.0.0.1:5199`，瀏覽器會自動開啟。
+啟動後服務預設運行於 `http://127.0.0.1:5199`，且只綁定 loopback，瀏覽器會自動開啟。若需要手機或同網段裝置連線，必須明確設定 `HOST=0.0.0.0`，並自行評估區網暴露風險。
 
 ### 執行單元測試
-專案包含 96 項基於 Node.js 內建測試模組的自動化測試：
+專案包含 101 項基於 Node.js 內建測試模組的自動化測試：
 ```bash
 npm test
 ```
@@ -137,11 +138,11 @@ npm test
   ```bash
   node src/mcp.mjs
   ```
-  stdio 進入點會載入 `data/config.json` 與 `data/state.json`、建立本機搶課引擎；若已記住帳密會自動登入，因此 8 項工具在 stdio 模式下皆可完整運作。
+  stdio 進入點會載入 `data/config.json` 與 `data/state.json`、建立本機搶課引擎；若已記住帳密會於背景自動登入。登入完成前，需要授權的工具會回報尚未登入，完成後 8 項工具皆可運作。
 - **本機 HTTP 端點**：
   - 探索端點：`GET /api/mcp`（回傳工具清冊與快取中繼標頭）
   - 調用端點：`POST /api/mcp`（支援 `Mcp-Method` 與 `Mcp-Name` HTTP 標頭導向）
-  - 安全限制：僅接受 loopback Origin 與 `Content-Type: application/json`；跨站瀏覽器請求會回傳 `403`，非 JSON 請求會回傳 `415`。伺服器預設只綁定 `127.0.0.1`。
+  - 安全限制：所有變更狀態的 API（含 `/api/mcp`、報名、退選與設定）僅接受 loopback／同源區網 Origin 與 `Content-Type: application/json`；跨站瀏覽器請求會回傳 `403`，非 JSON 請求會回傳 `415`。伺服器預設只綁定 `127.0.0.1`。
 
 ### 2. 核心工具目錄 (Tool Catalog)
 | 工具名稱 | 功能職責 | 關鍵參數 |
@@ -227,7 +228,7 @@ flutter build apk --release
 | 功能 | HTTP 方法與路徑 | 說明與欄位 |
 | --- | --- | --- |
 | 登入認證 | `POST api/Login/Auth` | 傳送 `{username, password}`，取得 Bearer Token |
-| 講座清單 | `POST api/Cfd01/Load?op=X01F00` | 公開端點；帶 Token 可取得個人 `cnt_10`（是否已報名） |
+| 講座清單 | `POST api/Cfd01/Load?op=X01F00&eid01=` | 請求內容 `{op, sdate, edate, eid01}`；公開端點，帶 Token 可取得個人 `cnt_10`（是否已報名） |
 | 講座明細 | `GET api/Cfd01/GetRes?eid01=` | 包含基本素養、主辦單位、UCAN、SDGs 等詳細資料 |
 | 身分驗證 | `POST api/PersonInfo/GetPInfo` | 傳送 `{p_no, p_id, p_type}`（`p_id` 為身分證末四碼） |
 | 送出報名 | `POST api/Cfd10/Save` | 搶課核心端點，需帶 Token 與 `std_info` 物件（含 `bfree` 無障礙需求，預設 `N`） |
@@ -267,6 +268,7 @@ asia-lecture-grabber/
 ├ src/
 │  ├ asia.mjs                    校方 API 客戶端（含 AIA 中繼憑證自動修補調度與連線池）
 │  ├ tls.mjs                     TLS 憑證鏈輔助（AIA 提取、中繼憑證下載與驗證）
+│  ├ contract.mjs                Node 與 Flutter 共用的校方行為契約
 │  ├ runtime.mjs                 共用執行期組裝（引擎、自動登入、狀態持久化）
 │  ├ engine.mjs                  搶課核心引擎（狀態機、突發輪詢、退避機制）
 │  ├ mcp.mjs                     Model Context Protocol 2026-07-28 無狀態伺服器（stdio 與 HTTP）
@@ -278,6 +280,7 @@ asia-lecture-grabber/
 ├ test/
 │  ├ asia.test.mjs               校方通訊錯誤、憑證鏈重試與 API 業務測試
 │  ├ mcp.test.mjs                MCP 2026-07-28 無狀態協定與 Tasks 整合測試
+│  ├ contract.test.mjs           Node／Flutter 契約一致性與憑證固定測試
 │  ├ calendar.test.mjs           時間戳解析、民國年轉換與衝堂檢驗測試
 │  ├ engine.test.mjs             狀態機輪詢、手動快報與退選邏輯測試
 │  ├ schedule.test.mjs           定時排程三模式與全域開關約束測試
@@ -300,6 +303,8 @@ asia-lecture-grabber/
 │  ├ lib/                        Flutter Dart 原始碼
 │  │  ├ main.dart                CupertinoApp 根元件與在線更新管線
 │  │  ├ config/i18n.dart         雙語國際化狀態機（系統語言自動適配）
+│  │  ├ config/contract.g.dart   由 src/contract.mjs 產生的共用契約常數
+│  │  ├ config/school_certs.dart 校方 AIA 中繼憑證（TLS 信任錨點）
 │  │  ├ backend/                 純 Dart 校方 API 客戶端與狀態機引擎
 │  │  └ screens/                 四大原生 Screen（講座情報、搶課排程、個人行程、系統設定）
 │  ├ android/                    Android 原生建置專案（含權限與 Gradle 設定）
@@ -307,6 +312,7 @@ asia-lecture-grabber/
 └ scripts/
    ├ asia-captcha-autofill.user.js 官方網頁驗證碼秒填與無障礙需求自動化腳本
    ├ desktop-launcher.mjs        桌面視窗喚起與孤兒進程清理腳本
+   ├ generate-contract.mjs       產生 Flutter 共用契約常數
    └ generate-icons.mjs          原生 PNG 圖示生成器
 ```
 

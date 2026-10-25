@@ -26,7 +26,9 @@ import crypto from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { DATA_DIR } from './storage.mjs';
+import { isCancelSuccessText } from './contract.mjs';
 import {
+  USER_AGENT,
   createTlsAgent,
   downloadBinary,
   extractAiaUrls,
@@ -65,9 +67,6 @@ export function resetBaseUrl() {
   USE_TLS = BASE.protocol === 'https:';
   buildAgent();
 }
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 const JSON_HEADERS = {
   Accept: 'application/json, text/plain, */*',
@@ -401,7 +400,7 @@ export async function cancelLecture(token, regEid) {
   });
 
   // 校方 DeleteData 成功時回傳空字串 "" 或 JSON 格式的 ""
-  if (!text || text === '""' || json === '') {
+  if (isCancelSuccessText(text) || json === '') {
     return { ok: true, message: '已成功取消報名' };
   }
 

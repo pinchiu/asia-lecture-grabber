@@ -19,7 +19,7 @@ import { defaultStorage } from './storage.mjs';
  * @param {object} options
  * @param {object} [options.storage]
  * @param {object} [options.api]
- * @returns {Promise<{engine: Engine, config: object, storage: object, api: object}>}
+ * @returns {Promise<{engine: Engine, config: object}>}
  */
 export async function createRuntime({ storage = defaultStorage, api = defaultApi } = {}) {
   const config = await storage.loadConfig();
@@ -29,11 +29,14 @@ export async function createRuntime({ storage = defaultStorage, api = defaultApi
     targets: savedState.targets,
     api
   });
-  return { engine, config, storage, api };
+  return { engine, config };
 }
 
 /**
  * 將引擎目標變更去抖動後持久化，並回傳可立即沖寫的函式。
+ *
+ * 注意：本函式會覆寫 `engine.onChange`；同一個 Engine 僅能綁定一次。
+ *
  * @param {Engine} engine
  * @param {object} storage
  * @param {number} delayMs

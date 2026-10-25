@@ -105,6 +105,7 @@ mobile/
 │  ├ config/
 │  │  ├ constants.dart          色彩、尺寸與共用常數
 │  │  ├ i18n.dart               雙語國際化與語言偏好
+│  │  ├ contract.g.dart         由 src/contract.mjs 產生的共用契約常數
 │  │  └ school_certs.dart       校方 AIA 中繼憑證（TLS 信任錨點）
 │  ├ backend/
 │  │  ├ asia_api.dart           校方 API 原生客戶端

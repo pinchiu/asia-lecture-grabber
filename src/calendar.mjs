@@ -9,6 +9,8 @@
  * 產出「日期＋週幾＋時間」都齊全的事件，供前端月曆與清單使用。
  */
 
+import { MISSING_END_FALLBACK_MS } from './contract.mjs';
+
 const WEEKDAY = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
 const pad = (n) => String(n).padStart(2, '0');
 
@@ -163,8 +165,8 @@ export function checkConflict(a, b) {
   const eventB = b.startAt !== undefined ? b : eventFromRow(b);
   if (!eventA || !eventB || !eventA.startAt || !eventB.startAt) return false;
 
-  const endA = eventA.endAt || (eventA.startAt + 7_200_000);
-  const endB = eventB.endAt || (eventB.startAt + 7_200_000);
+  const endA = eventA.endAt || eventA.startAt + MISSING_END_FALLBACK_MS;
+  const endB = eventB.endAt || eventB.startAt + MISSING_END_FALLBACK_MS;
 
   return Math.max(eventA.startAt, eventB.startAt) < Math.min(endA, endB);
 }
@@ -218,7 +220,7 @@ export function generateIcs(events = [], { calName = '亞洲大學通識講座' 
 
   for (const ev of events) {
     const start = ev.startAt ? new Date(ev.startAt) : new Date();
-    const end = ev.endAt ? new Date(ev.endAt) : new Date(start.getTime() + 7_200_000);
+    const end = ev.endAt ? new Date(ev.endAt) : new Date(start.getTime() + MISSING_END_FALLBACK_MS);
     const lits = (ev.literacies || []).join('、') || '一般';
     const summary = `${ev.title || '校園講座'} [${lits}]`;
     const desc = `講者：${ev.speaker || '校方講師'}\n地點：${ev.place || '亞大校園'}\n基本素養：${lits}\n課程代號：${ev.eid01 || ''}`;

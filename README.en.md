@@ -93,7 +93,7 @@ The service runs at `http://127.0.0.1:5199` by default and binds to loopback onl
 
 ### Running Unit Tests
 
-The project includes 96 automated tests built on Node.js's built-in test module:
+The project includes 101 automated tests built on Node.js's built-in test module:
 ```bash
 npm test
 ```
@@ -147,11 +147,11 @@ This project natively supports the 2026-07-28 Model Context Protocol (MCP) state
   ```bash
   node src/mcp.mjs
   ```
-  The stdio entry point loads `data/config.json` and `data/state.json`, creates the local grabbing engine, and signs in automatically when credentials are saved. All eight tools therefore work over stdio.
+  The stdio entry point loads `data/config.json` and `data/state.json`, creates the local grabbing engine, and signs in automatically in the background when credentials are saved. Until sign-in completes, tools that need authorization report that you are not logged in; afterwards all eight tools work over stdio.
 - **Local HTTP endpoints**:
   - Discovery endpoint: `GET /api/mcp` (returns the tool catalog and cache relay headers)
   - Invocation endpoint: `POST /api/mcp` (supports routing through the `Mcp-Method` and `Mcp-Name` HTTP headers)
-  - Security limits: only loopback origins and `Content-Type: application/json` are accepted. Cross-site browser requests receive `403`, and non-JSON requests receive `415`. The server binds to `127.0.0.1` by default.
+  - Security limits: every state-changing API (including `/api/mcp`, registration, cancellation, and settings) accepts only loopback or same-origin LAN origins and `Content-Type: application/json`. Cross-site browser requests receive `403`, and non-JSON requests receive `415`. The server binds to `127.0.0.1` by default.
 
 ### 2. Core Tool Catalog
 
@@ -286,6 +286,7 @@ asia-lecture-grabber/
 ├ src/
 │  ├ asia.mjs                    School API client (AIA intermediate certificate repair orchestration and connection pool)
 │  ├ tls.mjs                     TLS chain helpers (AIA extraction, intermediate download and verification)
+│  ├ contract.mjs                Shared school behaviour contract for Node and Flutter
 │  ├ runtime.mjs                 Shared runtime assembly (engine, auto-login, state persistence)
 │  ├ engine.mjs                  Core grabbing engine (state machine, burst polling, backoff)
 │  ├ mcp.mjs                     Model Context Protocol 2026-07-28 stateless server (stdio and HTTP)
@@ -297,6 +298,7 @@ asia-lecture-grabber/
 ├ test/
 │  ├ asia.test.mjs               School communication errors, certificate chain retry, and API business tests
 │  ├ mcp.test.mjs                MCP 2026-07-28 stateless protocol and Tasks integration tests
+│  ├ contract.test.mjs           Node/Flutter contract parity and certificate pin tests
 │  ├ calendar.test.mjs           Timestamp parsing, ROC year conversion, and conflict tests
 │  ├ engine.test.mjs             State machine polling, manual quick registration, and cancellation tests
 │  ├ schedule.test.mjs           Three scheduler modes and global switch constraint tests

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import '../config/contract.g.dart';
 import '../config/school_certs.dart';
 
 /// 表示與亞洲大學伺服器通訊時所發生的 API 例外狀況。
@@ -252,8 +253,8 @@ class AsiaApi {
       throw ApiError(text.isNotEmpty ? text : '退選失敗（HTTP ${response.statusCode}）', status: response.statusCode);
     }
 
-    // 校方 DeleteData 成功時回傳空字串或引號字串 ""
-    if (text.isEmpty || text == '""') {
+    // 校方 DeleteData 成功時回傳空字串或引號字串 ""（契約與 Node 端共用）
+    if (isCancelSuccessText(text)) {
       return {'ok': true, 'message': '已成功取消報名'};
     }
 

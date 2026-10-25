@@ -1,3 +1,5 @@
+import '../config/contract.g.dart';
+
 /// 提供亞洲大學通識講座日曆解析、名額排版、衝堂檢測與 iCalendar 匯出之工具函式集。
 class CalendarHelper {
   CalendarHelper._();
@@ -217,9 +219,9 @@ class CalendarHelper {
 
     // 若兩者均已解析為具備數值時間戳記之事件物件，優先直接比對時間戳
     final num? startAtA = a['startAt'] as num?;
-    final num? endAtA = (a['endAt'] as num?) ?? (startAtA != null ? startAtA + 7200000 : null);
+    final num? endAtA = (a['endAt'] as num?) ?? (startAtA != null ? startAtA + missingEndFallbackMs : null);
     final num? startAtB = b['startAt'] as num?;
-    final num? endAtB = (b['endAt'] as num?) ?? (startAtB != null ? startAtB + 7200000 : null);
+    final num? endAtB = (b['endAt'] as num?) ?? (startAtB != null ? startAtB + missingEndFallbackMs : null);
 
     if (startAtA != null && endAtA != null && startAtB != null && endAtB != null) {
       return startAtA < endAtB && startAtB < endAtA;

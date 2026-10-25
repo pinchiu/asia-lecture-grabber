@@ -46,15 +46,15 @@ metadata:
   }
 }
 ```
-stdio 進入點會載入 `data/config.json` 與 `data/state.json`、建立本機搶課引擎，並在已記住帳密時自動登入。因此 `asia_register_lecture`、`asia_cancel_lecture`、`asia_manage_targets` 與 `asia_get_engine_status` 在 stdio 模式下皆可運作；若未登入，工具會回傳明確的登入提示。
+stdio 進入點會載入 `data/config.json` 與 `data/state.json`、建立本機搶課引擎，並在已記住帳密時於背景自動登入。登入完成前，`asia_register_lecture`、`asia_cancel_lecture` 等需要授權的工具會回傳明確的登入提示；完成後 8 項工具皆可運作。`runStdioMcpServer()` 會拒絕沒有 engine 的 context。
 
-### 1.2 HTTP 無狀態端點模式 (雲端 / Web 代理)
+### 1.2 HTTP 無狀態端點模式 (本機 Web 代理)
 向伺服器發送標準 JSON-RPC 2.0 POST 請求至 `http://127.0.0.1:5199/api/mcp`。
 符合 2026-07-28 規範，支援 HTTP Header-Based Routing：
 - 標頭 `Mcp-Method: tools/call`
 - 標頭 `Mcp-Name: asia_list_lectures`
 - 伺服器回應標頭包含 `Mcp-Protocol-Version: 2026-07-28`
-- 安全限制：伺服器預設只綁定 `127.0.0.1`，且 `POST /api/mcp` 僅接受 loopback Origin 與 `Content-Type: application/json`。跨站瀏覽器請求會收到 `403`，非 JSON 請求會收到 `415`；非瀏覽器客戶端可省略 Origin。
+- 安全限制：伺服器預設只綁定 `127.0.0.1`。所有變更狀態的 API（含 `POST /api/mcp`、報名、退選與設定）僅接受 loopback／同源區網 Origin 與 `Content-Type: application/json`；跨站瀏覽器請求會收到 `403`，非 JSON 請求會收到 `415`。非瀏覽器客戶端可省略 Origin。
 
 ```http
 POST /api/mcp HTTP/1.1
