@@ -1,8 +1,8 @@
 /* =========================================================================
    亞洲大學講座自動報名助手與畢業素養門檻追蹤系統
-   美學風格：Bauhaus Minimalist Functionalism × Pure Monotone (黑白灰極簡包浩斯)
-   設計哲學：Less is More · Form Follows Function (形式服從功能 · 零 AI 感 · 零表情符號)
-   色彩架構：純粹黑白灰階階梯 (Black, White & Slate Gray) + 純白 (#ffffff) 專用操作高對比
+   美學風格：Native iOS Dark × Liquid Frosted Glass (與 Flutter 原生版一致)
+   設計哲學：Depth through material · Clear hierarchy · Semantic colour
+   色彩架構：曜石黑畫布 + 實心深灰卡片 + 四力與狀態的 iOS 語意色
    視覺材質：蘋果透光磨砂玻璃 (Liquid Frosted Glass) + 建築級精密細線 (Architectural Hairlines)
    ========================================================================= */
 
@@ -51,26 +51,39 @@
   --accent-border: rgba(255, 255, 255, 0.28);
   --accent-glow: 0 0 0 2px rgba(255, 255, 255, 0.4);
 
-  /* 功能狀態識別 (純粹黑白灰階階層，無雜色干擾) */
-  --status-ok: #ffffff;
-  --status-ok-bg: rgba(255, 255, 255, 0.08);
-  --status-ok-border: rgba(255, 255, 255, 0.24);
+  /* 與 Flutter 原生版一致的狀態色與四力色 */
+  --ios-green: #30d158;
+  --ios-blue: #0a84ff;
+  --ios-orange: #ff9f0a;
+  --ios-red: #ff453a;
+  --ios-purple: #bf5af2;
+  --ios-teal: #64d2ff;
 
-  --status-warn: #a1a1aa;
-  --status-warn-bg: rgba(255, 255, 255, 0.04);
-  --status-warn-border: rgba(255, 255, 255, 0.12);
+  /* 原生版卡片材質：實心深灰表面 + 12% 白色細邊，不使用厚重陰影 */
+  --surface: #16181e;
+  --surface-elevated: #1d2027;
+  --surface-border: rgba(255, 255, 255, 0.12);
 
-  --status-dead: #52525b;
-  --status-dead-bg: rgba(0, 0, 0, 0.3);
-  --status-dead-border: rgba(255, 255, 255, 0.05);
+  /* 功能狀態識別：沿用原生版的綠／藍／橘／紅語意 */
+  --status-ok: var(--ios-green);
+  --status-ok-bg: rgba(48, 209, 88, 0.12);
+  --status-ok-border: rgba(48, 209, 88, 0.3);
 
-  --status-err: #ffffff;
-  --status-err-bg: rgba(255, 255, 255, 0.06);
-  --status-err-border: rgba(255, 255, 255, 0.3);
+  --status-warn: var(--ios-orange);
+  --status-warn-bg: rgba(255, 159, 10, 0.1);
+  --status-warn-border: rgba(255, 159, 10, 0.28);
 
-  --status-manual: #d4d4d8;
-  --status-manual-bg: rgba(255, 255, 255, 0.05);
-  --status-manual-border: rgba(255, 255, 255, 0.16);
+  --status-dead: #71717a;
+  --status-dead-bg: rgba(255, 255, 255, 0.04);
+  --status-dead-border: rgba(255, 255, 255, 0.08);
+
+  --status-err: var(--ios-red);
+  --status-err-bg: rgba(255, 69, 58, 0.1);
+  --status-err-border: rgba(255, 69, 58, 0.3);
+
+  --status-manual: var(--ios-orange);
+  --status-manual-bg: rgba(255, 159, 10, 0.1);
+  --status-manual-border: rgba(255, 159, 10, 0.26);
 
   /* 四大素養標籤 (包浩斯幾何晶片，清爽大方) */
   --lit-chip-bg: rgba(255, 255, 255, 0.04);
@@ -126,10 +139,8 @@ body {
   overscroll-behavior-y: bounce;
   overscroll-behavior-x: none; /* 杜絕橫向橡皮筋左右晃動 */
   background-color: var(--bg-canvas);
-  background-image:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(30, 32, 40, 0.45) 0%, transparent 80%),
-    radial-gradient(ellipse 60% 30% at 50% 100%, rgba(18, 19, 24, 0.8) 0%, transparent 100%);
-  background-attachment: fixed;
+  /* 原生版為乾淨的曜石黑底，不用大面積漸層 */
+  background-image: none;
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: 13px;
@@ -194,7 +205,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* =========================================================================
-   頂部導覽列 Topbar (Bauhaus Architectural Header)
+   頂部導覽列 Topbar (Frosted Glass Header)
    ========================================================================= */
 
 .topbar {
@@ -391,47 +402,59 @@ a { color: inherit; text-decoration: none; }
   gap: 6px;
 }
 
-/* 包浩斯單色指標條 (Monochrome Indicators) */
+/* 原生版狀態指標：以小圓點與語意色呈現 */
 .pill {
   font-size: 11px;
   font-family: var(--font-mono);
-  padding: 3px 9px;
-  border-radius: var(--r-chip);
-  background: var(--glass-control);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--line-hairline);
   color: var(--text-secondary);
-  box-shadow: var(--glass-specular-soft);
   display: inline-flex;
   align-items: center;
   gap: 6px;
   transition: all var(--motion-fast);
 }
 
+.pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
 .pill.on {
-  color: #ffffff;
-  border-color: var(--line-strong);
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--ios-green);
+  border-color: rgba(48, 209, 88, 0.3);
+  background: rgba(48, 209, 88, 0.12);
   font-weight: 600;
 }
 
 .pill.run {
-  color: #000000;
-  background: #ffffff;
-  border-color: #ffffff;
+  color: var(--ios-green);
+  background: rgba(48, 209, 88, 0.16);
+  border-color: rgba(48, 209, 88, 0.42);
   font-weight: 700;
-  box-shadow: 0 1px 8px rgba(255, 255, 255, 0.35);
+}
+
+.pill.run::before {
+  box-shadow: 0 0 0 3px rgba(48, 209, 88, 0.16), 0 0 10px rgba(48, 209, 88, 0.55);
 }
 
 .pill.sched {
-  color: #ffffff;
-  border-color: var(--line-strong);
-  background: rgba(255, 255, 255, 0.07);
+  color: var(--ios-blue);
+  border-color: rgba(10, 132, 255, 0.3);
+  background: rgba(10, 132, 255, 0.12);
 }
 
 .pill.err {
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.12);
+  color: var(--ios-red);
+  border-color: rgba(255, 69, 58, 0.35);
+  background: rgba(255, 69, 58, 0.12);
 }
 
 .head-actions {
@@ -464,7 +487,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* =========================================================================
-   按鈕與控制項 (Bauhaus High-Contrast White & Smoked Glass)
+   按鈕與控制項 (Native White CTA & Smoked Glass)
    ========================================================================= */
 
 .btn {
@@ -472,16 +495,16 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 6px 14px;
-  font-size: 12.5px;
-  font-weight: 500;
-  border-radius: var(--r-control);
+  padding: 9px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: 12px;
   border: 1px solid transparent;
   cursor: pointer;
   user-select: none;
   transition: all var(--motion-fast);
   white-space: nowrap;
-  min-height: 32px;
+  min-height: 40px;
 }
 
 .btn:active:not(:disabled) {
@@ -526,17 +549,28 @@ a { color: inherit; text-decoration: none; }
 }
 
 .btn.danger {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: var(--glass-specular-soft);
+  background: rgba(255, 69, 58, 0.1);
+  color: var(--ios-red);
+  border-color: rgba(255, 69, 58, 0.28);
 }
 .btn.danger:hover:not(:disabled) {
-  background: #ffffff;
-  color: #000000;
-  border-color: #ffffff;
-  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.25);
-  font-weight: 600;
+  background: rgba(255, 69, 58, 0.2);
+  color: #ffffff;
+  border-color: rgba(255, 69, 58, 0.6);
+  box-shadow: 0 4px 16px rgba(255, 69, 58, 0.2);
+}
+
+/* 停止搶課：原生版是實心紅色的主要操作 */
+#btnStop:not(:disabled) {
+  background: var(--ios-red);
+  border-color: var(--ios-red);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(255, 69, 58, 0.28);
+}
+#btnStop:hover:not(:disabled) {
+  background: #ff5c52;
+  border-color: #ff5c52;
+  color: #ffffff;
 }
 
 .btn.danger-hover:hover:not(:disabled) {
@@ -546,10 +580,10 @@ a { color: inherit; text-decoration: none; }
 }
 
 .btn.sm {
-  padding: 3px 9px;
-  font-size: 11.5px;
-  min-height: 26px;
-  border-radius: var(--r-control);
+  padding: 4px 10px;
+  font-size: 12px;
+  min-height: 30px;
+  border-radius: 9px;
 }
 
 .btn.icon {
@@ -580,8 +614,31 @@ a { color: inherit; text-decoration: none; }
 .view-panel {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   animation: panelIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 原生版的大標題層級：每個分頁開頭先顯示頁面名稱 */
+.view-head {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 2px 2px 0;
+}
+
+.view-title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  color: var(--text-primary);
+}
+
+.view-subtitle {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-muted);
 }
 
 .view-panel[hidden] {
@@ -626,7 +683,7 @@ a { color: inherit; text-decoration: none; }
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-  gap: 20px;
+  gap: 16px;
   align-items: start;
 }
 
@@ -636,20 +693,18 @@ a { color: inherit; text-decoration: none; }
   gap: 12px;
 }
 
-/* 建築級透光卡片 (Bauhaus Architectural Panes) */
+/* 原生版卡片：實心深灰表面、12% 細邊、16px 圓角 */
 .card {
-  background: var(--glass-card);
-  backdrop-filter: blur(24px) saturate(130%);
-  -webkit-backdrop-filter: blur(24px) saturate(130%);
-  border: 1px solid var(--line-hairline);
+  background: var(--surface);
+  border: 0.8px solid var(--surface-border);
   border-radius: var(--r-card);
   padding: 16px 18px;
-  box-shadow: var(--glass-shadow), var(--glass-specular);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
   transition: border-color var(--motion-fast);
 }
 
 .card:hover {
-  border-color: var(--line-strong);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .card-head {
@@ -662,12 +717,14 @@ a { color: inherit; text-decoration: none; }
 }
 
 .card-head h2 {
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: 17px;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .idx {
@@ -718,12 +775,13 @@ a { color: inherit; text-decoration: none; }
 .form textarea,
 .tools input,
 .tools select {
-  background: var(--glass-input);
-  border: 1px solid var(--line-hairline);
-  border-radius: var(--r-control);
-  color: var(--text-pure);
-  padding: 7px 10px;
-  font-size: 12.5px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.8px solid var(--surface-border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  padding: 9px 12px;
+  font-size: 13px;
+  min-height: 38px;
   transition: all var(--motion-fast);
 }
 
@@ -732,9 +790,9 @@ a { color: inherit; text-decoration: none; }
 .form textarea:focus,
 .tools input:focus,
 .tools select:focus {
-  background: var(--glass-input-focus);
-  border-color: #ffffff;
-  box-shadow: 0 0 0 1px #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(10, 132, 255, 0.7);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.15);
   outline: none;
 }
 
@@ -744,12 +802,12 @@ a { color: inherit; text-decoration: none; }
   color: var(--text-muted);
 }
 
-/* 極簡幾何核選方塊 */
+/* 可勾選控制項：設定列使用 iOS 開關，篩選列使用膠囊勾選 */
 .check {
   display: flex !important;
   flex-direction: row !important;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
   font-size: 12px;
   color: var(--text-secondary);
@@ -759,44 +817,125 @@ a { color: inherit; text-decoration: none; }
   color: #ffffff;
 }
 
-.check.inline {
-  display: inline-flex !important;
+/* 設定列：文字在左、iOS 開關在右的整列可點擊區 */
+.check:not(.inline) {
+  flex-direction: row-reverse !important;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 50px;
+  gap: 14px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: var(--surface-elevated);
+  border: 0.8px solid var(--surface-border);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  transition: border-color var(--motion-fast), background var(--motion-fast);
 }
 
-input[type="checkbox"] {
+.check:not(.inline):hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(29, 32, 39, 0.9);
+}
+
+.check:not(.inline) > span {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 篩選列：膠囊勾選，選取後以藍色語意色標示 */
+.check.inline {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.8px solid var(--surface-border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  transition: all var(--motion-fast);
+}
+
+.check.inline:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  color: var(--text-primary);
+}
+
+.check.inline:has(input:checked) {
+  background: rgba(10, 132, 255, 0.14);
+  border-color: rgba(10, 132, 255, 0.42);
+  color: #ffffff;
+}
+
+/* iOS 開關軌道與滑塊 */
+.check > input[type="checkbox"] {
   appearance: none;
   -webkit-appearance: none;
-  width: 15px;
-  height: 15px;
-  border-radius: var(--r-chip);
-  background: var(--glass-input);
-  border: 1px solid var(--line-strong);
+  width: 44px;
+  height: 26px;
+  min-height: 0;
+  border-radius: 999px;
+  background: rgba(120, 120, 128, 0.32);
+  border: none;
   cursor: pointer;
   position: relative;
+  flex-shrink: 0;
   vertical-align: middle;
+  transition: background 0.18s ease;
+}
+
+.check > input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.check > input[type="checkbox"]:checked {
+  background: var(--ios-blue);
+}
+
+.check > input[type="checkbox"]:checked::after {
+  transform: translateX(18px);
+}
+
+/* 篩選膠囊：隱藏原生方框，改用左側狀態圓點 */
+.check.inline > input[type="checkbox"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.check.inline::before {
+  content: "";
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   flex-shrink: 0;
   transition: all var(--motion-fast);
 }
 
-input[type="checkbox"]:hover {
-  border-color: #ffffff;
+.check.inline:has(input:checked)::before {
+  background: var(--ios-blue);
+  border-color: var(--ios-blue);
+  box-shadow: inset 0 0 0 3px var(--surface-elevated);
 }
 
-input[type="checkbox"]:checked {
-  background: #ffffff;
-  border-color: #ffffff;
-}
-
-input[type="checkbox"]:checked::after {
-  content: "";
-  position: absolute;
-  left: 4px;
-  top: 1px;
-  width: 4px;
-  height: 8px;
-  border: solid #000000;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
+.check.inline:has(input:focus-visible) {
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.25);
 }
 
 .hint {
@@ -840,13 +979,14 @@ input[type="checkbox"]:checked::after {
 }
 
 .grad-icon {
-  color: #ffffff;
+  color: var(--ios-blue);
 }
 
 .grad-desc {
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.5;
   color: var(--text-secondary);
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .grad-head-actions {
@@ -867,22 +1007,22 @@ input[type="checkbox"]:checked::after {
 }
 
 .grad-status-badge.ok {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-  border-color: #ffffff;
+  background: rgba(48, 209, 88, 0.12);
+  color: var(--ios-green);
+  border-color: rgba(48, 209, 88, 0.4);
   font-weight: 700;
 }
 
 .grad-status-badge.pending {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
-  border-color: var(--line-hairline);
+  background: rgba(255, 159, 10, 0.1);
+  color: var(--ios-orange);
+  border-color: rgba(255, 159, 10, 0.28);
 }
 
 /* 歷年累計補登折疊面板 */
 .grad-history-panel {
-  background: var(--glass-subcard);
-  border: 1px solid var(--line-hairline);
+  background: var(--surface-elevated);
+  border: 0.8px solid var(--surface-border);
   border-radius: var(--r-card);
   padding: 12px 14px;
   margin-bottom: 14px;
@@ -954,12 +1094,11 @@ input[type="checkbox"]:checked::after {
 
 /* 智慧補齊缺額推薦面板 */
 .grad-recommend-panel {
-  background: var(--glass-card-hover);
-  border: 1px solid var(--line-strong);
+  background: var(--surface-elevated);
+  border: 0.8px solid var(--surface-border);
   border-radius: var(--r-card);
   padding: 14px 16px;
   margin-bottom: 14px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), var(--glass-specular);
   animation: panelIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1004,8 +1143,8 @@ input[type="checkbox"]:checked::after {
 }
 
 .rec-item:hover {
-  border-color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(10, 132, 255, 0.45);
+  background: rgba(10, 132, 255, 0.08);
 }
 
 .rec-item-title {
@@ -1038,11 +1177,10 @@ input[type="checkbox"]:checked::after {
 }
 
 .telem-card {
-  background: var(--glass-card);
-  border: 1px solid var(--line-hairline);
-  border-radius: var(--r-control);
-  padding: 12px 14px;
-  box-shadow: var(--glass-specular-soft);
+  background: var(--surface-elevated);
+  border: 0.8px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1050,7 +1188,7 @@ input[type="checkbox"]:checked::after {
 }
 
 .telem-card:hover {
-  border-color: var(--line-strong);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .telem-label {
@@ -1066,9 +1204,9 @@ input[type="checkbox"]:checked::after {
 }
 
 .telem-val {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   font-family: var(--font-mono);
 }
 
@@ -1090,8 +1228,8 @@ input[type="checkbox"]:checked::after {
 }
 
 .telem-dot.active {
-  background: #ffffff;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  background: var(--ios-green);
+  box-shadow: 0 0 0 3px rgba(48, 209, 88, 0.15), 0 0 10px rgba(48, 209, 88, 0.65);
   animation: pulseWhite 1.5s infinite ease-in-out;
 }
 
@@ -1141,8 +1279,8 @@ input[type="checkbox"]:checked::after {
 }
 
 .nav-segment-btn.active .kbd-sub {
-  background: rgba(0, 0, 0, 0.15);
-  color: #000000;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
   opacity: 0.8;
 }
 
@@ -1154,9 +1292,9 @@ input[type="checkbox"]:checked::after {
 }
 
 .badge-status.k-conflict {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px dashed rgba(255, 255, 255, 0.3);
-  color: #ffffff;
+  background: rgba(255, 69, 58, 0.12);
+  border: 1px dashed rgba(255, 69, 58, 0.45);
+  color: var(--ios-red);
   font-size: 10px;
   padding: 1px 6px;
 }
@@ -1169,20 +1307,24 @@ input[type="checkbox"]:checked::after {
 }
 
 .grad-metric {
-  background: var(--glass-subcard);
-  border: 1px solid var(--line-hairline);
-  border-radius: var(--r-control);
-  padding: 10px 12px;
+  background: var(--surface-elevated);
+  border: 0.8px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
   transition: all var(--motion-fast);
 }
 
 .grad-metric:hover {
-  border-color: var(--line-strong);
-  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.22);
 }
+
+.grad-metric.health.is-met { border-color: rgba(48, 209, 88, 0.45); }
+.grad-metric.care.is-met { border-color: rgba(10, 132, 255, 0.45); }
+.grad-metric.innovation.is-met { border-color: rgba(100, 210, 255, 0.45); }
+.grad-metric.excellence.is-met { border-color: rgba(191, 90, 242, 0.45); }
 
 .metric-top {
   display: flex;
@@ -1204,7 +1346,7 @@ input[type="checkbox"]:checked::after {
 }
 
 .metric-state.ok {
-  color: #ffffff;
+  color: var(--ios-green);
   font-weight: 700;
 }
 
@@ -1228,21 +1370,27 @@ input[type="checkbox"]:checked::after {
   color: var(--text-muted);
 }
 
-/* 包浩斯純白線條進度指示 (Bauhaus Minimal Line) */
 .progress-track {
   width: 100%;
-  height: 3px;
+  height: 4px;
   background: rgba(255, 255, 255, 0.08);
-  border-radius: 1px;
+  border-radius: 999px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  border-radius: 1px;
+  border-radius: 999px;
   background: #ffffff;
   transition: width 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
+
+/* 四力進度色與原生版一致 */
+.progress-fill.health { background: var(--ios-green); }
+.progress-fill.care { background: var(--ios-blue); }
+.progress-fill.innovation { background: var(--ios-teal); }
+.progress-fill.excellence { background: var(--ios-purple); }
+.progress-fill.total { background: var(--text-primary); }
 
 .metric-sub {
   font-size: 10.5px;
@@ -1295,6 +1443,35 @@ input[type="checkbox"]:checked::after {
   background: transparent;
 }
 
+/* 四力專屬色：健康綠、關懷藍、創新青、卓越紫 */
+.lit-tag.l-health,
+.lit-label-sm.l-health {
+  color: var(--ios-green);
+  background: rgba(48, 209, 88, 0.12);
+  border-color: rgba(48, 209, 88, 0.28);
+}
+
+.lit-tag.l-care,
+.lit-label-sm.l-care {
+  color: var(--ios-blue);
+  background: rgba(10, 132, 255, 0.12);
+  border-color: rgba(10, 132, 255, 0.3);
+}
+
+.lit-tag.l-innovation,
+.lit-label-sm.l-innovation {
+  color: var(--ios-teal);
+  background: rgba(100, 210, 255, 0.12);
+  border-color: rgba(100, 210, 255, 0.3);
+}
+
+.lit-tag.l-excellence,
+.lit-label-sm.l-excellence {
+  color: var(--ios-purple);
+  background: rgba(191, 90, 242, 0.12);
+  border-color: rgba(191, 90, 242, 0.3);
+}
+
 .lit-label-sm {
   font-size: 10.5px;
   font-weight: 600;
@@ -1323,32 +1500,33 @@ table.grid {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 table.grid th {
   position: sticky;
   top: 0;
-  background: rgba(18, 19, 24, 0.94);
+  background: rgba(22, 24, 30, 0.97);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   color: var(--text-muted);
   font-weight: 600;
-  font-size: 11.5px;
-  padding: 9px 12px;
-  border-bottom: 1px solid var(--line-strong);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--surface-border);
   z-index: 2;
   white-space: nowrap;
 }
 
 table.grid td {
-  padding: 10px 12px;
+  padding: 12px;
   border-bottom: 1px solid var(--line-hairline);
   vertical-align: middle;
 }
 
 table.grid tr:hover td {
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 table.grid th.right,
@@ -1358,7 +1536,8 @@ table.grid td.right {
 
 .cell-name {
   font-weight: 600;
-  color: var(--text-pure);
+  font-size: 13.5px;
+  color: var(--text-primary);
   line-height: 1.4;
 }
 
@@ -1377,7 +1556,7 @@ table.grid td.right {
   color: var(--text-secondary);
 }
 
-/* 狀態徽章 (Monochrome Precision Status) */
+/* 狀態徽章 (Semantic Status Badges) */
 .badge-status {
   display: inline-flex;
   align-items: center;
@@ -1403,18 +1582,18 @@ table.grid td.right {
 }
 
 .badge-status.k-ok {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--ios-green);
+  background: rgba(48, 209, 88, 0.12);
+  border-color: rgba(48, 209, 88, 0.3);
 }
-.badge-status.k-ok::before { background: #ffffff; }
+.badge-status.k-ok::before { background: var(--ios-green); }
 
 .badge-status.k-warn {
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.04);
-  border-color: var(--line-hairline);
+  color: var(--ios-orange);
+  background: rgba(255, 159, 10, 0.1);
+  border-color: rgba(255, 159, 10, 0.28);
 }
-.badge-status.k-warn::before { background: var(--text-muted); }
+.badge-status.k-warn::before { background: var(--ios-orange); }
 
 .badge-status.k-muted {
   color: var(--text-muted);
@@ -1431,19 +1610,19 @@ table.grid td.right {
 .badge-status.k-dead::before { background: var(--text-dim); }
 
 .badge-status.k-done {
-  color: #000000;
-  background: #ffffff;
-  border-color: #ffffff;
+  color: var(--ios-green);
+  background: rgba(48, 209, 88, 0.16);
+  border-color: rgba(48, 209, 88, 0.4);
   font-weight: 700;
 }
-.badge-status.k-done::before { background: #000000; }
+.badge-status.k-done::before { background: var(--ios-green); }
 
 .badge-status.k-manual {
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--line-hairline);
+  color: var(--ios-orange);
+  background: rgba(255, 159, 10, 0.1);
+  border-color: rgba(255, 159, 10, 0.26);
 }
-.badge-status.k-manual::before { background: var(--text-secondary); }
+.badge-status.k-manual::before { background: var(--ios-orange); }
 
 .badge-status.k-unknown {
   color: var(--text-muted);
@@ -1454,10 +1633,10 @@ table.grid td.right {
   font-family: var(--font-mono);
   font-weight: 700;
   padding: 2px 7px;
-  border-radius: var(--r-chip);
-  background: #ffffff;
-  color: #000000;
-  border: 1px solid #ffffff;
+  border-radius: 999px;
+  background: rgba(48, 209, 88, 0.14);
+  color: var(--ios-green);
+  border: 1px solid rgba(48, 209, 88, 0.35);
 }
 
 .tag {
@@ -1508,21 +1687,23 @@ table.grid td.right {
 .manual-tag {
   font-size: 11px;
   font-weight: 600;
-  padding: 2px 6px;
-  background: #ffffff;
-  color: #000000;
-  border-radius: var(--r-chip);
+  padding: 3px 8px;
+  background: var(--surface-elevated);
+  color: var(--text-secondary);
+  border: 0.8px solid var(--surface-border);
+  border-radius: 999px;
   white-space: nowrap;
 }
 
 .manual-input-wrap input {
   flex: 1;
-  padding: 5px 9px;
-  font-size: 12px;
-  background: var(--glass-input);
-  border: 1px solid var(--line-hairline);
-  color: #ffffff;
-  border-radius: var(--r-control);
+  padding: 7px 11px;
+  font-size: 13px;
+  min-height: 34px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.8px solid var(--surface-border);
+  color: var(--text-primary);
+  border-radius: 10px;
 }
 
 .manual-hint {
@@ -1675,10 +1856,10 @@ table.grid td.right {
 
 .day span {
   display: block;
-  padding: 5px 0;
-  border-radius: var(--r-chip);
-  background: var(--glass-input);
-  border: 1px solid var(--line-hairline);
+  padding: 6px 0;
+  border-radius: 8px;
+  background: var(--surface-elevated);
+  border: 0.8px solid var(--surface-border);
   font-size: 11.5px;
   font-weight: 600;
   color: var(--text-secondary);
@@ -1686,9 +1867,9 @@ table.grid td.right {
 }
 
 .day input:checked + span {
-  background: #ffffff;
-  color: #000000;
-  border-color: #ffffff;
+  background: rgba(10, 132, 255, 0.16);
+  color: #ffffff;
+  border-color: rgba(10, 132, 255, 0.5);
 }
 
 /* =========================================================================
@@ -1761,10 +1942,10 @@ table.grid td.right {
 }
 
 .cal-chip {
-  background: var(--glass-control);
-  border: 1px solid var(--line-hairline);
-  border-radius: 2px;
-  padding: 1px 4px;
+  background: var(--surface-elevated);
+  border: 0.8px solid var(--surface-border);
+  border-radius: 6px;
+  padding: 2px 5px;
   font-size: 10.5px;
   text-align: left;
   cursor: pointer;
@@ -1775,14 +1956,20 @@ table.grid td.right {
   transition: all var(--motion-fast);
 }
 .cal-chip:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.24);
   color: #ffffff;
+}
+
+.cal-chip.conflict {
+  background: rgba(255, 69, 58, 0.1);
+  border-color: rgba(255, 69, 58, 0.45);
+  color: var(--ios-red);
 }
 
 .cal-chip b {
   font-family: var(--font-mono);
-  color: #ffffff;
+  color: inherit;
   margin-right: 3px;
   font-weight: 600;
 }
@@ -1914,9 +2101,9 @@ table.grid td.right {
   gap: 8px;
 }
 
-.log .row.success .m { color: #ffffff; font-weight: 600; }
-.log .row.warn .m { color: var(--text-secondary); }
-.log .row.error .m { color: #ffffff; text-decoration: underline; }
+.log .row.success .m { color: var(--ios-green); font-weight: 600; }
+.log .row.warn .m { color: var(--ios-orange); }
+.log .row.error .m { color: var(--ios-red); }
 .log .row.info .m { color: var(--text-secondary); }
 
 .log .t { color: var(--text-muted); }
@@ -1948,11 +2135,13 @@ table.grid td.right {
 }
 
 .toast.ok {
-  border-color: #ffffff;
+  border-color: rgba(48, 209, 88, 0.55);
+  color: var(--ios-green);
 }
 
 .toast.err {
-  border-color: rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 69, 58, 0.55);
+  color: var(--ios-red);
 }
 
 @keyframes toastIn {
@@ -1961,7 +2150,7 @@ table.grid td.right {
 }
 
 /* =========================================================================
-   手機端專用底部導航列 Mobile Nav (Bauhaus Monotone Dock)
+   手機端專用底部導航列 Mobile Nav (Frosted Glass Dock)
    ========================================================================= */
 
 .mobile-nav {
@@ -2011,12 +2200,18 @@ table.grid td.right {
   }
 
   .brand h1 {
-    font-size: 15px !important;
+    font-size: 14px !important;
     letter-spacing: -0.3px !important;
+    max-width: 132px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .brand-text .sub {
-    font-size: 11px !important;
+  /* 原生版以內容區的大標題為主，頂部只保留最小品牌資訊 */
+  .brand-text .sub,
+  .badge-core {
+    display: none !important;
   }
 
   /* 在手機端隱藏頂部 Segments，由底部 iOS TabBar 統一負責，避免重複佔位 */
@@ -2024,11 +2219,46 @@ table.grid td.right {
     display: none !important;
   }
 
+  /* 原生版不在標題列塞狀態膠囊；狀態改由內容卡片呈現 */
+  .pills {
+    display: none !important;
+  }
+
+  /* 手機頂部只保留必要控制；停用中的按鈕與 PWA 安裝不佔寬度 */
+  .head-actions {
+    gap: 6px !important;
+  }
+
+  .head-actions .btn {
+    min-height: 34px !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    border-radius: 10px !important;
+  }
+
+  #pwaInstallBtn,
+  .head-actions #btnStart:disabled,
+  .head-actions #btnStop:disabled {
+    display: none !important;
+  }
+
+  .view-head {
+    padding-top: 8px;
+  }
+
+  .view-title {
+    font-size: 26px;
+  }
+
+  .view-subtitle {
+    font-size: 12.5px;
+  }
+
   /* 主佈局容器：上下內距精準適配頂部與底部的固定欄位，嚴格防止左右位移 */
   .layout {
     width: 100% !important;
     max-width: 100vw !important;
-    padding-top: calc(56px + env(safe-area-inset-top, 0px)) !important;
+    padding-top: calc(64px + env(safe-area-inset-top, 0px)) !important;
     padding-bottom: calc(68px + env(safe-area-inset-bottom, 16px)) !important;
     padding-left: 14px !important;
     padding-right: 14px !important;
@@ -2051,12 +2281,89 @@ table.grid td.right {
     overflow-x: hidden !important;
   }
 
+  /* 畢業卡片在手機端改成垂直堆疊，避免動作列把卡片撐寬 */
+  .grad-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .grad-head-text,
+  .grad-head-actions {
+    min-width: 0;
+  }
+
+  .grad-head-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .grad-status-badge {
+    white-space: normal;
+  }
+
+  .grad-title-row,
+  .metric-top {
+    flex-wrap: wrap;
+  }
+
+  .grad-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .grad-metric {
+    min-width: 0;
+  }
+
   .grad-metrics-grid {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
   .grad-metric.total {
     grid-column: span 2;
+  }
+
+  .settings-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* 手機端的指令列與手動快報列一律直向堆疊，避免按鈕被切掉 */
+  .agent-bar,
+  .manual-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .agent-bar input,
+  .agent-bar .btn {
+    width: 100%;
+  }
+
+  .manual-input-wrap {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .manual-input-wrap input {
+    width: 100%;
+    flex: none;
+  }
+
+  .manual-input-wrap .btn {
+    width: 100%;
+  }
+
+  .manual-tag {
+    align-self: flex-start;
+  }
+
+  .manual-hint {
+    font-size: 11px;
+    line-height: 1.5;
   }
 
   .mobile-toggle-btn {
@@ -2114,10 +2421,10 @@ table.grid td.right {
   }
 
   table.grid tr {
-    background: var(--glass-subcard);
-    border: 1px solid var(--line-hairline);
-    border-radius: var(--r-control);
-    padding: 12px;
+    background: var(--surface);
+    border: 0.8px solid var(--surface-border);
+    border-radius: 14px;
+    padding: 14px;
     margin-bottom: 12px;
     box-sizing: border-box;
     width: 100%;
@@ -2129,10 +2436,22 @@ table.grid td.right {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
     word-break: break-word;
   }
 
+  table.grid td[data-label]::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+  }
+
   table.grid td:first-child {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
     padding-top: 0;
     margin-bottom: 6px;
     border-bottom: 1px solid var(--line-subtle);

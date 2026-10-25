@@ -1,6 +1,6 @@
 # AGENTS.md
 
-亞洲大學「講座自動報名助手與素養門檻追蹤系統」：零依賴 Node.js（>=20）ESM 服務 + 極簡包浩斯與磨砂毛玻璃無框架前端 + Flutter 純 Cupertino 原生行動端 App + Model Context Protocol (MCP 2026-07-28 最新無狀態架構) AI 代理調用模組。
+亞洲大學「講座自動報名助手與素養門檻追蹤系統」：零依賴 Node.js（>=20）ESM 服務 + 曜石黑蘋果磨砂玻璃與原生四力配色無框架前端 + Flutter 純 Cupertino 原生行動端 App + Model Context Protocol (MCP 2026-07-28 最新無狀態架構) AI 代理調用模組。
 功能、API 逆向成果與引擎策略詳見 `README.md`；本檔記錄全專案之最新架構規範、設計約束與容易踩雷之核心事實。
 
 ## 指令
@@ -42,8 +42,8 @@
   - `src/calendar.mjs`：已報名講座轉行事曆事件、四大素養標籤提取、民國年轉換與時間戳記排序。
   - `src/ai.mjs`：智慧選課代理（OpenAI 相容 API，相容結尾帶有 `/chat/completions` 或缺少協定標頭之自訂 Base URL）與本機離線規則解析雙引擎，具備 100% 清單存在性防幻覺校驗。
   - `src/storage.mjs`：`config.json`（設定、排程、帳密、歷年素養）與 `state.json`（搶課目標）之本地持久化，內建 Promise 寫入串列佇列防範並行競爭。
-- **前端介面（包浩斯磨砂毛玻璃無框架原生介面）**：
-  - `public/index.html` / `app.js` / `style.css`：原生 JavaScript（Vanilla JS），採**極簡包浩斯黑白灰與蘋果液態磨砂毛玻璃美學**，具備圓角化分層導覽、液態滑動指示器與 iOS 原生級觸控拖曳手勢。
+- **前端介面（原生 iOS 深色磨砂玻璃無框架介面）**：
+  - `public/index.html` / `app.js` / `style.css`：原生 JavaScript（Vanilla JS），採**曜石黑底、蘋果液態磨砂玻璃與 Flutter 原生版一致的四力／狀態配色**，具備大標題層級、圓角化分層導覽、液態滑動指示器、點按與拖曳雙模式與 iOS 原生級觸控手勢。
   - 內建進階特色：
     - **中英文雙語介面（i18n）**：支援繁體中文與英文即時切換，設定區全數覆蓋 `data-i18n` 標籤，持久化存於 localStorage。
     - **DOM 簽名快取比對**：大廳、搶課目標與行事曆共用 `signatures` 快取與 `unchanged(...)` 輔助函式，避免每 1.2 秒輪詢撕毀 DOM 節點導致按鈕點擊事件被瀏覽器中斷。

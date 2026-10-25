@@ -293,8 +293,8 @@ asia-lecture-grabber/
 │  ├ storage.test.mjs            持久化、數值約束與並行寫入競爭測試
 │  └ ai.test.mjs                 智慧解析、Markdown 提詞與防幻覺測試
 ├ public/
-│  ├ index.html                  主介面（極簡包浩斯與毛玻璃視覺設計）
-│  ├ style.css                   黑白灰與磨砂毛玻璃高質感樣式表
+│  ├ index.html                  主介面（原生 iOS 深色與磨砂玻璃視覺設計）
+│  ├ style.css                   四力配色、狀態色與磨砂毛玻璃樣式表
 │  ├ app.js                      前端邏輯控制（Vanilla JS，具備 i18n 與簽名快取）
 │  ├ manifest.webmanifest        PWA 應用程式清單
 │  ├ sw.js                       Service Worker（Network-First 現代離線快取）

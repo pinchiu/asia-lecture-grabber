@@ -70,7 +70,7 @@
           <button class="btn ghost sm btn-lang" id="btnLang" data-action="toggle-lang" title="切換介面語言 / Switch Language">EN</button>
           <button class="btn ghost sm btn-pwa" id="pwaInstallBtn" data-action="install-pwa" data-i18n="btn_pwa" hidden>安裝 App</button>
           <button class="btn primary" id="btnStart" data-action="start" data-i18n="btn_start" disabled>開始搶課</button>
-          <button class="btn ghost" id="btnStop" data-action="stop" data-i18n="btn_stop" disabled>停止</button>
+          <button class="btn danger" id="btnStop" data-action="stop" data-i18n="btn_stop" disabled>停止</button>
         </div>
       </div>
     </div>
@@ -81,7 +81,11 @@
 
     <!-- ==================== 第一層：講座情報（大廳與畢業門檻） ==================== -->
     <div class="view-panel" data-view="lectures">
-      
+      <header class="view-head">
+        <h1 class="view-title" data-i18n="tab_lectures">講座情報</h1>
+        <p class="view-subtitle" data-i18n="view_lectures_sub">畢業門檻、講座清冊與手動報名</p>
+      </header>
+
       <!-- 四大基本素養畢業門檻儀表板 -->
       <section class="card grad-card" id="gradCard">
         <div class="card-head grad-head">
@@ -336,7 +340,11 @@
 
     <!-- ==================== 第二層：搶課排程（目標管理與定時啟動） ==================== -->
     <div class="view-panel" data-view="targets" hidden>
-      
+      <header class="view-head">
+        <h1 class="view-title" data-i18n="tab_targets">搶課排程</h1>
+        <p class="view-subtitle" data-i18n="view_targets_sub">搶課引擎、排程與目標佇列</p>
+      </header>
+
       <!-- 搶課即時戰情儀表 (Engine Telemetry) -->
       <div class="telemetry-grid">
         <div class="telem-card">
@@ -494,7 +502,11 @@
 
     <!-- ==================== 第三層：個人行程（行事曆與已報名） ==================== -->
     <div class="view-panel" data-view="calendar" hidden>
-      
+      <header class="view-head">
+        <h1 class="view-title" data-i18n="tab_calendar">個人行程</h1>
+        <p class="view-subtitle" data-i18n="view_calendar_sub">已報名行程與衝堂檢驗</p>
+      </header>
+
       <!-- 我的行事曆 -->
       <section class="card" id="cardCalendar">
         <div class="card-head">
@@ -528,7 +540,11 @@
 
     <!-- ==================== 第四層：系統設定（帳號、參數、日誌） ==================== -->
     <div class="view-panel" data-view="settings" hidden>
-      
+      <header class="view-head">
+        <h1 class="view-title" data-i18n="tab_settings">系統設定</h1>
+        <p class="view-subtitle" data-i18n="view_settings_sub">帳號、身份驗證與系統參數</p>
+      </header>
+
       <div class="settings-grid">
         <!-- 00 介面語言 -->
         <section class="card" id="cardLang">

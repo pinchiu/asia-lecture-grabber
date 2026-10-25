@@ -311,8 +311,8 @@ asia-lecture-grabber/
 │  ├ storage.test.mjs            Persistence, numeric constraints, and concurrent write race tests
 │  └ ai.test.mjs                 Smart parsing, Markdown prompts, and anti-hallucination tests
 ├ public/
-│  ├ index.html                  Main interface (minimalist Bauhaus and frosted-glass visual design)
-│  ├ style.css                   Monochrome and frosted-glass high-quality stylesheet
+│  ├ index.html                  Main interface (native iOS dark and frosted-glass visual design)
+│  ├ style.css                   Literacy accents, semantic status colours, and frosted-glass stylesheet
 │  ├ app.js                      Frontend logic controller (Vanilla JS with i18n and signature caching)
 │  ├ manifest.webmanifest        PWA application manifest
 │  ├ sw.js                       Service Worker (Network-First modern offline caching)

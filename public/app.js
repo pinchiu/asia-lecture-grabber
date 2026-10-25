@@ -22,6 +22,10 @@ const I18N = {
     tab_targets: '搶課排程',
     tab_calendar: '個人行程',
     tab_settings: '系統設定',
+    view_lectures_sub: '畢業門檻、講座清冊與手動報名',
+    view_targets_sub: '搶課引擎、排程與目標佇列',
+    view_calendar_sub: '已報名行程與衝堂檢驗',
+    view_settings_sub: '帳號、身份驗證與系統參數',
     pill_not_logged_in: '未登入',
     pill_logged_in: '已登入：',
     pill_standby: '待機中',
@@ -172,6 +176,10 @@ const I18N = {
     tab_targets: 'Targets',
     tab_calendar: 'Schedule',
     tab_settings: 'Settings',
+    view_lectures_sub: 'Graduation thresholds, lecture catalog, and manual registration',
+    view_targets_sub: 'Grabbing engine, schedule, and target queue',
+    view_calendar_sub: 'Registered schedule and conflict checks',
+    view_settings_sub: 'Account, identity verification, and system settings',
     pill_not_logged_in: 'Not Logged In',
     pill_logged_in: 'Logged in: ',
     pill_standby: 'Standby',
@@ -1023,19 +1031,29 @@ function computeGraduationStats(snap) {
   // 總場次：歷年補登總場次 + 當期已報名場次（單場多素養各指標分別累計，但總場次不灌水）
   const totalCompleted = historyTotal + current.total;
 
-  const deficiencies = [];
-  if (totals.health < 2) deficiencies.push({ id: 'health', name: '健康力', need: 2 - totals.health });
-  if (totals.care < 2) deficiencies.push({ id: 'care', name: '關懷力', need: 2 - totals.care });
-  if (totals.innovation < 2) deficiencies.push({ id: 'innovation', name: '創新力', need: 2 - totals.innovation });
-  if (totals.excellence < 2) deficiencies.push({ id: 'excellence', name: '卓越力', need: 2 - totals.excellence });
+  // 門檻以伺服器回傳的共用契約為準，避免網頁成為第三份硬編碼。
+  const threshold = snap.graduation?.threshold || {
+    total: 8,
+    health: 2,
+    care: 2,
+    innovation: 2,
+    excellence: 2
+  };
 
-  const isTotalMet = totalCompleted >= 8;
+  const deficiencies = [];
+  if (totals.health < threshold.health) deficiencies.push({ id: 'health', name: '健康力', need: threshold.health - totals.health });
+  if (totals.care < threshold.care) deficiencies.push({ id: 'care', name: '關懷力', need: threshold.care - totals.care });
+  if (totals.innovation < threshold.innovation) deficiencies.push({ id: 'innovation', name: '創新力', need: threshold.innovation - totals.innovation });
+  if (totals.excellence < threshold.excellence) deficiencies.push({ id: 'excellence', name: '卓越力', need: threshold.excellence - totals.excellence });
+
+  const isTotalMet = totalCompleted >= threshold.total;
   const isAllMet = isTotalMet && deficiencies.length === 0;
 
   return {
     current,
     history,
     totals,
+    threshold,
     totalCompleted,
     deficiencies,
     isTotalMet,
@@ -1048,14 +1066,16 @@ function renderGraduation(snap) {
 
   // 總場次
   $('#gradTotalCount').textContent = String(stats.totalCompleted);
-  const totalPercent = Math.min(100, Math.round((stats.totalCompleted / 8) * 100));
+  const totalPercent = Math.min(100, Math.round((stats.totalCompleted / stats.threshold.total) * 100));
   $('#gradTotalProgress').style.width = `${totalPercent}%`;
   const totalBadge = $('#gradTotalBadge');
-  if (stats.totalCompleted >= 8) {
-    totalBadge.textContent = t('grad_met_total', '已達標 (≥8)');
+  const totalCard = totalBadge.closest('.grad-metric');
+  if (totalCard) totalCard.classList.toggle('is-met', stats.isTotalMet);
+  if (stats.isTotalMet) {
+    totalBadge.textContent = t('grad_met_total', '已達標 (≥{n})').replace('{n}', stats.threshold.total);
     totalBadge.className = 'metric-state ok';
   } else {
-    totalBadge.textContent = t('grad_need_lectures', '尚缺 {n} 場').replace('{n}', 8 - stats.totalCompleted);
+    totalBadge.textContent = t('grad_need_lectures', '尚缺 {n} 場').replace('{n}', stats.threshold.total - stats.totalCompleted);
     totalBadge.className = 'metric-state';
   }
 
@@ -1065,6 +1085,8 @@ function renderGraduation(snap) {
     const pct = Math.min(100, Math.round((val / min) * 100));
     $(`#grad${prefix}Progress`).style.width = `${pct}%`;
     const badge = $(`#grad${prefix}Badge`);
+    const card = badge.closest('.grad-metric');
+    if (card) card.classList.toggle('is-met', val >= min);
     if (val >= min) {
       badge.textContent = t('grad_met', '已達標');
       badge.className = 'metric-state ok';
@@ -1074,10 +1096,10 @@ function renderGraduation(snap) {
     }
   };
 
-  setMetric('Health', stats.totals.health, 2);
-  setMetric('Care', stats.totals.care, 2);
-  setMetric('Innovation', stats.totals.innovation, 2);
-  setMetric('Excellence', stats.totals.excellence, 2);
+  setMetric('Health', stats.totals.health, stats.threshold.health);
+  setMetric('Care', stats.totals.care, stats.threshold.care);
+  setMetric('Innovation', stats.totals.innovation, stats.threshold.innovation);
+  setMetric('Excellence', stats.totals.excellence, stats.threshold.excellence);
 
   // 整體門檻狀態徽章
   const overallBadge = $('#gradOverallStatus');
@@ -1242,7 +1264,8 @@ function renderCalendar(snap) {
         (ev) => {
           const lits = (ev.literacies || []).join('/');
           const litSuffix = lits ? ` [${lits}]` : '';
-          return `<button class="cal-chip" data-action="cal-open" data-eid="${esc(ev.eid01)}" title="${esc(`${ev.title}${litSuffix}｜${ev.place || ''}`)}"><b>${esc(ev.time || '')}</b>${esc(shorten(ev.title, 6))}</button>`;
+          const chipClass = ev.hasConflict ? 'cal-chip conflict' : 'cal-chip';
+      return `<button class="${chipClass}" data-action="cal-open" data-eid="${esc(ev.eid01)}" title="${esc(`${ev.title}${litSuffix}｜${ev.place || ''}`)}"><b>${esc(ev.time || '')}</b>${esc(shorten(ev.title, 6))}</button>`;
         }
       )
       .join('');
@@ -1371,11 +1394,11 @@ function renderTargets(snap) {
             <div class="cell-name">${esc(target.rescnm)}</div>
             <div class="cell-sub">${esc(target.reseid)}</div>
           </td>
-          <td>${litHtml}</td>
-          <td><div class="cell-time">${esc(cleanHtml(target.resdat))}</div>${openHint}</td>
-          <td>${esc(target.locale || '-')}</td>
-          <td>${badge}${note}</td>
-          <td>${esc(formatAppNum(target.appnum, target))}</td>
+          <td data-label="${esc(t('th_lit', '基本素養 (四力)'))}">${litHtml}</td>
+          <td data-label="${esc(t('th_time', '活動時間'))}"><div class="cell-time">${esc(cleanHtml(target.resdat))}</div>${openHint}</td>
+          <td data-label="${esc(t('th_place', '活動地點'))}">${esc(target.locale || '-')}</td>
+          <td data-label="${esc(t('th_status', '即時監控狀態'))}">${badge}${note}</td>
+          <td data-label="${esc(t('th_capacity', '名額'))}">${esc(formatAppNum(target.appnum, target))}</td>
           <td class="right"><div class="btn-group">${actions.join(' ')}</div></td>
         </tr>`;
     })
@@ -1506,12 +1529,12 @@ function renderLectures(snap) {
             <div class="cell-name">${esc(row.rescnm)}</div>
             <div class="cell-sub">${esc(row.sponsr || '')} · 代號 ${esc(row.reseid || '')}</div>
           </td>
-          <td>${litBadges}</td>
-          <td>${esc(row.teachm || '-')}</td>
-          <td><div class="cell-time">${esc(cleanHtml(row.resdat) || '-')}</div></td>
-          <td>${esc(row.locale || '-')}</td>
-          <td>${esc(formatAppNum(row.appnum, row))}</td>
-          <td class="cell-sub">${esc(row.apptim || '-')}</td>
+          <td data-label="${esc(t('th_lit', '基本素養 (四力)'))}">${litBadges}</td>
+          <td data-label="${esc(t('th_speaker', '演講者 / 主持人'))}">${esc(row.teachm || '-')}</td>
+          <td data-label="${esc(t('th_time', '活動時間'))}"><div class="cell-time">${esc(cleanHtml(row.resdat) || '-')}</div></td>
+          <td data-label="${esc(t('th_place', '活動地點'))}">${esc(row.locale || '-')}</td>
+          <td data-label="${esc(t('th_capacity', '報名人數'))}">${esc(formatAppNum(row.appnum, row))}</td>
+          <td data-label="${esc(t('th_reg_period', '報名期間'))}" class="cell-sub">${esc(row.apptim || '-')}</td>
           <td class="right">${actionHtml}</td>
         </tr>`;
     })
